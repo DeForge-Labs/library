@@ -1,8 +1,8 @@
 {
-  "name": "libdeforge",
+  "name": "str-var",
   "version": "0.0.1",
-  "description": "node library for deforge",
-  "main": "index.js",
+  "description": "String variable node for deforge library",
+  "main": "node.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
