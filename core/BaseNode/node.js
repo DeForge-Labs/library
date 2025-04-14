@@ -1,5 +1,6 @@
 const sampleConfig = {
     title: "Title",
+    category: "category folder name",
     inputs: [
         {
             name: "Name",

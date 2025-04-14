@@ -2,6 +2,7 @@ import BaseNode from "../../core/BaseNode";
 
 const config = {
     title: "Integer",
+    category: "basic",
     inputs: [],
     outputs: [
         {
