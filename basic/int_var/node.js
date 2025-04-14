@@ -3,10 +3,15 @@ import BaseNode from "../../core/BaseNode";
 const config = {
     title: "Integer",
     inputs: [],
-    outputs: ["int-lit"],
-    conn_color: "#FFFFFF",
-
-    content: {number: "number-field"}
+    outputs: [
+        {
+            name: "Number",
+            type: "Integer",
+            desc: "",
+        }
+    ],
+    fields: {number: "number"},
+    tags: ['int', 'number'],
 }
 
 class int_lit extends BaseNode {
@@ -14,8 +19,8 @@ class int_lit extends BaseNode {
         super(config);
     }
 
-    run(inputs) {
-        return this.content.number;
+    run(inputs, contents) {
+        return contents.number;
     }
 }
 
