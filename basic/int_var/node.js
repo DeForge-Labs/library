@@ -10,17 +10,23 @@ const config = {
             desc: "",
         }
     ],
-    fields: {number: "number"},
+    fields: {
+        number: {
+            type: "number",
+            desc: "",
+            value: 0,
+        },
+    },
     tags: ['int', 'number'],
 }
 
-class int_lit extends BaseNode {
+class int_var extends BaseNode {
     constructor() {
         super(config);
     }
 
     run(inputs, contents) {
-        return contents.number;
+        return contents.number.value;
     }
 }
 

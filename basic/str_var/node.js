@@ -10,17 +10,23 @@ const config = {
             desc: "",
         }
     ],
-    fields: {text: "text"},
+    fields: {
+        text: {
+            type: "text",
+            desc: "",
+            value: "Enter text here...",
+        }
+    },
     tags: ['str', 'text'],
 }
 
-class int_lit extends BaseNode {
+class str_var extends BaseNode {
     constructor() {
         super(config);
     }
 
     run(inputs, contents) {
-        return contents.text;
+        return contents.text.value;
     }
 }
 

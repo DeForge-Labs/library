@@ -1,3 +1,29 @@
+const sampleConfig = {
+    title: "Title",
+    inputs: [
+        {
+            name: "Name",
+            type: "NodeType",
+            desc: "",
+        },
+    ],
+    outputs: [
+        {
+            name: "Name",
+            type: "NodeType",
+            desc: "",
+        }
+    ],
+    fields: {
+        fieldOnNode: {
+            type: "HTML input type",
+            desc: "",
+            value: "placeholder value, not necessarily string",
+        }
+    },
+    tags: ['smaller', 'tag', 'names'],
+}
+
 class Node {
     /**
      * Initialize a node
@@ -19,6 +45,21 @@ class Node {
      */
     run(inputs, contents) {
         
+    }
+
+    /**
+     * Get the config for a node
+     */
+    getConfig() {
+        const config = {
+            title: this.title,
+            inputs: this.inputs,
+            outputs: this.outputs,
+            tags: this.tags,
+            fields: this.fields,
+        }
+
+        return config;
     }
 }
 
