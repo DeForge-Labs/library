@@ -1,4 +1,4 @@
-import BaseNode from "../../core/BaseNode";
+import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
     title: "Integer",

@@ -1,7 +1,7 @@
 {
-  "name": "str-var",
+  "name": "test-node",
   "version": "0.0.1",
-  "description": "String variable node for deforge library",
+  "description": "Test node for deforge library",
   "main": "node.js",
   "type": "module",
   "scripts": {
