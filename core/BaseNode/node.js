@@ -1,6 +1,7 @@
 const sampleConfig = {
     title: "Title",
     category: "category folder name",
+    type: "node class name",
     inputs: [
         {
             name: "Name",

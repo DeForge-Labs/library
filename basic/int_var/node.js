@@ -3,6 +3,7 @@ import BaseNode from "../../core/BaseNode/node.js";
 const config = {
     title: "Integer",
     category: "basic",
+    type: "int_var",
     inputs: [],
     outputs: [
         {

@@ -3,6 +3,7 @@ import BaseNode from "../../core/BaseNode/node.js";
 const config = {
     title: "String",
     category: "basic",
+    type: "str_var",
     inputs: [],
     outputs: [
         {

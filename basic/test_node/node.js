@@ -1,8 +1,10 @@
 import BaseNode from "../../core/BaseNode/node.js";
+import cowsay from 'cowsay';
 
 const config = {
     title: "Test",
     category: "basic",
+    type: "test_node",
     inputs: [],
     outputs: [
         
@@ -18,7 +20,11 @@ class test_node extends BaseNode {
     }
 
     run(inputs, contents) {
-        console.log("Test node executed");
+        console.log(cowsay.say({
+            text: "Executed test node",
+            e: "oO",
+            T: "U "
+        }));
         return 0;
     }
 }
