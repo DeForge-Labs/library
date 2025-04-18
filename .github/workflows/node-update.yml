@@ -59,10 +59,8 @@ jobs:
                     # Empty output array if no nodes found
                     echo 'nodes=[]' >> $GITHUB_OUTPUT
                 else
-                    # Create a properly formatted JSON with escaped quotes
-                    NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s . | sed -e 's/"/\\"/g' -e 's/\//\\\//g')
-                    echo "$NODES_JSON"
-                    echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
+                    NODES_ENCODED=$(echo "$NODES_DIR" | base64)
+                    echo "nodes=$NODES_ENCODED" >> $GITHUB_OUTPUT
                 fi
                 
                 # Log for debugging
@@ -73,8 +71,8 @@ jobs:
               uses: actions/github-script@v6
               with:
                 script: |
-                    console.log(${{ steps.changed-nodes.outputs.nodes }});
-                    const changedNodes = JSON.parse(${{ steps.changed-nodes.outputs.nodes.output }});
+                    const encoded = '${{ steps.changed-nodes.outputs.nodes }}';
+                    const changedNodes = JSON.parse(Buffer.from(encoded, 'base64').toString('utf-8'));
                     
                     if (changedNodes.length === 0) {
                         console.log('No node directories were changed. Nothing to update.');
