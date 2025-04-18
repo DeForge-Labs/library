@@ -77,7 +77,7 @@ jobs:
                     console.log(`Updating the following node directories: ${changedNodes.join(', ')}`);
                     
                     try {
-                        const response = await axios.post('https://api.deforge.io/update-nodes', {
+                        const response = await axios.post('https://api.deforge.io/api/update-nodes', {
                             nodes: changedNodes,
                             repositoryUrl: process.env.GITHUB_REPOSITORY,
                         }, {
