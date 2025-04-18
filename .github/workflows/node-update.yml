@@ -1,0 +1,94 @@
+name: Process Node Updates
+
+on:
+    pull_request:
+        types: [closed]
+        branches: [main]
+    workflow_dispatch:
+        inputs:
+            force_all:
+                description: 'Process all nodes manually'
+                required: false
+                default: 'false'
+                type: choice
+                options:
+                    - 'true'
+                    - 'false'
+
+
+jobs:
+    process-nodes:
+        if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                node-version: '22'
+
+            - name: Determine updated nodes
+              id: changed-nodes
+              run: |
+                # Only force processing all nodes if explicitly requested
+                if [[ "${{ github.event.inputs.force_all }}" == "true" ]]; then
+                    echo "Processing all nodes directories"
+                    # Get all nodes directories
+                    NODE_DIRS=$(find . -type f -name "package.json" | grep -v "node_modules" | sed 's|/package.json$||' | sed 's|^\./||')
+                else
+                    echo "Processing only changed nodes directories"
+                    # Get previous commit hash (based on event type)
+                    if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    PREVIOUS_HASH=${{ github.event.pull_request.base.sha }}
+                    else
+                    # For manual triggers, compare with previous commit
+                    PREVIOUS_HASH=$(git rev-parse HEAD~1)
+                    fi
+                    
+                    # Find changed package.json files and extract their directories
+                    NODE_DIRS=$(git diff --name-only $PREVIOUS_HASH HEAD | grep "package.json" | grep -v "node_modules" | sed 's|/package.json$||')
+                fi
+                
+                # Create a JSON array of node directories
+                NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s .)
+                echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
+                
+                # Log for debugging
+                echo "Found the following changed node directories:"
+                echo "$NODE_DIRS"
+
+            - name: Call server update script
+              uses: actions/github-script@v6
+              with:
+                script: |
+                    const axios = require('axios');
+                    const changedNodes = ${{ steps.changed-nodes.outputs.nodes }};
+                    
+                    if (changedNodes.length === 0) {
+                        console.log('No node directories were changed. Nothing to update.');
+                        return;
+                    }
+                    
+                    console.log(`Updating the following node directories: ${changedNodes.join(', ')}`);
+                    
+                    try {
+                        const response = await axios.post('https://api.deforge.io/update-nodes', {
+                            nodes: changedNodes,
+                            repositoryUrl: process.env.GITHUB_REPOSITORY,
+                        }, {
+                                headers: {
+                                    'Authorization': `Bearer ${{ secrets.UPDATE_NODES_KEY }}`,
+                                    'Content-Type': 'application/json'
+                            }
+                        });
+                    
+                        console.log('Server response:', response.data);
+                    } catch (error) {
+                        console.error('Error calling server update script:', error.message);
+                        core.setFailed('Failed to update nodes on server');
+                    }
