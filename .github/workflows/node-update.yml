@@ -76,7 +76,7 @@ jobs:
 
                     console.log(decoded.split("\n"));
 
-                    const changedNodes = JSON.parse(decoded.split("\n"));
+                    const changedNodes = decoded.split("\n");
                     
                     if (changedNodes.length === 0) {
                         console.log('No node directories were changed. Nothing to update.');
