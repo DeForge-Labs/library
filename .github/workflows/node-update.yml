@@ -59,7 +59,7 @@ jobs:
                     # Empty output array if no nodes found
                     echo 'nodes=[]' >> $GITHUB_OUTPUT
                 else
-                    NODES_ENCODED=$(echo "$NODES_DIR" | base64)
+                    NODES_ENCODED=$(echo "$NODE_DIRS" | base64)
                     echo "nodes=$NODES_ENCODED" >> $GITHUB_OUTPUT
                 fi
                 
