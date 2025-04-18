@@ -56,12 +56,12 @@ jobs:
                 
                 # Ensure we have valid JSON output by properly handling empty results and formatting
                 if [ -z "$NODE_DIRS" ]; then
-                    # Empty array if no nodes found
-                    echo 'directories=[]' >> $GITHUB_OUTPUT
+                    # Empty output array if no nodes found
+                    echo 'nodes={\"output\":[]}' >> $GITHUB_OUTPUT
                 else
-                    # Create a properly formatted JSON array
-                    echo "$NODE_DIRS" | jq -R . | jq -s . > node_dirs.json
-                    echo "directories=$(cat node_dirs.json)" >> $GITHUB_OUTPUT
+                    # Create a properly formatted JSON with escaped quotes
+                    PLUGINS_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s . | jq -c '{output: .}' | sed 's/"/\\"/g')
+                    echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
                 fi
                 
                 # Log for debugging
@@ -73,7 +73,7 @@ jobs:
               with:
                 script: |
                     const axios = require('axios');
-                    const changedNodes = ${{ steps.changed-nodes.outputs.directories }};
+                    const changedNodes = JSON.parse${{ steps.changed-nodes.outputs.plugins.output }};
                     
                     if (changedNodes.length === 0) {
                         console.log('No node directories were changed. Nothing to update.');
