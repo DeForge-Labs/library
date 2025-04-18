@@ -94,8 +94,7 @@ jobs:
                             'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                            nodes: changedNodes,
-                            repositoryUrl: process.env.GITHUB_REPOSITORY
+                            nodes: changedNodes
                             })
                         });
                         
