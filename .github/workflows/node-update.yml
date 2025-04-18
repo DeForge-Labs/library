@@ -61,6 +61,7 @@ jobs:
                 else
                     # Create a properly formatted JSON array
                     NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s .)
+                    echo "nodes=$NODES_JSON"
                     echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
                 fi
                 
