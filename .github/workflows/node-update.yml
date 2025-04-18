@@ -60,7 +60,7 @@ jobs:
                     echo 'nodes=[]' >> $GITHUB_OUTPUT
                 else
                     # Create a properly formatted JSON with escaped quotes
-                    NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s . | sed 's/"/\\"/g')
+                    NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s . | sed -e 's/"/\\"/g' -e 's/\//\\\//g')
                     echo "$NODES_JSON"
                     echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
                 fi
