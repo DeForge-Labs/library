@@ -74,9 +74,9 @@ jobs:
                     const encoded = '${{ steps.changed-nodes.outputs.nodes }}';
                     const decoded = Buffer.from(encoded, 'base64').toString('utf-8');
 
-                    console.log(decoded);
+                    console.log(decoded.split("\n"));
 
-                    const changedNodes = JSON.parse(decoded);
+                    const changedNodes = JSON.parse(decoded.split("\n"));
                     
                     if (changedNodes.length === 0) {
                         console.log('No node directories were changed. Nothing to update.');
