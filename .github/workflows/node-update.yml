@@ -57,11 +57,11 @@ jobs:
                 # Ensure we have valid JSON output by properly handling empty results and formatting
                 if [ -z "$NODE_DIRS" ]; then
                     # Empty output array if no nodes found
-                    echo 'nodes={\"output\":[]}' >> $GITHUB_OUTPUT
+                    echo 'nodes:{\"output\":[]}' >> $GITHUB_OUTPUT
                 else
                     # Create a properly formatted JSON with escaped quotes
                     PLUGINS_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s . | jq -c '{output: .}' | sed 's/"/\\"/g')
-                    echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
+                    echo "nodes:$NODES_JSON" >> $GITHUB_OUTPUT
                 fi
                 
                 # Log for debugging
