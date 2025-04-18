@@ -1,7 +1,7 @@
 const sampleConfig = {
     title: "Title",
     category: "category folder name",
-    type: "node class name",
+    type: "node class name, should be same as the folder name of the node",
     inputs: [
         {
             name: "Name",
