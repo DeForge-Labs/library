@@ -54,9 +54,15 @@ jobs:
                     NODE_DIRS=$(git diff --name-only $PREVIOUS_HASH HEAD | grep "package.json" | grep -v "node_modules" | sed 's|/package.json$||')
                 fi
                 
-                # Create a JSON array of node directories
-                NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s .)
-                echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
+                # Ensure we have valid JSON output by properly handling empty results and formatting
+                if [ -z "$NODE_DIRS" ]; then
+                    # Empty array if no nodes found
+                    echo "nodes=[]" >> $GITHUB_OUTPUT
+                else
+                    # Create a properly formatted JSON array
+                    NODES_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s .)
+                    echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
+                fi
                 
                 # Log for debugging
                 echo "Found the following changed node directories:"
