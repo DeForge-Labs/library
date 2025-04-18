@@ -61,7 +61,7 @@ jobs:
                 else
                     # Create a properly formatted JSON with escaped quotes
                     PLUGINS_JSON=$(echo "$NODE_DIRS" | jq -R . | jq -s . | jq -c '{output: .}' | sed 's/"/\\"/g')
-                    echo "nodes=$NODES_JSON" >> $GITHUB_OUTPUT
+                    echo "$NODES_JSON" >> $GITHUB_OUTPUT
                 fi
                 
                 # Log for debugging
@@ -72,7 +72,8 @@ jobs:
               uses: actions/github-script@v6
               with:
                 script: |
-                    const changedNodes = JSON.parse${{ steps.changed-nodes.outputs.plugins.output }};
+                    console.log(${{ steps.changed-nodes.outputs.output }});
+                    const changedNodes = JSON.parse${{ steps.changed-nodes.outputs.output }};
                     
                     if (changedNodes.length === 0) {
                         console.log('No node directories were changed. Nothing to update.');
