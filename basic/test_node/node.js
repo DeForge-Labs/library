@@ -5,12 +5,14 @@ const config = {
     title: "Test",
     category: "basic",
     type: "test_node",
+    desc: "This is the test node",
     inputs: [],
     outputs: [
         
     ],
     fields: {
     },
+    difficulty: "high",
     tags: ['test'],
 }
 

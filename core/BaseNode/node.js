@@ -2,6 +2,7 @@ const sampleConfig = {
     title: "Title",
     category: "category folder name",
     type: "node class name, should be same as the folder name of the node",
+    desc: "Optinal node description",
     inputs: [
         {
             name: "Name",
@@ -23,6 +24,7 @@ const sampleConfig = {
             value: "placeholder value, not necessarily string",
         }
     },
+    difficulty: "low/medium/high",
     tags: ['smaller', 'tag', 'names'],
 }
 

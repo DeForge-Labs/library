@@ -4,6 +4,7 @@ const config = {
     title: "String",
     category: "basic",
     type: "str_var",
+    desc: "String variable",
     inputs: [],
     outputs: [
         {
@@ -19,6 +20,7 @@ const config = {
             value: "Enter text here...",
         }
     },
+    difficulty: "low",
     tags: ['str', 'text'],
 }
 
