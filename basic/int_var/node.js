@@ -4,6 +4,7 @@ const config = {
     title: "Integer",
     category: "basic",
     type: "int_var",
+    desc: "Integer variable",
     inputs: [],
     outputs: [
         {
@@ -19,6 +20,7 @@ const config = {
             value: 0,
         },
     },
+    difficulty: "low",
     tags: ['int', 'number'],
 }
 
