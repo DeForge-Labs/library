@@ -90,11 +90,11 @@ jobs:
                         const response = await fetch('https://api.deforge.io/api/update-nodes', {
                             method: 'POST',
                             headers: {
-                            'Authorization': `Bearer ${{ secrets.UPDATE_NODES_KEY }}`,
-                            'Content-Type': 'application/json'
+                                'Authorization': `Bearer ${{ secrets.UPDATE_NODES_KEY }}`,
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                            nodes: changedNodes
+                                nodes: changedNodes
                             })
                         });
                         
@@ -103,7 +103,7 @@ jobs:
                         }
                         
                         const data = await response.json();
-                        console.log('Server response:', data);
+                        console.log('Server response:\n', data);
                     } catch (error) {
                         console.error('Error calling server update script:', error.message);
                         core.setFailed('Failed to update plugins on server');
