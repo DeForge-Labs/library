@@ -34,4 +34,4 @@ class int_var extends BaseNode {
     }
 }
 
-export default int_lit;
+export default int_var;

@@ -34,4 +34,4 @@ class str_var extends BaseNode {
     }
 }
 
-export default int_lit;
+export default str_var;
