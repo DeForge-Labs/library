@@ -1,7 +1,7 @@
 {
-  "name": "float-var",
+  "name": "num-var",
   "version": "0.0.1",
-  "description": "Float variable node for deforge library",
+  "description": "Number variable node for deforge library",
   "main": "node.js",
   "type": "module",
   "scripts": {

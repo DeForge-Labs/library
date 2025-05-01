@@ -1,15 +1,15 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "Integer",
+    title: "Number",
     category: "basic",
-    type: "int_var",
-    desc: "Integer variable",
+    type: "num_var",
+    desc: "Number variable",
     inputs: [],
     outputs: [
         {
             name: "Number",
-            type: "Integer",
+            type: "Number",
             desc: "",
         }
     ],
@@ -21,10 +21,10 @@ const config = {
         },
     },
     difficulty: "low",
-    tags: ['int', 'number'],
+    tags: ['int', 'float', 'number'],
 }
 
-class int_var extends BaseNode {
+class num_var extends BaseNode {
     constructor() {
         super(config);
     }
@@ -34,4 +34,4 @@ class int_var extends BaseNode {
     }
 }
 
-export default int_var;
+export default num_var;
