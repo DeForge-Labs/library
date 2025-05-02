@@ -4,6 +4,7 @@ const config = {
     title: "String",
     category: "basic",
     type: "str_var",
+    icon: {},
     desc: "String variable",
     inputs: [],
     outputs: [

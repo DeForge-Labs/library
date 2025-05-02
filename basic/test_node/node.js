@@ -5,6 +5,7 @@ const config = {
     title: "Test",
     category: "basic",
     type: "test_node",
+    icon: {},
     desc: "This is the test node",
     inputs: [],
     outputs: [

@@ -2,6 +2,10 @@ const sampleConfig = {
     title: "Title",
     category: "category folder name",
     type: "node class name, should be same as the folder name of the node",
+    icon: {
+        type: "svg/jpeg/png",
+        content: "base64 of the image"
+    },
     desc: "Optinal node description",
     inputs: [
         {
@@ -37,6 +41,7 @@ class Node {
         this.title = configJSON.title;
         this.category = configJSON.category;
         this.type = configJSON.type;
+        this.icon = configJSON.icon;
         this.desc = configJSON.desc;
         this.inputs = configJSON.input;
         this.outputs = configJSON.outputs;
@@ -63,6 +68,7 @@ class Node {
             title: this.title,
             category: this.category,
             type: this.type,
+            icon: this.icon,
             desc: this.desc,
             inputs: this.inputs,
             outputs: this.outputs,

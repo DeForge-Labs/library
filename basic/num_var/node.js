@@ -4,6 +4,7 @@ const config = {
     title: "Number",
     category: "basic",
     type: "num_var",
+    icon: {},
     desc: "Number variable",
     inputs: [],
     outputs: [
