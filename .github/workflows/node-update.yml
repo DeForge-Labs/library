@@ -51,7 +51,7 @@ jobs:
                     fi
                     
                     # Find changed package.json files and extract their directories
-                    NODE_DIRS=$(git diff --name-only $PREVIOUS_HASH HEAD | grep "package.json" | grep -v "node_modules" | sed 's|/package.json$||')
+                    NODE_DIRS=$(git diff --name-only $PREVIOUS_HASH HEAD | grep -E '\.jsx?$|\.json$' | sed -E 's|^(([^/]+/){2}).*|\1|' | sed 's|/$||' | sort | uniq)
                 fi
                 
                 # Ensure we have valid JSON output by properly handling empty results and formatting
