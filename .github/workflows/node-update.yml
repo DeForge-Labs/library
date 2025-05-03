@@ -54,7 +54,8 @@ jobs:
                     if [ ${#OUTPUT[@]} -eq 0 ]; then
                         echo 'nodes=[]' >> $GITHUB_OUTPUT
                     else
-                        printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 | { read ENCODED && echo "nodes=$ENCODED" >> $GITHUB_OUTPUT; }
+                        NODES_ENCODED=$(printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 -w 0)
+                        echo "nodes=$NODES_ENCODED" >> $GITHUB_OUTPUT
                     fi
 
                     echo "All nodes marked as modified:"
@@ -90,13 +91,14 @@ jobs:
                     if [ ${#OUTPUT[@]} -eq 0 ]; then
                         echo 'nodes=[]' >> $GITHUB_OUTPUT
                     else
-                        printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 | { read ENCODED && echo "nodes=$ENCODED" >> $GITHUB_OUTPUT; }
+                        NODES_ENCODED=$(printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 -w 0)
+                        echo "nodes=$NODES_ENCODED" >> $GITHUB_OUTPUT
                     fi
 
                     echo "Changed nodes and statuses:"
                     printf "%s\n" "${OUTPUT[@]}"
                 fi
-                
+
             - name: Call server update script
               uses: actions/github-script@v6
               with:
