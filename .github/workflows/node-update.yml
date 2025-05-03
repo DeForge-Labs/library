@@ -37,52 +37,66 @@ jobs:
               run: |
                 # Only force processing all nodes if explicitly requested
                 if [[ "${{ github.event.inputs.force_all }}" == "true" ]]; then
-                    echo "Processing all nodes directories"
-                    # Get all nodes directories
+                    echo "Processing all node directories"
                     NODE_DIRS=$(find . -type f -name "package.json" | grep -v "node_modules" | sed 's|/package.json$||' | sed 's|^\./||')
+
+                    declare -A NODE_STATUS
+
+                    while IFS= read -r dir; do
+                        NODE_STATUS[$dir]="M"
+                    done <<< "$NODE_DIRS"
+
+                    OUTPUT=()
+                    for dir in "${!NODE_STATUS[@]}"; do
+                        OUTPUT+=("${dir}:${NODE_STATUS[$dir]}")
+                    done
+
+                    if [ ${#OUTPUT[@]} -eq 0 ]; then
+                        echo 'nodes=[]' >> $GITHUB_OUTPUT
+                    else
+                        printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 | { read ENCODED && echo "nodes=$ENCODED" >> $GITHUB_OUTPUT; }
+                    fi
+
+                    echo "All nodes marked as modified:"
+                    printf "%s\n" "${OUTPUT[@]}"
+
                 else
-                    echo "Processing only changed nodes directories"
-                    # Get previous commit hash (based on event type)
+                    echo "Processing only changed node directories"
+
                     if [[ "${{ github.event_name }}" == "pull_request" ]]; then
                         PREVIOUS_HASH=${{ github.event.pull_request.base.sha }}
                     else
-                        # For manual triggers, compare with previous commit
                         PREVIOUS_HASH=$(git rev-parse HEAD~1)
                     fi
+
+                    CHANGES=$(git diff --name-status $PREVIOUS_HASH HEAD | grep -E '\.jsx?$|\.json$' | grep -v 'node_modules')
+
+                    declare -A NODE_STATUS
+
+                    while IFS=$'\t' read -r status path; do
+                        top_two=$(echo "$path" | sed -E 's|^(([^/]+/){2}).*|\1|' | sed 's|/$||')
+                        if [[ "$status" == "D" ]]; then
+                            NODE_STATUS[$top_two]="D"
+                        elif [[ "${NODE_STATUS[$top_two]}" != "D" ]]; then
+                            NODE_STATUS[$top_two]="M"
+                        fi
+                    done <<< "$CHANGES"
+
+                    OUTPUT=()
+                    for dir in "${!NODE_STATUS[@]}"; do
+                        OUTPUT+=("${dir}:${NODE_STATUS[$dir]}")
+                    done
+
+                    if [ ${#OUTPUT[@]} -eq 0 ]; then
+                        echo 'nodes=[]' >> $GITHUB_OUTPUT
+                    else
+                        printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 | { read ENCODED && echo "nodes=$ENCODED" >> $GITHUB_OUTPUT; }
+                    fi
+
+                    echo "Changed nodes and statuses:"
+                    printf "%s\n" "${OUTPUT[@]}"
                 fi
                 
-                # Get changed .js/.jsx/.json files with status (excluding node_modules)
-                CHANGES=$(git diff --name-status $PREVIOUS_HASH HEAD | grep -E '\.jsx?$|\.json$' | grep -v 'node_modules')
-
-                declare -A NODE_STATUS
-
-                # Process each changed file
-                while IFS=$'\t' read -r status path; do
-                # Get top two folder levels
-                top_two=$(echo "$path" | sed -E 's|^(([^/]+/){2}).*|\1|' | sed 's|/$||')
-                # Normalize status: only keep 'D' as-is, mark everything else as 'M'
-                if [[ "$status" == "D" ]]; then
-                    NODE_STATUS[$top_two]="D"
-                elif [[ "${NODE_STATUS[$top_two]}" != "D" ]]; then
-                    NODE_STATUS[$top_two]="M"
-                fi
-                done <<< "$CHANGES"
-
-                # Format output
-                OUTPUT=()
-                for dir in "${!NODE_STATUS[@]}"; do
-                    OUTPUT+=("${dir}:${NODE_STATUS[$dir]}")
-                done
-
-                if [ ${#OUTPUT[@]} -eq 0 ]; then
-                    echo 'nodes=[]' >> $GITHUB_OUTPUT
-                else
-                    printf "%s\n" "${OUTPUT[@]}" | sort | uniq | base64 | { read ENCODED && echo "nodes=$ENCODED" >> $GITHUB_OUTPUT; }
-                fi
-
-                echo "Changed nodes and statuses:"
-                printf "%s\n" "${OUTPUT[@]}"
-
             - name: Call server update script
               uses: actions/github-script@v6
               with:
