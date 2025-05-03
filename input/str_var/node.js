@@ -1,11 +1,11 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "String",
-    category: "basic",
+    title: "User Input",
+    category: "input",
     type: "str_var",
     icon: {},
-    desc: "String variable",
+    desc: "String input from users",
     inputs: [],
     outputs: [
         {
@@ -22,7 +22,7 @@ const config = {
         }
     },
     difficulty: "low",
-    tags: ['str', 'text'],
+    tags: ['str', 'text', 'user', 'input'],
 }
 
 class str_var extends BaseNode {

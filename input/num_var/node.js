@@ -2,7 +2,7 @@ import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
     title: "Number",
-    category: "basic",
+    category: "input",
     type: "num_var",
     icon: {},
     desc: "Number variable",

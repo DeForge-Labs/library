@@ -1,7 +1,7 @@
 {
-  "name": "test-node",
+  "name": "api-node",
   "version": "0.0.1",
-  "description": "Test node for deforge library",
+  "description": "Node to call api",
   "main": "node.js",
   "type": "module",
   "scripts": {
@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
-    "cowsay": "^1.6.0"
+    "axios": "^1.9.0"
   }
 }
