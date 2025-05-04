@@ -44,7 +44,7 @@ class Node {
         this.type = configJSON.type;
         this.icon = configJSON.icon;
         this.desc = configJSON.desc;
-        this.inputs = configJSON.input;
+        this.inputs = configJSON.inputs;
         this.outputs = configJSON.outputs;
 
         this.tags = configJSON.tags;
