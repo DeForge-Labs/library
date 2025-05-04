@@ -65,12 +65,12 @@ class api_node extends BaseNode {
     run(inputs, contents) {
         
         const endpointFilter = inputs.filter((e) => e.name === "endpoint");
-        const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.endpoint.value;
+        const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents[1].value;
 
         const bodyFilter = inputs.filter((e) => e.name === "body");
-        const body = bodyFilter.length > 0 ? bodyFilter[0].value : contents.body.value;
+        const body = bodyFilter.length > 0 ? bodyFilter[0].value : contents[2].value;
 
-        const method = contents.method.value;
+        const method = contents[0].value;
 
         const requestConfig = {
             method: method,

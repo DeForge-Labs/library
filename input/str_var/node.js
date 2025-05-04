@@ -32,7 +32,7 @@ class str_var extends BaseNode {
     }
 
     run(inputs, contents) {
-        return contents.text.value;
+        return contents[0].value;
     }
 }
 

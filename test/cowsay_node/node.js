@@ -30,7 +30,7 @@ class cowsay_node extends BaseNode {
 
     run(inputs, contents) {
         console.log(cowsay.say({
-            text: contents.text.value | "Executed test node",
+            text: contents[0].value,
             e: "oO",
             T: "U "
         }));

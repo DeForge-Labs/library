@@ -39,7 +39,7 @@ class function_node extends BaseNode {
 
     run(inputs, contents) {
         console.log(contents.code.value);
-        return contents.code.value;
+        return contents[0].value;
     }
 }
 

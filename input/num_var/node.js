@@ -32,7 +32,7 @@ class num_var extends BaseNode {
     }
 
     run(inputs, contents) {
-        return contents.number.value;
+        return contents[0].value;
     }
 }
 
