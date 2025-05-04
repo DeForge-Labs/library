@@ -14,13 +14,14 @@ const config = {
             desc: "",
         }
     ],
-    fields: {
-        number: {
+    fields: [
+        {
+            name: "number",
             type: "number",
             desc: "",
             value: 0,
         },
-    },
+    ],
     difficulty: "low",
     tags: ['int', 'float', 'number'],
 }

@@ -11,13 +11,14 @@ const config = {
     outputs: [
         
     ],
-    fields: {
-        text: {
+    fields: [
+        {
+            name: "text",
             type: "text",
             desc: "",
             value: "Enter text here...",
         }
-    },
+    ],
     difficulty: "high",
     tags: ['test'],
 }

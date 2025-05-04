@@ -26,24 +26,33 @@ const config = {
             desc: "",
         }
     ],
-    fields: {
-        method: {
+    fields: [
+        {
+            name: "method",
             type: "select",
             desc: "",
             value: "GET",
             options: ["GET", "POST", "PUT", "DELETE"]
         },
-        endpoint: {
+        {
+            name: "endpoint",
             type: "text",
             desc: "",
             value: "endpoint..."
         },
-        body: {
+        {
+            name: "body",
             type: "textArea",
             desc: "",
             value: "Enter body here...",
-        }
-    },
+        },
+        {
+            name: "TG_API_KEY",
+            type: "env",
+            desc: "Api Key of Telegram Bot",
+            defaultValue: "eydnfnuani...",
+        },
+    ],
     difficulty: "medium",
     tags: ['api', 'http', 'external'],
 }

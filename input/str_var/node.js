@@ -14,13 +14,14 @@ const config = {
             desc: "",
         }
     ],
-    fields: {
-        text: {
+    fields: [
+        {
+            name: "text",
             type: "text",
             desc: "",
             value: "Enter text here...",
         }
-    },
+    ],
     difficulty: "low",
     tags: ['str', 'text', 'user', 'input'],
 }

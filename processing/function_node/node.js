@@ -20,13 +20,14 @@ const config = {
             desc: "",
         }
     ],
-    fields: {
-        code: {
+    fields: [
+        {
+            name: "code",
             type: "textArea",
             desc: "",
             value: "Enter code here...",
         }
-    },
+    ],
     difficulty: "high",
     tags: ['code', 'function', 'transform'],
 }

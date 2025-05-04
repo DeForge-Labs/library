@@ -21,13 +21,14 @@ const sampleConfig = {
             desc: "",
         }
     ],
-    fields: {
-        fieldOnNode: {
+    fields: [
+        {
+            name: "fieldOnNode",
             type: "HTML input type",
             desc: "",
             value: "placeholder value, not necessarily string",
         }
-    },
+    ],
     difficulty: "low/medium/high",
     tags: ['smaller', 'tag', 'names'],
 }
