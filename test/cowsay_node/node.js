@@ -7,7 +7,13 @@ const config = {
     type: "cowsay_node",
     icon: {},
     desc: "This is the test cowsay node",
-    inputs: [],
+    inputs: [
+        {
+            name: "text",
+            type: "text",
+            desc: "",
+        }
+    ],
     outputs: [
         
     ],
@@ -29,8 +35,17 @@ class cowsay_node extends BaseNode {
     }
 
     run(inputs, contents) {
+
+        let text = "";
+        if (contents?.length > 0) {
+            text = contents[0].value;
+        }
+        else {
+            text = inputs[0].value;
+        }
+
         console.log(cowsay.say({
-            text: contents[0].value,
+            text: text,
             e: "oO",
             T: "U "
         }));
