@@ -22,7 +22,7 @@ const config = {
             value: "Enter text here...",
         }
     ],
-    difficulty: "low",
+    difficulty: "easy",
     tags: ['str', 'text', 'user', 'input'],
 }
 

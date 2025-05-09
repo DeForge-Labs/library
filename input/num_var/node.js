@@ -22,7 +22,7 @@ const config = {
             value: 0,
         },
     ],
-    difficulty: "low",
+    difficulty: "easy",
     tags: ['int', 'float', 'number'],
 }
 

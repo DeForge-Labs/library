@@ -28,7 +28,7 @@ const config = {
             value: "Enter code here...",
         }
     ],
-    difficulty: "high",
+    difficulty: "hard",
     tags: ['code', 'function', 'transform'],
 }
 
