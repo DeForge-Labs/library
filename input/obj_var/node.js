@@ -39,7 +39,7 @@ const config = {
             value: "value...",
         },
     ],
-    diff: "medium",
+    difficulty: "medium",
     tags: ["object", "variable"],
 }
 

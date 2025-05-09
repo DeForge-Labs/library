@@ -31,7 +31,7 @@ const config = {
             value: "[]",
         },
     ],
-    diff: "medium",
+    difficulty: "medium",
     tags: ["object", "map"],
 }
 
