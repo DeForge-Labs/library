@@ -9,47 +9,58 @@ const config = {
     desc: "call external API",
     inputs: [
         {
+            desc: "The endpoint of the API",
             name: "endpoint",
-            type: "String",
-            desc: "",
+            type: "Text",
         },
         {
+            desc: "The body of the API",
             name: "body",
-            type: "String",
-            desc: "",
-        }
+            type: "JSON",
+        },
+        {
+            desc: "The headers of the API",
+            name: "headers",
+            type: "JSON",
+        },
     ],
     outputs: [
         {
+            desc: "The response of the API",
             name: "output",
-            type: "String",
-            desc: "",
-        }
+            type: "Text",
+        },
     ],
     fields: [
         {
+            desc: "The method of the API",
             name: "method",
             type: "select",
-            desc: "",
             value: "GET",
-            options: ["GET", "POST", "PUT", "DELETE"]
+            options: ["GET", "POST", "PUT", "DELETE"],
         },
         {
+            desc: "The endpoint of the API",
             name: "endpoint",
-            type: "text",
-            desc: "",
-            value: "endpoint..."
+            type: "Text",
+            value: "endpoint...",
         },
         {
+            desc: "The body of the API",
             name: "body",
-            type: "textArea",
-            desc: "",
+            type: "Map",
             value: "Enter body here...",
         },
         {
+            desc: "The headers of the API",
+            name: "headers",
+            type: "Map",
+            value: "Enter headers here...",
+        },
+        {
+            desc: "Api Key of Telegram Bot",
             name: "TG_API_KEY",
             type: "env",
-            desc: "Api Key of Telegram Bot",
             defaultValue: "eydnfnuani...",
         },
     ],
@@ -62,35 +73,38 @@ class api_node extends BaseNode {
         super(config);
     }
 
-    run(inputs, contents) {
+    async run(inputs, contents) {
         
         const endpointFilter = inputs.filter((e) => e.name === "endpoint");
-        const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents[1].value;
+        const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "endpoint")[0].value;
 
         const bodyFilter = inputs.filter((e) => e.name === "body");
-        const body = bodyFilter.length > 0 ? bodyFilter[0].value : contents[2].value;
+        const body = bodyFilter.length > 0 ? bodyFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
 
-        const method = contents[0].value;
+        const headersFilter = inputs.filter((e) => e.name === "headers");
+        const headers = headersFilter.length > 0 ? headersFilter[0].value : contents.filter((e) => e.name === "headers")[0].value;
+
+        const method = contents.filter((e) => e.name === "method")[0].value;
 
         const requestConfig = {
             method: method,
             maxBodyLength: Infinity,
             url: endpoint,
-            headers: {
-                'Content-Type': "application/json"
-            },
+            ...(headers !== null && { headers: headers }),
             data: JSON.stringify(body)
         };
 
-        axios.request(requestConfig)
-            .then((response) => {
-                console.log(JSON.stringify(response.data));
-                return JSON.stringify(response.data);
-            })
-            .catch((error) => {
-                console.error(error);
-                return JSON.stringify(error);
-            });
+        try {
+
+            const response = await axios.request(requestConfig);
+            console.log(JSON.stringify(response.data));
+            return JSON.stringify(response.data);
+
+        } catch (error) {
+            
+            console.error(error);
+            return JSON.stringify(error);
+        }
     }
 }
 

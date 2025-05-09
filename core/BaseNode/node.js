@@ -29,7 +29,7 @@ const sampleConfig = {
             value: "placeholder value, not necessarily string",
         }
     ],
-    difficulty: "low/medium/high",
+    difficulty: "easy/medium/hard",
     tags: ['smaller', 'tag', 'names'],
 }
 
@@ -57,7 +57,7 @@ class Node {
      * Need to be overidden.
      * @param {JSON} inputs The inputs to the node
      */
-    run(inputs, contents) {
+    async run(inputs, contents) {
         
     }
 

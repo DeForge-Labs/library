@@ -10,14 +10,14 @@ const config = {
     outputs: [
         {
             name: "Text",
-            type: "String",
+            type: "Text",
             desc: "",
         }
     ],
     fields: [
         {
-            name: "text",
-            type: "text",
+            name: "Text",
+            type: "Text",
             desc: "",
             value: "Enter text here...",
         }
@@ -31,7 +31,7 @@ class str_var extends BaseNode {
         super(config);
     }
 
-    run(inputs, contents) {
+    async run(inputs, contents) {
         return contents[0].value;
     }
 }

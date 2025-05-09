@@ -16,8 +16,8 @@ const config = {
     ],
     fields: [
         {
-            name: "number",
-            type: "number",
+            name: "Number",
+            type: "Number",
             desc: "",
             value: 0,
         },
@@ -31,7 +31,7 @@ class num_var extends BaseNode {
         super(config);
     }
 
-    run(inputs, contents) {
+    async run(inputs, contents) {
         return contents[0].value;
     }
 }
