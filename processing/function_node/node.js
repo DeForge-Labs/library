@@ -37,8 +37,8 @@ class function_node extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents) {
-        console.log(contents.code.value);
+    async run(inputs, contents, webconsole) {
+        webconsole.success(contents.code.value);
         return contents[0].value;
     }
 }

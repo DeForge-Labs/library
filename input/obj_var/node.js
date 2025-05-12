@@ -48,7 +48,7 @@ class obj_var extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents) {
+    async run(inputs, contents, webconsole) {
         
         const keyFilter = inputs.filter((e) => e.name === "key");
         const key = keyFilter.length > 0 ? keyFilter[0].value : contents.filter((e) => e.name === "key")[0].value;

@@ -73,7 +73,7 @@ class api_node extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents) {
+    async run(inputs, contents, webconsole) {
         
         const endpointFilter = inputs.filter((e) => e.name === "endpoint");
         const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "endpoint")[0].value;
@@ -97,12 +97,12 @@ class api_node extends BaseNode {
         try {
 
             const response = await axios.request(requestConfig);
-            console.log(JSON.stringify(response.data));
+            webconsole.info(JSON.stringify(response.data));
             return JSON.stringify(response.data);
 
         } catch (error) {
             
-            console.error(error);
+            webconsole.error(error);
             return JSON.stringify(error);
         }
     }

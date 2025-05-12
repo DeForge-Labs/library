@@ -9,8 +9,8 @@ const config = {
     desc: "This is the test cowsay node",
     inputs: [
         {
-            name: "text",
-            type: "text",
+            name: "Text",
+            type: "Text",
             desc: "",
         }
     ],
@@ -19,8 +19,8 @@ const config = {
     ],
     fields: [
         {
-            name: "text",
-            type: "text",
+            name: "Text",
+            type: "Text",
             desc: "",
             value: "Enter text here...",
         }
@@ -34,7 +34,7 @@ class cowsay_node extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents) {
+    async run(inputs, contents, webconsole) {
 
         let text = "";
         if (contents?.length > 0) {
@@ -44,7 +44,7 @@ class cowsay_node extends BaseNode {
             text = inputs[0].value;
         }
 
-        console.log(cowsay.say({
+        webconsole.info(cowsay.say({
             text: text,
             e: "oO",
             T: "U "

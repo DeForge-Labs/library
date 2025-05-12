@@ -31,7 +31,7 @@ class str_var extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents) {
+    async run(inputs, contents, webconsole) {
         return contents[0].value;
     }
 }
