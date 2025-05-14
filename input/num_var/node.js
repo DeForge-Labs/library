@@ -31,7 +31,7 @@ class num_var extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents, webconsole) {
+    async run(inputs, contents, webconsole, serverData) {
         return contents[0].value;
     }
 }

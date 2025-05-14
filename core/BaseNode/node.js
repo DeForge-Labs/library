@@ -57,7 +57,7 @@ class Node {
      * Need to be overidden.
      * @param {JSON} inputs The inputs to the node
      */
-    async run(inputs, contents) {
+    async run(inputs, contents, webconsole, serverData) {
         
     }
 

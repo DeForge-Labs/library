@@ -40,7 +40,7 @@ class obj_to_map extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents, webconsole) {
+    async run(inputs, contents, webconsole, serverData) {
         
         let pairMap = {};
 

@@ -73,7 +73,7 @@ class api_node extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents, webconsole) {
+    async run(inputs, contents, webconsole, serverData) {
         
         const endpointFilter = inputs.filter((e) => e.name === "endpoint");
         const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "endpoint")[0].value;

@@ -34,7 +34,7 @@ class cowsay_node extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents, webconsole) {
+    async run(inputs, contents, webconsole, serverData) {
 
         let text = "";
         if (contents?.length > 0) {
