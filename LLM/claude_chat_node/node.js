@@ -100,7 +100,7 @@ class claude_chat_node extends BaseNode {
 
         const response = await agent.generate(query, {
             ...(memory && { resourceId: serverData.userId }),
-            ...(memory && { threadId: serverData.workflowId }),
+            ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
         });
 
         webconsole.info(`Anthropic LLM Response: ${response.text}`);
