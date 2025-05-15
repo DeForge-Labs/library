@@ -27,9 +27,9 @@ const config = {
     ],
     fields: [
         {
-            desc: "The knowledge base file",
+            desc: "The knowledge base file link",
             name: "file",
-            type: "File",
+            type: "Text",
             value: "",
         },
     ],
