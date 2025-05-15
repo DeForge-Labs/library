@@ -25,7 +25,7 @@ const config = {
         },
         {
             desc: "System prompt for the LLM",
-            name: "sysPrompt",
+            name: "systemPrompt",
             type: "Text"
         },
         {
@@ -57,7 +57,7 @@ const config = {
         },
         {
             desc: "System prompt for the LLM",
-            name: "sysPrompt",
+            name: "systemPrompt",
             type: "Text",
             value: "You are a helpful assistant"
         },
@@ -82,8 +82,8 @@ class google_chat_node extends BaseNode {
         const queryFilter = inputs.filter((e) => e.name === "query");
         const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
 
-        const sysPromptFilter = inputs.filter((e) => e.name === "sysPrompt");
-        const systemPrompt = sysPromptFilter.length > 0 ? sysPromptFilter[0].value : contents.filter((e) => e.name === "sysPrompt")[0].value;
+        const systemPromptFilter = inputs.filter((e) => e.name === "systemPrompt");
+        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "systemPrompt")[0].value;
 
         const model = contents.filter((e) => e.name === "model")[0].value;
         const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
