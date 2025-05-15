@@ -16,19 +16,19 @@ const config = {
     category: "processing",
     type: "rag_node",
     icon: {},
-    desc: "chat with LLMs",
+    desc: "Add your document as knowledge for AI",
     inputs: [],
     outputs: [
         {
-            desc: "database fileName",
+            desc: "Knowledge database",
             name:"rag_db_name",
-            type: "Text",
+            type: "RAG",
         },
     ],
     fields: [
         {
             desc: "The knowledge base file link",
-            name: "file",
+            name: "filelink",
             type: "Text",
             value: "",
         },

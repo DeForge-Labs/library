@@ -35,9 +35,9 @@ const config = {
             type: "Text"
         },
         {
-            desc: "RAG Knowledge base",
-            name: "rag",
-            type: "Text"
+            desc: "Knowledge base",
+            name: "KnowledgeBase",
+            type: "RAG"
         }
     ],
     outputs: [
@@ -108,7 +108,7 @@ class custom_chat_node extends BaseNode {
         const modelFilter = inputs.filter((e) => e.name === "model");
         const model = modelFilter.length > 0 ? modelFilter[0].value : contents.filter((e) => e.name === "model")[0].value;
 
-        const ragStoreFilter = inputs.filter((e) => e.name === "rag");
+        const ragStoreFilter = inputs.filter((e) => e.name === "KnowledgeBase");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
 
         const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
