@@ -20,11 +20,6 @@ const config = {
     inputs: [],
     outputs: [
         {
-            desc: "Vector database",
-            name: "output",
-            type: "RAG",
-        },
-        {
             desc: "database fileName",
             name:"rag_db_name",
             type: "Text",
@@ -75,10 +70,7 @@ class rag_node extends BaseNode {
 
         if (isEmbedded) {
             webconsole.success("RAG NODE | DB exists");
-            return {
-                store: store,
-                fileName: `./${workflowId}_${fileHash}.db`
-            };
+            return `${workflowId}_${fileHash}.db`;
         }
 
         try {
@@ -129,10 +121,7 @@ class rag_node extends BaseNode {
 
             webconsole.success("RAG NODE | Vector DB created");
 
-            return {
-                store: store,
-                fileName: `./${workflowId}_${fileHash}.db`,
-            };
+            return `${workflowId}_${fileHash}.db`;
 
         } catch (error) {
             webconsole.error("RAG NODE | some error occured: ", error);

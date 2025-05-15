@@ -1,4 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
+import { Mastra } from "@mastra/core";
+import { createVectorQueryTool } from "@mastra/rag";
+import { LibSQLVector } from '@mastra/core/vector/libsql';
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -30,6 +33,12 @@ const config = {
             desc: "System prompt for the LLM",
             name: "sysPrompt",
             type: "Text"
+        },
+        ,
+        {
+            desc: "RAG Knowledge base",
+            name: "rag",
+            type: "RAG"
         }
     ],
     outputs: [
@@ -100,6 +109,9 @@ class custom_chat_node extends BaseNode {
         const modelFilter = inputs.filter((e) => e.name === "model");
         const model = modelFilter.length > 0 ? modelFilter[0].value : contents.filter((e) => e.name === "model")[0].value;
 
+        const ragStoreFilter = inputs.filter((e) => e.name === "rag");
+        const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
+
         const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
 
         const memory  = saveMemory ? new Memory({
@@ -114,6 +126,12 @@ class custom_chat_node extends BaseNode {
             }
         }) : null;
 
+        const ragTool = createVectorQueryTool({
+            vectorStoreName: "libStore",
+            indexName: "collection",
+            model: openai.embedding("text-embedding-3-small"),
+        });
+
         const llm = createOpenAI({
             baseURL: endpoint,
             apiKey: serverData.envList?.LLM_API_KEY || "",
@@ -121,13 +139,24 @@ class custom_chat_node extends BaseNode {
 
         const openai = llm.languageModel;
 
-        const agent = new Agent({
+        const newAgent = new Agent({
             name: "UserAgent",
             instructions: systemPrompt,
             model: openai(model),
-            ...(memory && { memory: memory })
+            ...(memory && { memory: memory }),
+            ...(ragStoreName && { tools: { ragTool } }),
         });
 
+        const ragStore = new LibSQLVector({
+            connectionUrl: `file:./${ragStoreName}`
+        });
+
+        const mastra = new Mastra({
+            agents: { newAgent },
+            vectors: { ragStore },
+        });
+        const agent = mastra.getAgent("UserAgent");
+        
         const response = await agent.generate(query, {
             ...(memory && { resourceId: serverData.userId }),
             ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
