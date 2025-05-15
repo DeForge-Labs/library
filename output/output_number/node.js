@@ -1,7 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    name: "Output Number",
+    title: "Output Number",
     category: "output",
     type: "output_number",
     icon: {},
