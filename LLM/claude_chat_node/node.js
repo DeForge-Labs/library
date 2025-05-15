@@ -31,7 +31,7 @@ const config = {
         {
             desc: "RAG Knowledge base",
             name: "rag",
-            type: "RAG"
+            type: "Text"
         }
     ],
     outputs: [

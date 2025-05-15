@@ -31,7 +31,7 @@ const config = {
         {
             desc: "RAG Knowledge base",
             name: "rag",
-            type: "RAG"
+            type: "Text"
         }
     ],
     outputs: [
@@ -115,7 +115,7 @@ class google_chat_node extends BaseNode {
             model: google(model),
             ...(memory && { memory: memory })
         });
-        
+
         const ragStore = new LibSQLVector({
             connectionUrl: `file:./${ragStoreName}`
         });
