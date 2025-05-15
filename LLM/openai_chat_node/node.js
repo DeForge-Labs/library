@@ -108,23 +108,34 @@ class openai_chat_node extends BaseNode {
             model: openai.embedding("text-embedding-3-small"),
         });
 
-        const newAgent = new Agent({
+        var agent;
+
+        if (ragStoreName) {
+            const newAgent = new Agent({
+                name: "UserAgent",
+                instructions: systemPrompt,
+                model: openai(model),
+                ...(memory && { memory: memory }),
+                tools: { ragTool },
+            });
+
+            const ragStore = new LibSQLVector({
+                connectionUrl: `file:./${ragStoreName}`
+            });
+
+            const mastra = new Mastra({
+                agents: { newAgent },
+                vectors: { ragStore },
+            });
+            agent = mastra.getAgent("UserAgent");
+        }
+
+        agent = new Agent({
             name: "UserAgent",
             instructions: systemPrompt,
             model: openai(model),
-            ...(memory && { memory: memory }),
-            ...(ragStoreName && { tools: { ragTool } }),
-        });
-
-        const ragStore = new LibSQLVector({
-            connectionUrl: `file:./${ragStoreName}`
-        });
-
-        const mastra = new Mastra({
-            agents: { newAgent },
-            vectors: { ragStore },
-        });
-        const agent = mastra.getAgent("UserAgent");
+            ...(memory && { memory: memory })
+        });        
 
         const response = await agent.generate(query, {
             ...(memory && { resourceId: serverData.workflowId }),
