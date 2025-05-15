@@ -4,12 +4,14 @@ const config = {
     title: "Objects To Map",
     category: "processing",
     type: "obj_to_map",
-    icon: {
-        type: "",
-        content: "",
-    },
+    icon: {},
     desc: "Convert object to map",
     inputs: [
+        {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
         {
             desc: "Objects to convert",
             name: "objects",

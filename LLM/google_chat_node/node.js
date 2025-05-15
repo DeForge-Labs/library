@@ -16,23 +16,34 @@ const config = {
     category: "LLM",
     type: "google_chat_node",
     icon: {},
-    desc: "chat with LLMs",
+    desc: "Chat with Google based LLM",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
-            type: "Text"
+            name: "System Prompt",
+            type: "Text",
         },
         {
-            desc: "Knowledge base",
-            name: "KnowledgeBase",
-            type: "RAG"
-        }
+            desc: "RAG Knowledge base",
+            name: "Rag",
+            type: "Rag",
+        },
+        {
+            desc: "Save chat as context for LLM",
+            name: "Save Context",
+            type: "Boolean",
+            value: true,
+        },
     ],
     outputs: [
         {
@@ -42,35 +53,42 @@ const config = {
         },
     ],
     fields: [
-        {
-            desc: "The LLM model",
-            name: "model",
-            type: "select",
-            value: "gemini-2.0-flash",
-            options: ["gemini-2.5-pro-preview-05-06", "gemini-2.5-flash-preview-04-17", "gemini-2.0-flash", "gemini-1.5-pro-latest", "gemini-1.5-flash-latest", "gemini-1.5-flash-8b-latest"],
-        },
-        {
-            desc: "Chat text to send",
-            name: "query",
-            type: "Text",
-            value: "Enter text here...",
-        },
-        {
-            desc: "System prompt for the LLM",
-            name: "systemPrompt",
-            type: "Text",
-            value: "You are a helpful assistant"
-        },
-        {
-            desc: "Save chat as context for LLM",
-            name: "saveContext",
-            type: "Boolean",
-            value: true
-        }
+    {
+        desc: "The LLM model",
+        name: "model",
+        type: "select",
+        value: "gemini-2.0-flash",
+        options: [
+            "gemini-2.5-pro-preview-05-06",
+            "gemini-2.5-flash-preview-04-17",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro-latest",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-flash-8b-latest",
+        ],
+    },
+    {
+        desc: "Chat text to send",
+        name: "Query",
+        type: "Text",
+        value: "Enter text here...",
+    },
+    {
+        desc: "System prompt for the LLM",
+        name: "System Prompt",
+        type: "Text",
+        value: "You are a helpful assistant",
+    },
+    {
+        desc: "Save chat as context for LLM",
+        name: "Save Context",
+        type: "CheckBox",
+        value: true,
+    },
     ],
     difficulty: "medium",
-    tags: ['api', 'llm', 'chatbot'],
-}
+    tags: ["api", "llm", "chatbot"],
+  }
 
 class google_chat_node extends BaseNode {
     constructor() {

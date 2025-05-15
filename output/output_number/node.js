@@ -1,40 +1,39 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "Number Input",
-    category: "input",
-    type: "num_var",
+    name: "Output Number",
+    category: "output",
+    type: "output_number",
     icon: {},
-    desc: "Number variable",
-    inputs: [],
-    outputs: [
+    desc: "Outputs number to the user",
+    inputs: [
         {
+            desc: "Number to output",
             name: "Number",
             type: "Number",
-            desc: "",
-        }
+        },
     ],
+    outputs: [],
     fields: [
         {
+            desc: "Number to output",
             name: "Number",
             type: "Number",
-            desc: "",
             value: 0,
         },
     ],
     difficulty: "easy",
-    tags: ['int', 'float', 'number'],
+    tags: ["output", "number"],
 }
 
-class num_var extends BaseNode {
+class output_number extends BaseNode {
     constructor() {
         super(config);
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        webconsole.info("Number Input | emitting output value");
-        return contents[0].value;
+        
     }
 }
 
-export default num_var;
+export default output_number;

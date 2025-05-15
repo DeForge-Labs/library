@@ -9,6 +9,11 @@ const config = {
     desc: "call external API",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The endpoint of the API",
             name: "endpoint",
             type: "Text",
@@ -28,7 +33,7 @@ const config = {
         {
             desc: "The response of the API",
             name: "output",
-            type: "Text",
+            type: "JSON",
         },
     ],
     fields: [
@@ -56,13 +61,7 @@ const config = {
             name: "headers",
             type: "Map",
             value: "Enter headers here...",
-        },
-        {
-            desc: "Api Key of Telegram Bot",
-            name: "TG_API_KEY",
-            type: "env",
-            defaultValue: "eydnfnuani...",
-        },
+        }
     ],
     difficulty: "medium",
     tags: ['api', 'http', 'external'],

@@ -1,40 +1,39 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "User Input",
-    category: "input",
-    type: "str_var",
+    title: "Output Text",
+    category: "output",
+    type: "output_text",
     icon: {},
-    desc: "String input from users",
-    inputs: [],
-    outputs: [
+    desc: "Outputs text to the user",
+    inputs: [
         {
+            desc: "Text to output",
             name: "Text",
             type: "Text",
-            desc: "",
-        }
+        },
     ],
+    outputs: [],
     fields: [
         {
+            desc: "Text to output",
             name: "Text",
             type: "Text",
-            desc: "",
             value: "Enter text here...",
-        }
+        },
     ],
     difficulty: "easy",
-    tags: ['str', 'text', 'user', 'input'],
+    tags: ["output", "text"],
 }
 
-class str_var extends BaseNode {
+class output_text extends BaseNode {
     constructor() {
         super(config);
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        webconsole.info("User Input | emitting output");
-        return contents[0].value;
+        
     }
 }
 
-export default str_var;
+export default output_text;

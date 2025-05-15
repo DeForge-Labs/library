@@ -1,7 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "Object Variable",
+    title: "Object Input",
     category: "input",
     type: "obj_var",
     icon: {},

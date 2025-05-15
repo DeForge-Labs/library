@@ -15,6 +15,11 @@ const config = {
     desc: "chat with LLMs",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The endpoint of the OpenAI compatible LLM API",
             name: "endpoint",
             type: "Text",
@@ -26,19 +31,25 @@ const config = {
         },
         {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
-            type: "Text"
+            name: "System Prompt",
+            type: "Text",
         },
         {
-            desc: "Knowledge base",
-            name: "KnowledgeBase",
-            type: "RAG"
-        }
+            desc: "RAG Knowledge base",
+            name: "Rag",
+            type: "Rag",
+        },
+        {
+            desc: "Save chat as context for LLM",
+            name: "Save Context",
+            type: "Boolean",
+            value: true,
+        },
     ],
     outputs: [
         {
@@ -62,31 +73,31 @@ const config = {
         },
         {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
             value: "Enter text here...",
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
+            name: "System Prompt",
             type: "Text",
-            value: "You are a helpful assistant"
+            value: "You are a helpful assistant",
         },
         {
             desc: "Save chat as context for LLM",
-            name: "saveContext",
-            type: "Boolean",
-            value: true
+            name: "Save Context",
+            type: "CheckBox",
+            value: true,
         },
         {
             desc: "Api Key of LLM",
             name: "LLM_API_KEY",
             type: "env",
             defaultValue: "eydnfnuani...",
-        }
+        },
     ],
-    difficulty: "medium",
-    tags: ['api', 'llm', 'chatbot'],
+    difficulty: "hard",
+    tags: ["api", "llm", "chatbot"],
 }
 
 class custom_chat_node extends BaseNode {

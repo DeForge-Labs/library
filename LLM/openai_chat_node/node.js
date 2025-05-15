@@ -18,20 +18,25 @@ const config = {
     desc: "chat with LLMs",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Chat text to send",
             name: "query",
             type: "Text",
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
-            type: "Text"
+            name: "sysPrompt",
+            type: "Text",
         },
         {
-            desc: "Knowledge base",
-            name: "KnowledgeBase",
-            type: "RAG"
-        }
+            desc: "RAG Knowledge base",
+            name: "rag",
+            type: "Text",
+        },
     ],
     outputs: [
         {
@@ -46,7 +51,19 @@ const config = {
             name: "model",
             type: "select",
             value: "gpt-4.1",
-            options: ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo", "o3-mini", "o3", "o4-mini"],
+            options: [
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "gpt-4.1-nano",
+                "gpt-4o",
+                "gpt-4o-mini",
+                "gpt-4-turbo",
+                "gpt-4",
+                "gpt-3.5-turbo",
+                "o3-mini",
+                "o3",
+                "o4-mini",
+            ],
         },
         {
             desc: "Chat text to send",
@@ -56,19 +73,19 @@ const config = {
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
+            name: "sysPrompt",
             type: "Text",
-            value: "You are a helpful assistant"
+            value: "You are a helpful assistant",
         },
         {
             desc: "Save chat as context for LLM",
             name: "saveContext",
             type: "Boolean",
-            value: true
-        }
+            value: true,
+        },
     ],
     difficulty: "medium",
-    tags: ['api', 'llm', 'chatbot'],
+    tags: ["api", "llm", "chatbot"],
 }
 
 class openai_chat_node extends BaseNode {

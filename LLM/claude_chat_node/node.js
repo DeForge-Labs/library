@@ -16,23 +16,34 @@ const config = {
     category: "LLM",
     type: "claude_chat_node",
     icon: {},
-    desc: "chat with LLMs",
+    desc: "Chat with Anthropic based LLM",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
-            type: "Text"
+            name: "System Prompt",
+            type: "Text",
         },
         {
-            desc: "Knowledge base",
-            name: "KnowledgeBase",
-            type: "RAG"
-        }
+            desc: "RAG Knowledge base",
+            name: "Rag",
+            type: "Rag",
+        },
+        {
+            desc: "Save chat as context for LLM",
+            name: "Save Context",
+            type: "Boolean",
+            value: true,
+        },
     ],
     outputs: [
         {
@@ -47,29 +58,36 @@ const config = {
             name: "model",
             type: "select",
             value: "claude-3-5-sonnet-20241022",
-            options: ["claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+            options: [
+                "claude-3-7-sonnet-20250219",
+                "claude-3-5-sonnet-20241022",
+                "claude-3-5-haiku-20241022",
+                "claude-3-opus-20240229",
+                "claude-3-sonnet-20240229",
+                "claude-3-haiku-20240307",
+            ],
         },
         {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
             value: "Enter text here...",
         },
         {
             desc: "System prompt for the LLM",
-            name: "systemPrompt",
+            name: "System Prompt",
             type: "Text",
-            value: "You are a helpful assistant"
+            value: "You are a helpful assistant",
         },
         {
             desc: "Save chat as context for LLM",
-            name: "saveContext",
-            type: "Boolean",
-            value: true
-        }
+            name: "Save Context",
+            type: "CheckBox",
+            value: true,
+        },
     ],
     difficulty: "medium",
-    tags: ['api', 'llm', 'chatbot'],
+    tags: ["api", "llm", "chatbot"],
 }
 
 class claude_chat_node extends BaseNode {

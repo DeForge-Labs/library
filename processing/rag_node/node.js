@@ -16,25 +16,25 @@ const config = {
     category: "processing",
     type: "rag_node",
     icon: {},
-    desc: "Add your document as knowledge for AI",
+    desc: "Process your Knowledge Base to use it in LLMs",
     inputs: [],
     outputs: [
         {
-            desc: "Knowledge database",
-            name:"rag_db_name",
-            type: "RAG",
+            desc: "RAG Database",
+            name: "Rag Database",
+            type: "Rag",
         },
     ],
     fields: [
         {
             desc: "The knowledge base file link",
-            name: "filelink",
+            name: "File Link",
             type: "Text",
-            value: "",
+            value: "https://yourfilelink.com/",
         },
     ],
-    difficulty: "medium",
-    tags: ['api', 'llm', 'chatbot'],
+    difficulty: "easy",
+    tags: ["api", "llm", "knowledge-base"],
 }
 
 class rag_node extends BaseNode {
