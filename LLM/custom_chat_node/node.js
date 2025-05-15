@@ -34,7 +34,6 @@ const config = {
             name: "sysPrompt",
             type: "Text"
         },
-        ,
         {
             desc: "RAG Knowledge base",
             name: "rag",
