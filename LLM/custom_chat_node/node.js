@@ -12,7 +12,7 @@ const config = {
     category: "LLM",
     type: "custom_chat_node",
     icon: {},
-    desc: "chat with LLMs",
+    desc: "Chat with custom LLMs",
     inputs: [
         {
             desc: "The flow of the workflow",

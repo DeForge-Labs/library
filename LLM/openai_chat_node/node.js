@@ -15,7 +15,7 @@ const config = {
     category: "LLM",
     type: "openai_chat_node",
     icon: {},
-    desc: "chat with LLMs",
+    desc: "Chat with OpenAI based LLMs",
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -24,17 +24,17 @@ const config = {
         },
         {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
         },
         {
             desc: "System prompt for the LLM",
-            name: "sysPrompt",
+            name: "System Prompt",
             type: "Text",
         },
         {
             desc: "RAG Knowledge base",
-            name: "rag",
+            name: "Rag",
             type: "Text",
         },
     ],
@@ -67,20 +67,20 @@ const config = {
         },
         {
             desc: "Chat text to send",
-            name: "query",
+            name: "Query",
             type: "Text",
             value: "Enter text here...",
         },
         {
             desc: "System prompt for the LLM",
-            name: "sysPrompt",
+            name: "System Prompt",
             type: "Text",
             value: "You are a helpful assistant",
         },
         {
             desc: "Save chat as context for LLM",
-            name: "saveContext",
-            type: "Boolean",
+            name: "Save Context",
+            type: "CheckBox",
             value: true,
         },
     ],
@@ -95,11 +95,11 @@ class openai_chat_node extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
         
-        const queryFilter = inputs.filter((e) => e.name === "query");
-        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
+        const queryFilter = inputs.filter((e) => e.name === "Query");
+        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
 
-        const systemPromptFilter = inputs.filter((e) => e.name === "systemPrompt");
-        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "systemPrompt")[0].value;
+        const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
+        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
 
         const model = contents.filter((e) => e.name === "model")[0].value;
         const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
