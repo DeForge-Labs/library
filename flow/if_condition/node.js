@@ -91,6 +91,7 @@ class if_condition extends BaseNode {
                 break;
         }
 
+        webconsole.success("IF NODE | Emmitting result");
         return { True: res, False: !res };
     }
 }

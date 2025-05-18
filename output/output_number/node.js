@@ -32,7 +32,11 @@ class output_number extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        
+        const NumberOutput = Object.keys(inputs).length > 0 ? inputs[0].value : null;
+
+        webconsole.info("NUMBER OUTPUT | Emmitting JSON output");
+
+        return NumberOutput;
     }
 }
 

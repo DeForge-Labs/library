@@ -94,6 +94,8 @@ class openai_chat_node extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
+
+        webconsole.info("OPENAI NODE | Prepping inputs");
         
         const queryFilter = inputs.filter((e) => e.name === "Query");
         const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
@@ -107,6 +109,9 @@ class openai_chat_node extends BaseNode {
         const ragStoreFilter = inputs.filter((e) => e.name === "KnowledgeBase");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
 
+        if (saveMemory) {
+            webconsole.info("OPENAI NODE | Loading memories");
+        }
         const memory  = saveMemory ? new Memory({
             storage: new LibSQLStore({
                 url: `file:./local.db`,
@@ -128,6 +133,7 @@ class openai_chat_node extends BaseNode {
         var agent;
 
         if (ragStoreName) {
+            webconsole.info("OPENAI NODE | Importing knowledge base");
             const newAgent = new Agent({
                 name: "UserAgent",
                 instructions: systemPrompt,
@@ -154,6 +160,7 @@ class openai_chat_node extends BaseNode {
             ...(memory && { memory: memory })
         });        
 
+        webconsole.info("OPENAI NODE | Prompting LLM");
         const response = await agent.generate(query, {
             ...(memory && { resourceId: serverData.workflowId }),
             ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),

@@ -56,6 +56,7 @@ class obj_var extends BaseNode {
         const valueFilter = inputs.filter((e) => e.name === "value");
         const value = valueFilter.length > 0 ? valueFilter[0].value : contents.filter((e) => e.name === "value")[0].value;
 
+        webconsole.success("OBJECT NODE | Emmitting JSON");
         return {
             [key]: value
         };

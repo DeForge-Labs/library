@@ -107,6 +107,8 @@ class custom_chat_node extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
 
+        webconsole.info("CUSTOM NODE | Prepping inputs");
+
         const endpointFilter = inputs.filter((e) => e.name === "endpoint");
         const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "endpoint")[0].value;
         
@@ -124,6 +126,9 @@ class custom_chat_node extends BaseNode {
 
         const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
 
+        if (saveMemory) {
+            webconsole.info("CUSTOM NODE | Loading memories");
+        }
         const memory  = saveMemory ? new Memory({
             storage: new LibSQLStore({
                 url: `file:./local.db`,
@@ -152,6 +157,7 @@ class custom_chat_node extends BaseNode {
         var agent;
 
         if (ragStoreName) {
+            webconsole.info("CUSTOM NODE | Importing knowledge base");
             const newAgent = new Agent({
                 name: "UserAgent",
                 instructions: systemPrompt,
@@ -178,12 +184,13 @@ class custom_chat_node extends BaseNode {
             ...(memory && { memory: memory })
         });
         
+        webconsole.info("CUSTOM NODE | Prompting LLM");
         const response = await agent.generate(query, {
             ...(memory && { resourceId: serverData.userId }),
             ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
         });
 
-        webconsole.info(`OpenAI LLM Response: ${response.text}`);
+        webconsole.info(`Custom LLM Response: ${response.text}`);
         
         return response.text;
     }

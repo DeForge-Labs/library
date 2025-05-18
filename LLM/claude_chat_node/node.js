@@ -96,6 +96,8 @@ class claude_chat_node extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
+
+        webconsole.info("CLAUDE NODE | Prepping inputs");
         
         const queryFilter = inputs.filter((e) => e.name === "query");
         const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
@@ -109,6 +111,9 @@ class claude_chat_node extends BaseNode {
         const ragStoreFilter = inputs.filter((e) => e.name === "KnowledgeBase");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
 
+        if (saveMemory) {
+            webconsole.info("CLAUDE NODE | Loading memories");
+        }
         const memory  = saveMemory ? new Memory({
             storage: new LibSQLStore({
                 url: `file:./local.db`,
@@ -130,6 +135,7 @@ class claude_chat_node extends BaseNode {
         var agent;
 
         if (ragStoreName) {
+            webconsole.info("CLAUDE NODE | Importing knowledge base");
             const newAgent = new Agent({
                 name: "UserAgent",
                 instructions: systemPrompt,
@@ -156,6 +162,7 @@ class claude_chat_node extends BaseNode {
             ...(memory && { memory: memory })
         }); 
 
+        webconsole.info("CLAUDE NODE | Prompting LLM");
         const response = await agent.generate(query, {
             ...(memory && { resourceId: serverData.userId }),
             ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
