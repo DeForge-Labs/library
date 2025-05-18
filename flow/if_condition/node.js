@@ -32,23 +32,11 @@ const config = {
     ],
     fields: [
         {
-            desc: "First input",
-            name: "Input 1",
-            type: "Any",
-            value: "Enter input here...",
-        },
-        {
             desc: "Condition",
             name: "Condition",
             type: "select",
             value: "==",
             options: ["==", "!=", ">", "<", ">=", "<="],
-        },
-        {
-            desc: "Second input",
-            name: "Input 2",
-            type: "Any",
-            value: "Enter input here...",
         },
     ],
     difficulty: "easy",
@@ -62,6 +50,48 @@ class if_condition extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
         
+        webconsole.info("IF NODE | Begin execution");
+
+        const input1Filter = inputs.filter((e) => e.name === "Input 1");
+        if (input1Filter.length === 0) {
+            webconsole.error("IF NODE | Input 1 required but not given");
+            return null;
+        }
+        const input1 = input1Filter[0].value;
+
+        const input2Filter = inputs.filter((e) => e.name === "Input 1");
+        if (input2Filter.length === 0) {
+            webconsole.error("IF NODE | Input 2 required but not given");
+            return null;
+        }
+        const input2 = input2Filter[0].value;
+
+        const operation = contents[0].value;
+        let res = true;
+        switch (operation) {
+            case "==":
+                res = input1 == input2
+                break;
+            case "!=":
+                res = input1 != input2
+                break;
+            case ">":
+                res = input1 > input2;
+                break;
+            case "<":
+                res = input1 < input2;
+                break;
+            case ">=":
+                res = input1 >= input2;
+                break;
+            case " <=":
+                res = input1 <= input2;
+                break;        
+            default:
+                break;
+        }
+
+        return { True: res, False: !res };
     }
 }
 

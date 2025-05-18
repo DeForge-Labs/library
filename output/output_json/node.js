@@ -18,7 +18,7 @@ const config = {
         {
             desc: "JSON to output",
             name: "JSON",
-            type: "JSON",
+            type: "Map",
             value: "Enter JSON here...",
         },
     ],

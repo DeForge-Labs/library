@@ -74,13 +74,13 @@ const config = {
         {
             desc: "Chat text to send",
             name: "Query",
-            type: "Text",
+            type: "TextArea",
             value: "Enter text here...",
         },
         {
             desc: "System prompt for the LLM",
             name: "System Prompt",
-            type: "Text",
+            type: "TextArea",
             value: "You are a helpful assistant",
         },
         {
