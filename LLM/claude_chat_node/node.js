@@ -35,7 +35,7 @@ const config = {
         },
         {
             desc: "RAG Knowledge base",
-            name: "Rag",
+            name: "RAG",
             type: "Rag",
         },
         {
@@ -55,7 +55,7 @@ const config = {
     fields: [
         {
             desc: "The LLM model",
-            name: "model",
+            name: "Model",
             type: "select",
             value: "claude-3-5-sonnet-20241022",
             options: [
@@ -99,16 +99,16 @@ class claude_chat_node extends BaseNode {
 
         webconsole.info("CLAUDE NODE | Prepping inputs");
         
-        const queryFilter = inputs.filter((e) => e.name === "query");
-        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
+        const queryFilter = inputs.filter((e) => e.name === "Query");
+        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
 
-        const systemPromptFilter = inputs.filter((e) => e.name === "systemPrompt");
-        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "systemPrompt")[0].value;
+        const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
+        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
 
-        const model = contents.filter((e) => e.name === "model")[0].value;
-        const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
+        const model = contents.filter((e) => e.name === "Model")[0].value;
+        const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
-        const ragStoreFilter = inputs.filter((e) => e.name === "KnowledgeBase");
+        const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
 
         if (saveMemory) {

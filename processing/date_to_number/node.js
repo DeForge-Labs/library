@@ -44,6 +44,20 @@ class date_to_number extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
         
+        webconsole.info("DATE TO NUM NODE | Executing logic");
+
+        const DateFilter = inputs.filter((e) => e.name === "Date");
+        const Datedata = DateFilter.length > 0 ? DateFilter[0].value : contents[0].value;
+
+        try {
+            const data = new Date(Datedata).getTime();
+            webconsole.success("DATE TO NUM NODE | successfully converted date");
+
+            return data;
+        } catch (error) {
+            webconsole.error("DATE TO NUM NODE | Some error occured: " + error);
+            return null;
+        }
     }
 }
 

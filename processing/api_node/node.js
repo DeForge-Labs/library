@@ -73,6 +73,8 @@ class api_node extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
+
+        webconsole.info("API NODE | egin execution, parsing inputs");
         
         const endpointFilter = inputs.filter((e) => e.name === "endpoint");
         const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "endpoint")[0].value;
@@ -93,15 +95,15 @@ class api_node extends BaseNode {
             data: JSON.stringify(body)
         };
 
+        webconsole.info("API NODE | Sending request");
         try {
-
             const response = await axios.request(requestConfig);
-            webconsole.info(JSON.stringify(response.data));
+            webconsole.success("API NODE | Response: \n" + JSON.stringify(response.data));
             return JSON.stringify(response.data);
 
         } catch (error) {
             
-            webconsole.error(error);
+            webconsole.error("API NODE | Error: " + error);
             return JSON.stringify(error);
         }
     }

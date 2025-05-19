@@ -34,8 +34,14 @@ const config = {
         },
         {
             desc: "RAG Knowledge base",
-            name: "Rag",
-            type: "Text",
+            name: "RAG",
+            type: "RAG",
+        },
+        {
+            desc: "Save chat as context for LLM",
+            name: "Save Context",
+            type: "Boolean",
+            value: true,
         },
     ],
     outputs: [
@@ -48,7 +54,7 @@ const config = {
     fields: [
         {
             desc: "The LLM model",
-            name: "model",
+            name: "Model",
             type: "select",
             value: "gpt-4.1",
             options: [
@@ -103,10 +109,10 @@ class openai_chat_node extends BaseNode {
         const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
         const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
 
-        const model = contents.filter((e) => e.name === "model")[0].value;
-        const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
+        const model = contents.filter((e) => e.name === "Model")[0].value;
+        const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
-        const ragStoreFilter = inputs.filter((e) => e.name === "KnowledgeBase");
+        const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
 
         if (saveMemory) {

@@ -21,12 +21,12 @@ const config = {
         },
         {
             desc: "The endpoint of the OpenAI compatible LLM API",
-            name: "endpoint",
+            name: "Endpoint",
             type: "Text",
         },
         {
             desc: "The LLM model",
-            name: "model",
+            name: "Model",
             type: "Text",
         },
         {
@@ -41,7 +41,7 @@ const config = {
         },
         {
             desc: "RAG Knowledge base",
-            name: "Rag",
+            name: "RAG",
             type: "Rag",
         },
         {
@@ -61,13 +61,13 @@ const config = {
     fields: [
         {
             desc: "The endpoint of the OpenAI compatible LLM API",
-            name: "endpoint",
+            name: "Endpoint",
             type: "Text",
             value: "endpoint...",
         },
         {
             desc: "The LLM model",
-            name: "model",
+            name: "Model",
             type: "Text",
             value: "llama3-70b",
         },
@@ -109,22 +109,22 @@ class custom_chat_node extends BaseNode {
 
         webconsole.info("CUSTOM NODE | Prepping inputs");
 
-        const endpointFilter = inputs.filter((e) => e.name === "endpoint");
-        const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "endpoint")[0].value;
+        const endpointFilter = inputs.filter((e) => e.name === "Endpoint");
+        const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "Endpoint")[0].value;
         
-        const queryFilter = inputs.filter((e) => e.name === "query");
-        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
+        const queryFilter = inputs.filter((e) => e.name === "Query");
+        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
 
-        const systemPromptFilter = inputs.filter((e) => e.name === "systemPrompt");
-        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "systemPrompt")[0].value;
+        const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
+        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
 
-        const modelFilter = inputs.filter((e) => e.name === "model");
-        const model = modelFilter.length > 0 ? modelFilter[0].value : contents.filter((e) => e.name === "model")[0].value;
+        const modelFilter = inputs.filter((e) => e.name === "Model");
+        const model = modelFilter.length > 0 ? modelFilter[0].value : contents.filter((e) => e.name === "Model")[0].value;
 
-        const ragStoreFilter = inputs.filter((e) => e.name === "KnowledgeBase");
+        const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
 
-        const saveMemory = contents.filter((e) => e.name === "saveContext")[0].value;
+        const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
         if (saveMemory) {
             webconsole.info("CUSTOM NODE | Loading memories");
