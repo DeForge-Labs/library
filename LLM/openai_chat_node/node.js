@@ -35,7 +35,7 @@ const config = {
         {
             desc: "RAG Knowledge base",
             name: "RAG",
-            type: "RAG",
+            type: "Rag",
         },
         {
             desc: "Save chat as context for LLM",
