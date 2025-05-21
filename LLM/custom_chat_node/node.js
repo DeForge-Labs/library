@@ -40,6 +40,11 @@ const config = {
             type: "Text",
         },
         {
+            desc: "Creativity of the LLM",
+            name: "Temperature",
+            type: "Number",
+        },
+        {
             desc: "RAG Knowledge base",
             name: "RAG",
             type: "Rag",
@@ -84,6 +89,15 @@ const config = {
             value: "You are a helpful assistant",
         },
         {
+            desc: "Creativity of the LLM",
+            name: "Temperature",
+            type: "Slider",
+            value: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        {
             desc: "Save chat as context for LLM",
             name: "Save Context",
             type: "CheckBox",
@@ -123,6 +137,9 @@ class custom_chat_node extends BaseNode {
 
         const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
         const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
+
+        const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
+        const temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
 
         const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
@@ -186,6 +203,7 @@ class custom_chat_node extends BaseNode {
         
         webconsole.info("CUSTOM NODE | Prompting LLM");
         const response = await agent.generate(query, {
+            temperature: temperature,
             ...(memory && { resourceId: serverData.userId }),
             ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
         });

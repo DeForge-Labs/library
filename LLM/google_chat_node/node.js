@@ -34,6 +34,11 @@ const config = {
             type: "Text",
         },
         {
+            desc: "Creativity of the LLM",
+            name: "Temperature",
+            type: "Number",
+        },
+        {
             desc: "RAG Knowledge base",
             name: "RAG",
             type: "Rag",
@@ -53,38 +58,47 @@ const config = {
         },
     ],
     fields: [
-    {
-        desc: "The LLM model",
-        name: "Model",
-        type: "select",
-        value: "gemini-2.0-flash",
-        options: [
-            "gemini-2.5-pro-preview-05-06",
-            "gemini-2.5-flash-preview-04-17",
-            "gemini-2.0-flash",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-flash-8b-latest",
-        ],
-    },
-    {
-        desc: "Chat text to send",
-        name: "Query",
-        type: "TextArea",
-        value: "Enter text here...",
-    },
-    {
-        desc: "System prompt for the LLM",
-        name: "System Prompt",
-        type: "TextArea",
-        value: "You are a helpful assistant",
-    },
-    {
-        desc: "Save chat as context for LLM",
-        name: "Save Context",
-        type: "CheckBox",
-        value: true,
-    },
+        {
+            desc: "The LLM model",
+            name: "Model",
+            type: "select",
+            value: "gemini-2.0-flash",
+            options: [
+                "gemini-2.5-pro-preview-05-06",
+                "gemini-2.5-flash-preview-04-17",
+                "gemini-2.0-flash",
+                "gemini-1.5-pro-latest",
+                "gemini-1.5-flash-latest",
+                "gemini-1.5-flash-8b-latest",
+            ],
+        },
+        {
+            desc: "Chat text to send",
+            name: "Query",
+            type: "TextArea",
+            value: "Enter text here...",
+        },
+        {
+            desc: "System prompt for the LLM",
+            name: "System Prompt",
+            type: "TextArea",
+            value: "You are a helpful assistant",
+        },
+        {
+            desc: "Creativity of the LLM",
+            name: "Temperature",
+            type: "Slider",
+            value: 0.5,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        {
+            desc: "Save chat as context for LLM",
+            name: "Save Context",
+            type: "CheckBox",
+            value: true,
+        },
     ],
     difficulty: "medium",
     tags: ["api", "llm", "chatbot"],
@@ -104,6 +118,9 @@ class google_chat_node extends BaseNode {
 
         const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
         const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
+
+        const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
+        const temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
 
         const model = contents.filter((e) => e.name === "Model")[0].value;
         const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
@@ -164,6 +181,7 @@ class google_chat_node extends BaseNode {
 
         webconsole.info("GOOGLE NODE | Prompting LLM");
         const response = await agent.generate(query, {
+            temperature: temperature,
             ...(memory && { resourceId: serverData.userId }),
             ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
         });
