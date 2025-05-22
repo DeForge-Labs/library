@@ -26,6 +26,12 @@ const config = {
             type: "TextArea",
             value: "text here ...",
         },
+        {
+            desc: "Api Key of your Telegram bot",
+            name: "TG_API_KEY",
+            type: "env",
+            defaultValue: "eydnfnuani...",
+        },
     ],
     difficulty: "easy",
     tags: ["trigger", "telegram"],
