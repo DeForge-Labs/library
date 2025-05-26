@@ -14,8 +14,8 @@ const config = {
             type: "Text",
         },
         {
-            desc: "User ID Number to send the text to",
-            name: "UserID",
+            desc: "Chat ID to send the text to",
+            name: "ChatID",
             type: "Text"
         }
     ],
@@ -28,8 +28,8 @@ const config = {
             value: "text here ...",
         },
         {
-            desc: "User ID Number to send the text to",
-            name: "UserID",
+            desc: "Chat ID to send the text to",
+            name: "ChatID",
             type: "Text",
             value: "123456",
         },
@@ -56,8 +56,8 @@ class tg_msg_send extends BaseNode {
         let Message = MessageFilter.length > 0 ? MessageFilter[0].value : contents.filter((e) => e.name === "Message")[0].value;
         Message = Message.length > 4096 ? Message.slice(0, -3) + "..." : Message;
 
-        const UserFilter = inputs.filter((e) => e.name === "UserID");
-        let UserID = UserFilter.length > 0 ? UserFilter[0].value : contents.filter((e) => e.name === "UserID")[0].value;
+        const UserFilter = inputs.filter((e) => e.name === "ChatID");
+        let UserID = UserFilter.length > 0 ? UserFilter[0].value : contents.filter((e) => e.name === "ChatID")[0].value;
 
         const botToken = serverData.envList?.TG_API_KEY || "";
 
