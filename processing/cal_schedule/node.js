@@ -35,6 +35,11 @@ const config = {
       name: "Error",
       type: "Flow",
     },
+    {
+      desc: "Error details",
+      name: "Error payload",
+      type: "Text",
+    }
   ],
   fields: [
     {
@@ -91,10 +96,19 @@ class cal_schedule extends BaseNode {
       webconsole.success(
         "CAL SCHEDULE | Response: \n" + JSON.stringify(response.data)
       );
-      return JSON.stringify(response.data);
+      return {
+        "Slots": response.data,
+        "Error": false,
+        "Error payload": "",
+      };
+
     } catch (error) {
       webconsole.error("CAL SCHEDULE | Error: " + error);
-      return JSON.stringify(error);
+      return {
+        "Slots": {},
+        "Error": true,
+        "Error payload": JSON.stringify(error),
+      };
     }
   }
 }

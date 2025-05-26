@@ -50,6 +50,11 @@ const config = {
       name: "Error",
       type: "Flow",
     },
+    {
+      desc: "Error details",
+      name: "Error payload",
+      type: "Text",
+    }
   ],
   fields: [
     {
@@ -224,12 +229,19 @@ class cal_book extends BaseNode {
       });
 
       webconsole.success("CAL BOOK | Booking successful");
-      return JSON.stringify({
-        success: "Booking successful",
-      });
+      return {
+        "Success": true,
+        "Error": false,
+        "Error payload": "",
+      };
+
     } catch (error) {
       webconsole.error("CAL BOOK | Error: " + error);
-      return JSON.stringify(error);
+      return {
+        "Success": false,
+        "Error": true,
+        "Error payload": JSON.stringify(error),
+      };
     }
   }
 }
