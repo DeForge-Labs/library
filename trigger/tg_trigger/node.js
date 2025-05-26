@@ -56,7 +56,7 @@ const config = {
         },
     ],
     difficulty: "easy",
-    tags: ["trigger", "telegram"],
+    tags: ["trigger", "telegram", "bot"],
 }
 
 class tg_trigger extends BaseNode {
