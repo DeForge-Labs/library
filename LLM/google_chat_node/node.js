@@ -47,7 +47,6 @@ const config = {
             desc: "Save chat as context for LLM",
             name: "Save Context",
             type: "Boolean",
-            value: true,
         },
     ],
     outputs: [
