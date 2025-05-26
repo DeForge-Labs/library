@@ -29,7 +29,7 @@ const config = {
     {
       desc: "JSON to convert",
       name: "JSON",
-      type: "JSON",
+      type: "Map",
     },
   ],
   difficulty: "easy",
