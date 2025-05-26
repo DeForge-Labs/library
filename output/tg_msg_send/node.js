@@ -14,7 +14,7 @@ const config = {
             type: "Text",
         },
         {
-            desc: "User ID Number to the send the text to",
+            desc: "User ID Number to send the text to",
             name: "UserID",
             type: "Text"
         }
@@ -28,7 +28,7 @@ const config = {
             value: "text here ...",
         },
         {
-            desc: "User ID Number to the send the text to",
+            desc: "User ID Number to send the text to",
             name: "UserID",
             type: "Text",
             value: "123456",
