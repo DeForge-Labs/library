@@ -51,7 +51,7 @@ const config = {
     outputs: [
         {
             desc: "The response of the LLM",
-            name: "output",
+            name: "LLMResponse",
             type: "Text",
         },
     ],

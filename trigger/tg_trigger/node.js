@@ -75,7 +75,7 @@ class tg_trigger extends BaseNode {
 
         const msg = payload.message.text;
         const chatID = serverData.chatId;
-        const userName = msg.fron.username;
+        const userName = msg.from.username;
         const isCommand = Object.keys(payload.message).includes("entities");
 
         const botToken = serverData.envList?.TG_API_KEY || "";
