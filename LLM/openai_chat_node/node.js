@@ -123,7 +123,8 @@ class openai_chat_node extends BaseNode {
         const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
 
         const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
-        const temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
+        let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
+        temperature = Number(temperature);
 
         const model = contents.filter((e) => e.name === "Model")[0].value;
         const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
