@@ -1,6 +1,6 @@
 {
   "name": "cal-schedule",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node to check calendar events through cal.com public link",
   "main": "node.js",
   "type": "module",
