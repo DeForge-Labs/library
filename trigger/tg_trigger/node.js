@@ -1,4 +1,5 @@
 import BaseNode from "../../core/BaseNode/node.js";
+import axios from "axios";
 
 const config = {
     title: "Telegram Trigger",
@@ -69,17 +70,32 @@ class tg_trigger extends BaseNode {
         const payload = serverData.tgPayload;
 
         const onStartFilter = inputs.filter((e) => e.name === "On Start");
-        const onStartText = onStartFilter.length > 0 ? onStartFilter[0].value : contents.filter((e) => e.name === "On Start")[0].value;
+        let onStartText = onStartFilter.length > 0 ? onStartFilter[0].value : contents.filter((e) => e.name === "On Start")[0].value;
+        onStartText = onStartText.length > 4096 ? onStartText.slice(0, -3) + "..." : onStartText;
 
         const msg = payload.message.text;
         const chatID = serverData.chatId;
         const userName = msg.fron.username;
         const isCommand = Object.keys(payload.message).includes("entities");
 
-        if (isCommand && msg.startsWith("/start")) {
-            // Logic for telegram send message
+        const botToken = serverData.envList?.TG_API_KEY || "";
 
-            webconsole.success("TG NODE | Recieved start message, responded successfully");
+        if (isCommand && msg.startsWith("/start")) {
+
+            const startResponse = await axios.get(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatID}&text=${onStartText}`);
+
+            if (startResponse.data.ok) {
+                webconsole.success("TG NODE | Recieved start message, responded successfully");
+                return {
+                    "Flow": false,
+                    "Message": msg,
+                    "Chat ID": chatID,
+                    "Username": userName,
+                    "Is Command": isCommand,
+                };
+            }
+
+            webconsole.error(`TG NODE | Recieved start message but some error occured when responding \nError code: ${startResponse.data.error_code}, Description: ${startResponse.data.description}`);
             return {
                 "Flow": false,
                 "Message": msg,
