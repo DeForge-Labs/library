@@ -9,6 +9,11 @@ const config = {
     desc: "Send a message via your telegram bot",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Text to send",
             name: "Message",
             type: "Text",
