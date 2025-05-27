@@ -160,18 +160,18 @@ class custom_chat_node extends BaseNode {
             }
         }) : null;
 
-        const ragTool = createVectorQueryTool({
-            vectorStoreName: "libStore",
-            indexName: "collection",
-            model: openai.embedding("text-embedding-3-small"),
-        });
-
         const llm = createOpenAI({
             baseURL: endpoint,
             apiKey: serverData.envList?.LLM_API_KEY || "",
         })
 
         const openai = llm.languageModel;
+
+        const ragTool = createVectorQueryTool({
+            vectorStoreName: "libStore",
+            indexName: "collection",
+            model: llm.embedding("text-embedding-3-small"),
+        });
 
         var agent;
 

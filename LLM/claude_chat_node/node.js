@@ -5,8 +5,8 @@ import { LibSQLVector } from '@mastra/core/vector/libsql';
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
-import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from '@ai-sdk/openai';
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createOpenAI } from '@ai-sdk/openai';
 import dotenv from 'dotenv';
 
 dotenv.config("./env");
@@ -141,6 +141,16 @@ class claude_chat_node extends BaseNode {
                 },
             }
         }) : null;
+
+        const openai = createOpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        const llm = createAnthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+        })
+
+        const anthropic = llm.languageModel;
 
         const ragTool = createVectorQueryTool({
             vectorStoreName: "libStore",

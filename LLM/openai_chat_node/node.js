@@ -4,7 +4,7 @@ import { createVectorQueryTool } from "@mastra/rag";
 import { LibSQLVector } from '@mastra/core/vector/libsql';
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { LibSQLStore } from "@mastra/libsql";
 import dotenv from 'dotenv';
 
@@ -147,10 +147,16 @@ class openai_chat_node extends BaseNode {
             }
         }) : null;
 
+        const llm = createOpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        })
+
+        const openai = llm.languageModel;
+
         const ragTool = createVectorQueryTool({
             vectorStoreName: "libStore",
             indexName: "collection",
-            model: openai.embedding("text-embedding-3-small"),
+            model: llm.embedding("text-embedding-3-small"),
         });
 
         var agent;

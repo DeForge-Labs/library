@@ -5,8 +5,8 @@ import { LibSQLVector } from '@mastra/core/vector/libsql';
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
-import { google } from "@ai-sdk/google";
-import { openai } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from '@ai-sdk/openai';
 import dotenv from 'dotenv';
 
 dotenv.config("./env");
@@ -141,6 +141,16 @@ class google_chat_node extends BaseNode {
                 },
             }
         }) : null;
+
+        const openai = createOpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        const llm = createGoogleGenerativeAI({
+            apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+        })
+
+        const google = llm.languageModel;
 
         const ragTool = createVectorQueryTool({
             vectorStoreName: "libStore",
