@@ -8,7 +8,7 @@ import { openai } from "@ai-sdk/openai";
 import { LibSQLStore } from "@mastra/libsql";
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config("./env");
 
 const config = {
     title: "OpenAI Chat",

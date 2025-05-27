@@ -6,6 +6,9 @@ import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { createOpenAI } from "@ai-sdk/openai";
 import { LibSQLStore } from "@mastra/libsql";
+import dotenv from 'dotenv';
+
+dotenv.config("./env");
 
 const config = {
     title: "Custom Chat",

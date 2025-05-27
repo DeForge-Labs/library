@@ -9,7 +9,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from '@ai-sdk/openai';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config("./env");
 
 const config = {
     title: "Anthropic Chat",
