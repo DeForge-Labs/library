@@ -59,7 +59,7 @@ class if_condition extends BaseNode {
         }
         const input1 = input1Filter[0].value;
 
-        const input2Filter = inputs.filter((e) => e.name === "Input 1");
+        const input2Filter = inputs.filter((e) => e.name === "Input 2");
         if (input2Filter.length === 0) {
             webconsole.error("IF NODE | Input 2 required but not given");
             return null;
