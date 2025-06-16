@@ -63,7 +63,9 @@ class text_to_json extends BaseNode {
       if (match) {
         const data = JSON.parse(match[1]);
         webconsole.success("TEXT TO JSON NODE | Successfully converted text");
-        return data;
+        return {
+          "JSON": data
+        };
       }
       webconsole.error("TEXT TO JSON NODE | Some error occured");
       return null;
