@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/DeForge-Labs/library/issues"
   },
-  "homepage": "https://github.com/DeForge-Labs/library#readme"
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "@toolsycc/json-repair": "^0.1.22"
+  }
 }

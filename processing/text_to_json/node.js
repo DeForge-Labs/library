@@ -1,4 +1,5 @@
 import BaseNode from "../../core/BaseNode/node.js";
+import { repairJson } from "@toolsycc/json-repair";
 
 const config = {
   title: "Text to JSON",
@@ -61,7 +62,9 @@ class text_to_json extends BaseNode {
       const regex = /^\s*({.*})/ms;
       const match = Textdata.match(regex);
       if (match) {
-        const data = JSON.parse(match[1]);
+        const data = repairJson(match[1], {
+          returnObject: true,
+        });
         webconsole.success("TEXT TO JSON NODE | Successfully converted text");
         return {
           "JSON": data
