@@ -71,7 +71,9 @@ class text_to_date extends BaseNode {
         millisecond: dateObj.getMilliseconds(),
       };
       webconsole.success("TEXT TO DATE NODE | Successfully converted text");
-      return date;
+      return {
+        "Date": date,
+      };
     } catch (error) {
       webconsole.error("TEXT TO DATE NODE | Some error occured: " + error);
       return null;
