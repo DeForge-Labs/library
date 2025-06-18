@@ -73,6 +73,9 @@ class rag_node extends BaseNode {
 
         const store = new PgVector({
             connectionString: process.env.POSTGRESS_URL,
+            pgPoolOptions: {
+                ssl: true
+            }
         });
         const indices_list = await store.listIndexes();
 
