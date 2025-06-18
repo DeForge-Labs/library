@@ -137,7 +137,9 @@ class openai_chat_node extends BaseNode {
         const memory  = saveMemory ? new Memory({
             storage: new PostgresStore({
                 connectionString: process.env.POSTGRESS_URL,
-                ssl: true
+                ssl: {
+                    rejectUnauthorized: false
+                }
             }),
             options: {
                 lastMessages: 40,
@@ -179,7 +181,9 @@ class openai_chat_node extends BaseNode {
             const ragStore = new PgVector({
                 connectionString: process.env.POSTGRESS_URL,
                 pgPoolOptions: {
-                    ssl: true
+                    ssl: {
+                        rejectUnauthorized: false
+                    }
                 }
             });
 
