@@ -1,7 +1,8 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { Mastra } from "@mastra/core";
 import { createVectorQueryTool } from "@mastra/rag";
-import { PgVector, PostgresStore } from "@mastra/pg";
+import { PostgresStore } from "@mastra/pg";
+import { QdrantVector } from "@mastra/qdrant";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
@@ -174,8 +175,8 @@ class google_chat_node extends BaseNode {
                 tools: { ragTool },
             });
 
-            const ragStore = new PgVector({
-                connectionString: process.env.POSTGRESS_URL,
+            const ragStore = new QdrantVector({
+                url: process.env.QDRANT_URL,
             });
 
             const mastra = new Mastra({

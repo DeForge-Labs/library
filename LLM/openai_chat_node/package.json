@@ -22,6 +22,7 @@
     "@mastra/core": "^0.10.6",
     "@mastra/memory": "^0.10.4",
     "@mastra/pg": "^0.11.0",
+    "@mastra/qdrant": "^0.10.3",
     "@mastra/rag": "^1.0.0",
     "dotenv": "^16.5.0"
   }
