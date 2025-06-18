@@ -1,13 +1,14 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { LibSQLVector } from '@mastra/core/vector/libsql';
+import { PgVector } from "@mastra/pg";
 import { MDocument } from '@mastra/rag'
 import { Downloader } from "nodejs-file-downloader";
 import { exec } from 'child_process';
 import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import axios from "axios";
 
 dotenv.config();
 
@@ -27,10 +28,20 @@ const config = {
     ],
     fields: [
         {
-            desc: "The knowledge base file link",
-            name: "File Link",
+            desc: "The type of data you are providing",
+            name: "Data Type",
+            type: "select",
+            value: "Link to a file",
+            options: [
+                "Link to a file",
+                "Link to a webpage",
+            ],
+        },
+        {
+            desc: "The knowledge base link",
+            name: "Link",
             type: "Text",
-            value: "https://yourfilelink.com/",
+            value: "https://yourlink.com/",
         },
     ],
     difficulty: "easy",
@@ -45,62 +56,110 @@ class rag_node extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
         let isEmbedded = false;
         let fileHash = "";
+        let index_name = "";
+        let md_data = "";
 
         const workflowId = serverData.workflowId.replaceAll("-", "_");
 
-        const fileUrl = contents[0].value;
-        const allowedTypes = ["pdf", "docx", "txt", "json", "md"];
+        const DataType = contents.filter((e) => e.name === "Data Type")[0].value;
+        const dataURL = contents.filter((e) => e.name === "Link")[0].value;
 
-        const downloader = new Downloader({
-            url: fileUrl,
-            directory: "./",
-            cloneFiles: false,
-            onBeforeSave: (fileName) => {
-                fileHash = crypto.createHash('sha256').update(fileName).digest('hex');
-
-                if (fs.existsSync(`./${workflowId}_${fileHash}.db`)) {
-                    isEmbedded = true;
-                }
-            }
+        const store = new PgVector({
+            connectionString: process.env.POSTGRESS_URL,
         });
+        const indices_list = await store.listIndexes();
 
-        const store = new LibSQLVector({
-            connectionUrl: `file:./${workflowId}_${fileHash}.db`,
-        });
+        if (DataType === "Link to a file") {
 
-        if (isEmbedded) {
-            webconsole.success("RAG NODE | DB exists");
-            return `${workflowId}_${fileHash}.db`;
-        }
+            const downloader = new Downloader({
+                url: dataURL,
+                directory: "./runtime_files/",
+                cloneFiles: false,
+                onBeforeSave: (fileName) => {
+                    const file_ext = fileName.split(".").slice(-1)[0];
 
-        try {
-            const { filePath, downloadStatus } = await downloader.download();
-
-            if (!allowedTypes.some(type => filePath.endsWith(type))) {
-                webconsole.error("RAG NODE | Unsupported file type.");
-                return null;
-            }
-
-            const command = `markitdown ${filePath} -o document.md`;
-            exec(command, (error, stdout, stderr) => {
-                    if (error) {
-                        webconsole.error(`Error executing command: ${error.message}`);
-                        return;
+                    fileHash = crypto.createHash('sha256').update(fileName).digest('hex');
+                    index_name = `${workflowId}_${fileHash}`
+                    if (indices_list.includes(index_name)) {
+                        isEmbedded = true;
                     }
-                    if (stderr) {
-                        webconsole.error(`Command stderr: ${stderr}`);
-                        return;
-                    }
-                    webconsole.info(`Command stdout: ${stdout}`);
-                });
-            fs.unlink(filePath, (err) => {
-                if (err) {
-                    webconsole.error("RAG NODE | error deleting the uploaded file");
+
+                    return `${index_name}.${file_ext}`;
                 }
             });
 
-            const data = fs.readFileSync('./document.md', 'utf-8');
-            const doc = MDocument.fromMarkdown(data);
+            if (isEmbedded) {
+                webconsole.success("RAG NODE | DB already exists");
+                return index_name;
+            }
+
+            try {
+
+                // Download file
+                const { filePath, downloadStatus } = await downloader.download();
+
+                // Convert file to markdown
+                const command = `markitdown ./runtime_files/${filePath.split('//').slice(-1)[0]} -o ./runtime_files/document_${workflowId}.md`;
+                exec(command, (error, stdout, stderr) => {
+                        if (error) {
+                            webconsole.error(`RAG NODE | Error executing command: ${error.message}`);
+                            return;
+                        }
+                        if (stderr) {
+                            webconsole.error(`RAG NODE | Command stderr: ${stderr}`);
+                            return;
+                        }
+                        webconsole.info(`RAG NODE | Command stdout: ${stdout}`);
+                });
+
+                // Delete downloaded file
+                fs.unlink(`./runtime_files/${filePath.split('//').slice(-1)[0]}`, (err) => {
+                    if (err) {
+                        webconsole.error("RAG NODE | error deleting the file");
+                    }
+                });
+
+                // Read markdown file
+                md_data = fs.readFileSync(`./document_${workflowId}.md`, 'utf-8');
+
+                // Delete converted markdown file
+                fs.unlink(`./runtime_files/document_${workflowId}.md`, (err) => {
+                    if (err) {
+                        webconsole.error("RAG NODE | error deleting the file");
+                    }
+                });
+            } catch (error) {
+                webconsole.error("RAG NODE | some error occured while downloading and converting file: ", error);
+                return null;
+            }
+        }
+        else if (DataType === "Link to a webpage") {
+
+            const config = {
+                method: 'get',
+                maxBodyLength: Infinity,
+                url: `https://r.jina.ai/${dataURL}`,
+                headers: {},
+            };
+
+            const response = await axios.request(config);
+            if (response.status == 200) {
+                md_data = JSON.stringify(response.data);
+            }
+            else {
+                webconsole.error("RAG NODE | some error occured while gathering data from webpage: ", response.statusText);
+                return null;
+            }
+
+        }
+        else {
+            webconsole.error("RAG NODE | How did you even get here? There is no other option");
+            return null;
+        }
+
+        try {
+
+            const doc = MDocument.fromMarkdown(md_data);
             const chunks = await doc.chunk();
 
             const { embeddings } = await embedMany({
@@ -109,19 +168,19 @@ class rag_node extends BaseNode {
             });
 
             await store.createIndex({
-                indexName: `collection`,
+                indexName: index_name,
                 dimension: 1536,
             });
 
             await store.upsert({
-                indexName: `collection`,
+                indexName: index_name,
                 vectors: embeddings,
                 metadata: chunks.map(chunk => ({ text: chunk.text }))
             });
 
             webconsole.success("RAG NODE | Vector DB created");
 
-            return `${workflowId}_${fileHash}.db`;
+            return index_name;
 
         } catch (error) {
             webconsole.error("RAG NODE | some error occured: ", error);

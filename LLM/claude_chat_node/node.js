@@ -1,10 +1,9 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { Mastra } from "@mastra/core";
 import { createVectorQueryTool } from "@mastra/rag";
-import { LibSQLVector } from '@mastra/core/vector/libsql';
+import { PgVector, PostgresStore } from "@mastra/pg";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
-import { LibSQLStore } from "@mastra/libsql";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from '@ai-sdk/openai';
 import dotenv from 'dotenv';
@@ -131,8 +130,8 @@ class claude_chat_node extends BaseNode {
             webconsole.info("CLAUDE NODE | Loading memories");
         }
         const memory  = saveMemory ? new Memory({
-            storage: new LibSQLStore({
-                url: `file:./local.db`,
+            storage: new PostgresStore({
+                connectionString: process.env.POSTGRESS_URL,
             }),
             options: {
                 lastMessages: 40,
@@ -151,17 +150,22 @@ class claude_chat_node extends BaseNode {
         })
 
         const anthropic = llm.languageModel;
-
-        const ragTool = createVectorQueryTool({
-            vectorStoreName: "libStore",
-            indexName: "collection",
-            model: openai.embedding("text-embedding-3-small"),
-        });
-
         var agent;
 
         if (ragStoreName) {
             webconsole.info("CLAUDE NODE | Importing knowledge base");
+
+            const ragTool = createVectorQueryTool({
+                vectorStoreName: "postgres",
+                indexName: ragStoreName,
+                model: openai.embedding("text-embedding-3-small"),
+                databaseConfig: {
+                    pgvector: {
+                        minScore: 0.7,
+                    }
+                }
+            });
+
             const newAgent = new Agent({
                 name: "UserAgent",
                 instructions: systemPrompt,
@@ -170,8 +174,8 @@ class claude_chat_node extends BaseNode {
                 tools: { ragTool },
             });
 
-            const ragStore = new LibSQLVector({
-                connectionUrl: `file:./${ragStoreName}`
+            const ragStore = new PgVector({
+                connectionString: process.env.POSTGRESS_URL,
             });
 
             const mastra = new Mastra({
@@ -189,15 +193,22 @@ class claude_chat_node extends BaseNode {
         }); 
 
         webconsole.info("CLAUDE NODE | Prompting LLM");
-        const response = await agent.generate(query, {
-            temperature: temperature,
-            ...(memory && { resourceId: serverData.userId }),
-            ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
-        });
-
-        webconsole.info(`Anthropic LLM Response: ${response.text}`);
         
-        return response.text;
+        try {
+            const response = await agent.generate(query, {
+                temperature: temperature,
+                ...(memory && { resourceId: `${serverData.workflowId}_claude` }),
+                ...(memory && { threadId: serverData.chatId ? `${serverData.chatId}_${serverData.workflowId}` : `42069_${serverData.workflowId}` }),
+            });
+
+            webconsole.success(`CLAUDE NODE | Successfully responed`);
+        
+            return response.text;
+        } catch (error) {
+            webconsole.error(`CLAUDE NODE | Some error occured: ${error}`);
+        
+            return null;
+        }
     }
 }
 

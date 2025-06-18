@@ -1,7 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "User Input",
+    title: "Text Input",
     category: "input",
     type: "str_var",
     icon: {},

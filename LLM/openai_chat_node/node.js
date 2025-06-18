@@ -1,11 +1,10 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { Mastra } from "@mastra/core";
 import { createVectorQueryTool } from "@mastra/rag";
-import { LibSQLVector } from '@mastra/core/vector/libsql';
+import { PgVector, PostgresStore } from "@mastra/pg";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { createOpenAI } from "@ai-sdk/openai";
-import { LibSQLStore } from "@mastra/libsql";
 import dotenv from 'dotenv';
 
 dotenv.config("./env");
@@ -136,8 +135,8 @@ class openai_chat_node extends BaseNode {
             webconsole.info("OPENAI NODE | Loading memories");
         }
         const memory  = saveMemory ? new Memory({
-            storage: new LibSQLStore({
-                url: `file:./local.db`,
+            storage: new PostgresStore({
+                connectionString: process.env.POSTGRESS_URL,
             }),
             options: {
                 lastMessages: 40,
@@ -152,17 +151,22 @@ class openai_chat_node extends BaseNode {
         })
 
         const openai = llm.languageModel;
-
-        const ragTool = createVectorQueryTool({
-            vectorStoreName: "libStore",
-            indexName: "collection",
-            model: llm.embedding("text-embedding-3-small"),
-        });
-
         var agent;
 
         if (ragStoreName) {
             webconsole.info("OPENAI NODE | Importing knowledge base");
+
+            const ragTool = createVectorQueryTool({
+                vectorStoreName: "postgres",
+                indexName: ragStoreName,
+                model: llm.embedding("text-embedding-3-small"),
+                databaseConfig: {
+                    pgvector: {
+                        minScore: 0.7,
+                    }
+                }
+            });
+
             const newAgent = new Agent({
                 name: "UserAgent",
                 instructions: systemPrompt,
@@ -171,8 +175,8 @@ class openai_chat_node extends BaseNode {
                 tools: { ragTool },
             });
 
-            const ragStore = new LibSQLVector({
-                connectionUrl: `file:./${ragStoreName}`
+            const ragStore = new PgVector({
+                connectionString: process.env.POSTGRESS_URL,
             });
 
             const mastra = new Mastra({
@@ -190,15 +194,23 @@ class openai_chat_node extends BaseNode {
         });        
 
         webconsole.info("OPENAI NODE | Prompting LLM");
-        const response = await agent.generate(query, {
-            temperature: temperature,
-            ...(memory && { resourceId: serverData.workflowId }),
-            ...(memory && { threadId: serverData.chatId ? serverData.chatId : "42069" }),
-        });
+        try {
+            
+            const response = await agent.generate(query, {
+                temperature: temperature,
+                ...(memory && { resourceId: `${serverData.workflowId}_openai` }),
+                ...(memory && { threadId: serverData.chatId ? `${serverData.chatId}_${serverData.workflowId}` : `42069_${serverData.workflowId}` }),
+            });
 
-        webconsole.info(`OpenAI LLM Response: ${response.text}`);
+            webconsole.success(`OPENAI NODE | Successfully responed`);
         
-        return response.text;
+            return response.text;
+
+        } catch (error) {
+            webconsole.error(`OPENAI NODE | Some error occured: ${error}`);
+        
+            return null;
+        }
     }
 }
 
