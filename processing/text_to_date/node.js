@@ -17,11 +17,6 @@ const config = {
       name: "Text",
       type: "Text",
     },
-    {
-      desc: "Target timezone (e.g., Asia/Kolkata, America/New_York)",
-      name: "Timezone",
-      type: "Text",
-    },
   ],
   outputs: [
     {
@@ -37,12 +32,6 @@ const config = {
       type: "Text",
       value: "Enter ISO Date String here...",
     },
-    {
-      desc: "Target timezone",
-      name: "Timezone",
-      type: "Text",
-      value: "Asia/Tokyo",
-    },
   ],
   difficulty: "easy",
   tags: ["text", "date"],
@@ -57,55 +46,30 @@ class text_to_date extends BaseNode {
     webconsole.info("TEXT TO DATE NODE | Executing logic");
 
     const TextFilter = inputs.filter((e) => e.name === "Text");
-    const Textdata = TextFilter.length > 0 ? TextFilter[0].value : contents.filter((e) => e.name === "Text")[0].value;
-
-    const TimezoneFilter = inputs.filter((e) => e.name === "Timezone");
-    const timezone = TimezoneFilter.length > 0 ? TimezoneFilter[0].value : contents.filter((e) => e.name === "Timezone")[0].value || "UTC";
+    const Textdata =
+      TextFilter.length > 0 ? TextFilter[0].value : contents[0].value;
 
     try {
-      if (Textdata === null || Textdata === undefined || timezone === null || timezone === undefined) {
+      if (Textdata === null || Textdata === undefined) {
         webconsole.error("TEXT TO DATE NODE | Some data is null");
         return null;
       }
 
-      if (typeof Textdata !== "string" || typeof timezone !== "string") {
+      if (typeof Textdata !== "string") {
         webconsole.error("TEXT TO DATE NODE | Some data is not a string");
         return null;
       }
 
       const dateObj = new Date(Textdata);
-      
-      const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
-
-      const parts = formatter.formatToParts(dateObj);
-      const partsObj = parts.reduce((acc, part) => {
-        acc[part.type] = part.value;
-        return acc;
-      }, {});
-
-      // Get milliseconds separately as formatToParts doesn't include them
-      const millisecond = dateObj.getMilliseconds();
-
       const date = {
-        year: parseInt(partsObj.year),
-        month: parseInt(partsObj.month),
-        day: parseInt(partsObj.day),
-        hour: parseInt(partsObj.hour),
-        minute: parseInt(partsObj.minute),
-        second: parseInt(partsObj.second),
-        millisecond: millisecond,
-        timezone: timezone
+        year: dateObj.getFullYear(),
+        month: dateObj.getMonth() + 1,
+        day: dateObj.getDate(),
+        hour: dateObj.getHours(),
+        minute: dateObj.getMinutes(),
+        second: dateObj.getSeconds(),
+        millisecond: dateObj.getMilliseconds(),
       };
-
       webconsole.success("TEXT TO DATE NODE | Successfully converted text");
       return {
         "Date": date,
