@@ -62,7 +62,14 @@ class rag_node extends BaseNode {
         const workflowId = serverData.workflowId.replaceAll("-", "_");
 
         const DataType = contents.filter((e) => e.name === "Data Type")[0].value;
-        const dataURL = contents.filter((e) => e.name === "Link")[0].value;
+        const dataURLFilter = contents.filter((e) => e.name === "Link")
+        
+        if (dataURLFilter.length === 0) {
+            webconsole.error("No link provided");
+            return null;
+        }
+
+        const dataURL = dataURLFilter[0].value;
 
         const store = new PgVector({
             connectionString: process.env.POSTGRESS_URL,
