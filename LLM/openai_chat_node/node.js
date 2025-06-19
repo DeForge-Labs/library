@@ -1,7 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { Mastra } from "@mastra/core";
 import { createVectorQueryTool } from "@mastra/rag";
-import { PgVector, PostgresStore } from "@mastra/pg";
+import { PgVector, PostgresStore, PGVECTOR_PROMPT } from "@mastra/pg";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -169,7 +169,7 @@ class openai_chat_node extends BaseNode {
 
             const newAgent = new Agent({
                 name: "UserAgent",
-                instructions: systemPrompt,
+                instructions: `${systemPrompt}\n${PGVECTOR_PROMPT}`,
                 model: openai(model),
                 ...(memory && { memory: memory }),
                 tools: { ragTool },
