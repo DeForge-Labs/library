@@ -126,8 +126,8 @@ class tg_msg_send extends BaseNode {
                 return markdownResponse.data;
             }
         } catch (error) {
-            webconsole.warn("TG MSG NODE | MarkdownV2 format failed, falling back to plain text");
-            webconsole.warn(`Error: ${error.response?.data?.description || error.message}`);
+            webconsole.info("TG MSG NODE | MarkdownV2 format failed, falling back to plain text");
+            webconsole.info(`Error: ${error.response?.data?.description || error.message}`);
         }
 
         // Fallback: send as plain text
