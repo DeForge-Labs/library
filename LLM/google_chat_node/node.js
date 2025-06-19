@@ -156,12 +156,12 @@ class google_chat_node extends BaseNode {
             webconsole.info("GOOGLE NODE | Importing knowledge base");
 
             const ragTool = createVectorQueryTool({
-                vectorStoreName: "postgres",
+                vectorStoreName: "ragStore",
                 indexName: ragStoreName,
                 model: openai.embedding("text-embedding-3-small"),
                 databaseConfig: {
                     pgvector: {
-                        minScore: 0.7,
+                        minScore: 0.5,
                     }
                 }
             });
@@ -182,15 +182,16 @@ class google_chat_node extends BaseNode {
                 agents: { newAgent },
                 vectors: { ragStore },
             });
-            agent = mastra.getAgent("UserAgent");
+            agent = mastra.getAgent("newAgent");
         }
-
-        agent = new Agent({
-            name: "UserAgent",
-            instructions: systemPrompt,
-            model: google(model),
-            ...(memory && { memory: memory })
-        }); 
+        else {
+            agent = new Agent({
+                name: "UserAgent",
+                instructions: systemPrompt,
+                model: google(model),
+                ...(memory && { memory: memory })
+            }); 
+        }
 
         webconsole.info("GOOGLE NODE | Prompting LLM");
         

@@ -137,9 +137,6 @@ class openai_chat_node extends BaseNode {
         const memory  = saveMemory ? new Memory({
             storage: new PostgresStore({
                 connectionString: process.env.POSTGRESS_URL,
-                ssl: {
-                    rejectUnauthorized: false
-                }
             }),
             options: {
                 lastMessages: 40,
@@ -160,12 +157,12 @@ class openai_chat_node extends BaseNode {
             webconsole.info("OPENAI NODE | Importing knowledge base");
 
             const ragTool = createVectorQueryTool({
-                vectorStoreName: "postgres",
+                vectorStoreName: "ragStore",
                 indexName: ragStoreName,
                 model: llm.embedding("text-embedding-3-small"),
                 databaseConfig: {
                     pgvector: {
-                        minScore: 0.7,
+                        minScore: 0.5,
                     }
                 }
             });
@@ -180,26 +177,22 @@ class openai_chat_node extends BaseNode {
 
             const ragStore = new PgVector({
                 connectionString: process.env.POSTGRESS_URL,
-                pgPoolOptions: {
-                    ssl: {
-                        rejectUnauthorized: false
-                    }
-                }
             });
 
             const mastra = new Mastra({
                 agents: { newAgent },
                 vectors: { ragStore },
             });
-            agent = mastra.getAgent("UserAgent");
+            agent = mastra.getAgent("newAgent");
         }
-
-        agent = new Agent({
-            name: "UserAgent",
-            instructions: systemPrompt,
-            model: openai(model),
-            ...(memory && { memory: memory })
-        });        
+        else {
+            agent = new Agent({
+                name: "UserAgent",
+                instructions: systemPrompt,
+                model: openai(model),
+                ...(memory && { memory: memory })
+            });
+        }
 
         webconsole.info("OPENAI NODE | Prompting LLM");
         try {

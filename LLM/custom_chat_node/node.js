@@ -171,12 +171,12 @@ class custom_chat_node extends BaseNode {
             webconsole.info("CUSTOM NODE | Importing knowledge base");
 
             const ragTool = createVectorQueryTool({
-                vectorStoreName: "postgres",
+                vectorStoreName: "ragStore",
                 indexName: ragStoreName,
                 model: llm.embedding("text-embedding-3-small"),
                 databaseConfig: {
                     pgvector: {
-                        minScore: 0.7,
+                        minScore: 0.5,
                     }
                 }
             });
@@ -197,15 +197,16 @@ class custom_chat_node extends BaseNode {
                 agents: { newAgent },
                 vectors: { ragStore },
             });
-            agent = mastra.getAgent("UserAgent");
+            agent = mastra.getAgent("newAgent");
         }
-
-        agent = new Agent({
-            name: "UserAgent",
-            instructions: systemPrompt,
-            model: openai(model),
-            ...(memory && { memory: memory })
-        });
+        else {
+            agent = new Agent({
+                name: "UserAgent",
+                instructions: systemPrompt,
+                model: openai(model),
+                ...(memory && { memory: memory })
+            });
+        }
         
         webconsole.info("CUSTOM NODE | Prompting LLM");
         

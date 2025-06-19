@@ -54,6 +54,46 @@ class tg_msg_send extends BaseNode {
         super(config);
     }
 
+    /**
+     * Sanitizes text for Telegram MarkdownV2 format
+     * Escapes special characters that need to be escaped in MarkdownV2
+     */
+    sanitizeForMarkdownV2(text) {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        // Characters that need to be escaped in MarkdownV2
+        const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+        
+        let sanitized = text;
+        specialChars.forEach(char => {
+            const regex = new RegExp('\\' + char, 'g');
+            sanitized = sanitized.replace(regex, '\\' + char);
+        });
+
+        return sanitized;
+    }
+
+    /**
+     * Validates if text is safe for MarkdownV2 format
+     * Returns true if the text should work with MarkdownV2
+     */
+    validateMarkdownV2(text) {
+        if (!text || typeof text !== 'string') {
+            return false;
+        }
+
+        // Check for balanced markdown elements
+        const backticks = (text.match(/`/g) || []).length;
+        const asterisks = (text.match(/\*/g) || []).length;
+        const underscores = (text.match(/_/g) || []).length;
+        const tildes = (text.match(/~/g) || []).length;
+
+        // Basic validation - even number of markdown characters (should be paired)
+        return backticks % 2 === 0 && asterisks % 2 === 0 && underscores % 2 === 0 && tildes % 2 === 0;
+    }
+
     async run(inputs, contents, webconsole, serverData) {
         webconsole.info("TG MSG NODE | Started execution");
 
@@ -66,15 +106,53 @@ class tg_msg_send extends BaseNode {
 
         const botToken = serverData.envList?.TG_API_KEY || "";
 
-        const startResponse = await axios.get(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${UserID}&text=${Message}`);
+        // First try to send with MarkdownV2 format
+        try {
+            webconsole.info("TG MSG NODE | Attempting to send with MarkdownV2 format");
+            
+            // Sanitize the message for MarkdownV2
+            const sanitizedMessage = this.sanitizeForMarkdownV2(Message);
+            
+            const markdownResponse = await axios.get(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                params: {
+                    chat_id: UserID,
+                    text: sanitizedMessage,
+                    parse_mode: 'MarkdownV2'
+                }
+            });
 
-        if (startResponse.data.ok) {
-            webconsole.success("TG MSG NODE | Sent message successfully");
-            return startResponse.data;
+            if (markdownResponse.data.ok) {
+                webconsole.success("TG MSG NODE | Sent message successfully with MarkdownV2 format");
+                return markdownResponse.data;
+            }
+        } catch (error) {
+            webconsole.warn("TG MSG NODE | MarkdownV2 format failed, falling back to plain text");
+            webconsole.warn(`Error: ${error.response?.data?.description || error.message}`);
         }
 
-        webconsole.error(`TG NODE | Some error occured when sending message \nError code: ${startResponse.data.error_code}, Description: ${startResponse.data.description}`);
-        return startResponse.data;
+        // Fallback: send as plain text
+        try {
+            webconsole.info("TG MSG NODE | Sending as plain text");
+            
+            const plainResponse = await axios.get(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                params: {
+                    chat_id: UserID,
+                    text: Message
+                }
+            });
+
+            if (plainResponse.data.ok) {
+                webconsole.success("TG MSG NODE | Sent message successfully as plain text");
+                return plainResponse.data;
+            }
+
+            webconsole.error(`TG MSG NODE | Error sending plain text message - Error code: ${plainResponse.data.error_code}, Description: ${plainResponse.data.description}`);
+            return plainResponse.data;
+
+        } catch (error) {
+            webconsole.error(`TG MSG NODE | Failed to send message - ${error.response?.data?.description || error.message}`);
+            return null
+        }
     }
 }
 
