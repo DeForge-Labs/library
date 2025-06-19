@@ -92,6 +92,7 @@ class tg_trigger extends BaseNode {
                     "Chat ID": chatID,
                     "Username": userName,
                     "Is Command": isCommand,
+                    "__terminate": true,
                 };
             }
 
@@ -102,6 +103,7 @@ class tg_trigger extends BaseNode {
                 "Chat ID": chatID,
                 "Username": userName,
                 "Is Command": isCommand,
+                "__terminate": true,
             };
         }
 
