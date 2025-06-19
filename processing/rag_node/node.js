@@ -1,7 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { QdrantVector } from "@mastra/qdrant";
+import { PgVector } from "@mastra/pg";
 import { MDocument } from '@mastra/rag'
 import { Downloader } from "nodejs-file-downloader";
 import { exec } from 'child_process';
@@ -71,8 +71,13 @@ class rag_node extends BaseNode {
 
         const dataURL = dataURLFilter[0].value;
 
-        const store = new QdrantVector({
-            url: process.env.QDRANT_URL,
+        const store = new PgVector({
+            connectionString: process.env.POSTGRESS_URL,
+            pgPoolOptions: {
+                ssl: {
+                    rejectUnauthorized: false
+                }
+            }
         });
         const indices_list = await store.listIndexes();
 

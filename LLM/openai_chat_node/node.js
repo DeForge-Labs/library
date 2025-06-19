@@ -1,8 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { Mastra } from "@mastra/core";
 import { createVectorQueryTool } from "@mastra/rag";
-import { PostgresStore } from "@mastra/pg";
-import { QdrantVector } from "@mastra/qdrant";
+import { PgVector, PostgresStore } from "@mastra/pg";
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -179,8 +178,13 @@ class openai_chat_node extends BaseNode {
                 tools: { ragTool },
             });
 
-            const ragStore = new QdrantVector({
-                url: process.env.QDRANT_URL,
+            const ragStore = new PgVector({
+                connectionString: process.env.POSTGRESS_URL,
+                pgPoolOptions: {
+                    ssl: {
+                        rejectUnauthorized: false
+                    }
+                }
             });
 
             const mastra = new Mastra({
