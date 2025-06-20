@@ -109,10 +109,10 @@ const config = {
         },
     ],
     difficulty: "medium",
-    tags: ["api", "llm", "chatbot", "postgresql", "rag"],
+    tags: ["api", "llm", "chatbot", "rag"],
 }
 
-class openai_chat_postgres_node extends BaseNode {
+class openai_chat_node extends BaseNode {
     constructor() {
         super(config);
         this.pgPool = new Pool({
@@ -464,4 +464,4 @@ Answer:`);
     }
 }
 
-export default openai_chat_postgres_node;
+export default openai_chat_node;

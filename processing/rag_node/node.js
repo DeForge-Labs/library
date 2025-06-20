@@ -53,7 +53,7 @@ const config = {
         },
     ],
     difficulty: "easy",
-    tags: ["api", "llm", "knowledge-base", "rag", "postgresql"],
+    tags: ["api", "llm", "knowledge-base", "rag"],
 }
 
 class rag_node extends BaseNode {
