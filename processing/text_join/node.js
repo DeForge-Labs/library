@@ -49,7 +49,18 @@ class text_join extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        
+        webconsole.info("TEXT JOIN NODE | Gathering texts");
+
+        const inputTextsFilter = inputs.find((e) => e.name === "objects");
+        const inputTexts = inputTextsFilter?.value || [];
+
+        const separatorFilter = contents.find((e) => e.name === "Separator");
+        const separator = separatorFilter?.value || " ";
+
+        const res = inputTexts.join(separator);
+
+        webconsole.success("TEXT JOIN NODE | Joined texts");
+        return res;
     }
 }
 
