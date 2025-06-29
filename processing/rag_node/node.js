@@ -87,6 +87,9 @@ class rag_node extends BaseNode {
             const vectorStore = new PGVectorStore(embeddings, {
                 postgresConnectionOptions: {
                     connectionString: process.env.POSTGRESS_URL,
+                    ssl: {
+                        rejectUnauthorized: false
+                    },
                 },
                 tableName: tableName,
                 columns: {
@@ -168,6 +171,9 @@ class rag_node extends BaseNode {
                 {
                     postgresConnectionOptions: {
                         connectionString: process.env.POSTGRESS_URL,
+                        ssl: {
+                            rejectUnauthorized: false
+                        },
                     },
                     tableName: tableName,
                     columns: {

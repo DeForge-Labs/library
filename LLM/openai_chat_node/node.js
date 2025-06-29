@@ -132,6 +132,9 @@ class openai_chat_node extends BaseNode {
         super(config);
         this.pgPool = new Pool({
             connectionString: process.env.POSTGRESS_URL,
+            ssl: {
+                rejectUnauthorized: false
+            },
         });
         this.memoryStore = new MemorySaver();
     }
@@ -141,6 +144,9 @@ class openai_chat_node extends BaseNode {
             const vectorStore = new PGVectorStore(embeddings, {
                 postgresConnectionOptions: {
                     connectionString: process.env.POSTGRESS_URL,
+                    ssl: {
+                        rejectUnauthorized: false
+                    },
                 },
                 tableName: tableName,
                 columns: {
