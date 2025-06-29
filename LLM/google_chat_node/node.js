@@ -1,14 +1,34 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import { Mastra } from "@mastra/core";
-import { createVectorQueryTool } from "@mastra/rag";
-import { PgVector, PostgresStore } from "@mastra/pg";
-import { Agent } from "@mastra/core/agent";
-import { Memory } from "@mastra/memory";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from '@ai-sdk/openai';
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
+import { PostgresChatMessageHistory } from "@langchain/community/stores/message/postgres";
+import { formatDocumentsAsString } from "langchain/util/document";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+import {
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    trimMessages,
+} from '@langchain/core/messages';
+import {
+    START,
+    END,
+    MessagesAnnotation,
+    StateGraph,
+    MemorySaver,
+} from '@langchain/langgraph';
+import { 
+    ToolNode,
+    toolsCondition,
+} from "@langchain/langgraph/prebuilt";
+import pkg from 'pg';
 import dotenv from 'dotenv';
 
-dotenv.config("./env");
+const { Pool } = pkg;
+
+dotenv.config();
 
 const config = {
     title: "Google Chat",
@@ -99,116 +119,310 @@ const config = {
         },
     ],
     difficulty: "medium",
-    tags: ["api", "llm", "chatbot"],
-  }
+    tags: ["api", "llm", "chatbot", "rag"],
+}
 
 class google_chat_node extends BaseNode {
+
     constructor() {
         super(config);
+        this.pgPool = new Pool({
+            connectionString: process.env.POSTGRESS_URL,
+        });
+        this.memoryStore = new MemorySaver();
+    }
+
+    async initializeVectorStore(embeddings, tableName, webconsole) {
+        try {
+            const vectorStore = new PGVectorStore(embeddings, {
+                postgresConnectionOptions: {
+                    connectionString: process.env.POSTGRESS_URL,
+                },
+                tableName: tableName,
+                columns: {
+                    idColumnName: "id",
+                    vectorColumnName: "vector",
+                    contentColumnName: "content",
+                    metadataColumnName: "metadata",
+                },
+            });
+            
+            return vectorStore;
+        } catch (error) {
+            webconsole.error(`GOOGLE NODE | Failed to initialize PostgreSQL vector store '${tableName}': ${error.message}`);
+            throw error;
+        }
+    }
+
+    async initializeChatHistory(sessionId, webconsole) {
+        try {
+            const chatHistory = new PostgresChatMessageHistory({
+                pool: this.pgPool,
+                sessionId: sessionId,
+                tableName: "message_store",
+            });
+
+            webconsole.success(`GOOGLE NODE | PostgreSQL chat history initialized for session: ${sessionId}`);
+            return chatHistory;
+        } catch (error) {
+            webconsole.error(`GOOGLE NODE | Failed to initialize chat history: ${error.message}`);
+            throw error;
+        }
+    }
+
+    createRetriever(vectorStore, webconsole) {
+        const retriever = vectorStore.asRetriever({
+            k: 5, // Number of documents to retrieve
+            searchType: "similarity",
+        });
+
+        webconsole.info("GOOGLE NODE | Created PostgreSQL-based retriever with k=5");
+        return retriever;
+    }
+
+    createRagTool(vectorStore, webconsole) {
+        const retriever = this.createRetriever(vectorStore, webconsole);
+        
+        return tool(
+            async ({ query }) => {
+                try {
+                    const docs = await retriever.getRelevantDocuments(query);
+                    const context = formatDocumentsAsString(docs);
+                    
+                    webconsole.info(`GOOGLE NODE | Retrieved ${docs.length} relevant documents from PostgreSQL`);
+                    
+                    if (docs.length === 0) {
+                        return "No relevant information found in the knowledge base.";
+                    }
+                    
+                    return `Relevant context from knowledge base:\n${context}`;
+                } catch (error) {
+                    webconsole.error(`GOOGLE NODE | Error in RAG tool: ${error.message}`);
+                    return "Error retrieving information from knowledge base.";
+                }
+            },
+            {
+                name: "ragTool",
+                description: "Retrieve relevant information from the knowledge base to answer questions",
+                schema: z.object({ 
+                    query: z.string().describe("The search query to find relevant information") 
+                }),
+                responseFormat: "content",
+            }
+        );
+    }
+
+    async loadChatHistory(sessionId, webconsole) {
+        try {
+            const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
+            const messages = await chatHistory.getMessages();
+            
+            const langChainMessages = messages.map(msg => {
+                if (msg.getType() === 'human') {
+                    return new HumanMessage(msg.content);
+                } else if (msg.getType() === 'ai') {
+                    return new AIMessage(msg.content);
+                } else if (msg.getType() === 'system') {
+                    return new SystemMessage(msg.content);
+                }
+                return msg;
+            });
+            
+            webconsole.info(`GOOGLE NODE | Loaded ${langChainMessages.length} messages from chat history`);
+            return langChainMessages;
+        } catch (error) {
+            webconsole.error(`GOOGLE NODE | Error loading chat history: ${error.message}`);
+            return [];
+        }
+    }
+
+    createWorkflow(llm, systemPrompt, ragTool, webconsole) {
+
+        const callModel = async (state) => {
+            try {
+                const messages = state.messages;
+                
+                const lastSystemMessage = messages.slice().reverse().find(msg => msg instanceof SystemMessage);
+                
+                if (!lastSystemMessage) {
+                    messages.unshift(new SystemMessage(systemPrompt));
+                    webconsole.info("GOOGLE NODE | Added system prompt (no previous system message found)");
+                } else if (lastSystemMessage.content !== systemPrompt) {
+                    messages.unshift(new SystemMessage(systemPrompt));
+                    webconsole.info("GOOGLE NODE | Added updated system prompt (content changed)");
+                } else {
+                    webconsole.info("GOOGLE NODE | Using existing system prompt (content unchanged)");
+                }
+                
+                const response = await llm.invoke(messages);
+                return { messages: response };
+            } catch (error) {
+                webconsole.error(`GOOGLE NODE | Error invoking LLM: ${error.message}`);
+                throw error;
+            }
+        };
+
+        let workflow;
+        
+        if (ragTool) {
+            const ragNode = async (state) => {
+                const llmWithTools = llm.bindTools([ragTool]);
+                const response = await llmWithTools.invoke(state.messages);
+                return { messages: [response] };
+            };
+
+            const tools = new ToolNode([ragTool]);
+
+            workflow = new StateGraph(MessagesAnnotation)
+                .addNode("rag", ragNode)
+                .addNode("tools", tools)
+                .addNode("model", callModel)
+                .addEdge(START, "rag")
+                .addConditionalEdges("rag", toolsCondition, {
+                    [END]: END,
+                    tools: "tools",
+                })
+                .addEdge("tools", "model")
+                .addEdge("model", END);
+        } else {
+            workflow = new StateGraph(MessagesAnnotation)
+                .addNode("model", callModel)
+                .addEdge(START, "model")
+                .addEdge("model", END);
+        }
+
+        return workflow.compile({ checkpointer: this.memoryStore });
     }
 
     async run(inputs, contents, webconsole, serverData) {
-
-        webconsole.info("GOOGLE NODE | Prepping inputs");
-        
-        const queryFilter = inputs.filter((e) => e.name === "Query");
-        const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "body")[0].value;
-
-        const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
-        const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
-
-        const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
-        const temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
-
-        const model = contents.filter((e) => e.name === "Model")[0].value;
-        const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
-
-        const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
-        const ragStoreName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
-
-        if (saveMemory) {
-            webconsole.info("GOOGLE NODE | Loading memories");
-        }
-        const memory  = saveMemory ? new Memory({
-            storage: new PostgresStore({
-                connectionString: process.env.POSTGRESS_URL,
-            }),
-            options: {
-                lastMessages: 40,
-                workingMemory: {
-                    enabled: false,
-                },
-            }
-        }) : null;
-
-        const openai = createOpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
-        });
-
-        const llm = createGoogleGenerativeAI({
-            apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-        })
-
-        const google = llm.languageModel;
-        var agent;
-
-        if (ragStoreName) {
-            webconsole.info("GOOGLE NODE | Importing knowledge base");
-
-            const ragTool = createVectorQueryTool({
-                vectorStoreName: "ragStore",
-                indexName: ragStoreName,
-                model: openai.embedding("text-embedding-3-small"),
-                databaseConfig: {
-                    pgvector: {
-                        minScore: 0.5,
-                    }
-                }
-            });
-
-            const newAgent = new Agent({
-                name: "UserAgent",
-                instructions: systemPrompt,
-                model: google(model),
-                ...(memory && { memory: memory }),
-                tools: { ragTool },
-            });
-
-            const ragStore = new PgVector({
-                connectionString: process.env.POSTGRESS_URL,
-            });
-
-            const mastra = new Mastra({
-                agents: { newAgent },
-                vectors: { ragStore },
-            });
-            agent = mastra.getAgent("newAgent");
-        }
-        else {
-            agent = new Agent({
-                name: "UserAgent",
-                instructions: systemPrompt,
-                model: google(model),
-                ...(memory && { memory: memory })
-            }); 
-        }
-
-        webconsole.info("GOOGLE NODE | Prompting LLM");
-        
         try {
-            const response = await agent.generate(query, {
+            webconsole.info("GOOGLE NODE | Starting LangGraph-based chat node");
+            
+            const queryFilter = inputs.filter((e) => e.name === "Query");
+            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+
+            const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
+            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
+
+            const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
+            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
+            temperature = Number(temperature);
+
+            const model = contents.filter((e) => e.name === "Model")[0].value;
+            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
+
+            const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
+            const ragTableName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
+
+            webconsole.info(`GOOGLE NODE | Configuration - Model: ${model}, Temperature: ${temperature}, Save Memory: ${saveMemory}, RAG Table: ${ragTableName || 'None'}`);
+
+            if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+                throw new Error("GOOGLE_GENERATIVE_AI_API_KEY environment variable not set");
+            }
+            if (!process.env.POSTGRESS_URL) {
+                throw new Error("POSTGRESS_URL environment variable not set");
+            }
+
+            const llm = new ChatGoogleGenerativeAI({
+                model: model,
                 temperature: temperature,
-                ...(memory && { resourceId: `${serverData.workflowId}_ggogle` }),
-                ...(memory && { threadId: serverData.chatId ? `${serverData.chatId}_${serverData.workflowId}` : `42069_${serverData.workflowId}` }),
+                apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
             });
 
-            webconsole.success(`GOOGLE NODE | Successfully responed`);
-        
-            return response.text;
+            // Create session ID for memory
+            const sessionId = serverData.chatId ? 
+                `${serverData.chatId}_${serverData.workflowId}` : 
+                `default_${serverData.workflowId}`;
+
+            let ragTool = null;
+            if (ragTableName && ragTableName.trim() !== "") {
+                webconsole.info("GOOGLE NODE | Setting up PostgreSQL RAG tool");
+                
+                // For RAG, we still need OpenAI embeddings (industry standard)
+                if (!process.env.OPENAI_API_KEY) {
+                    throw new Error("OPENAI_API_KEY environment variable required for RAG embeddings");
+                }
+                
+                const embeddings = new OpenAIEmbeddings({
+                    model: "text-embedding-3-small",
+                    apiKey: process.env.OPENAI_API_KEY,
+                });
+
+                const vectorStore = await this.initializeVectorStore(embeddings, ragTableName, webconsole);
+                ragTool = this.createRagTool(vectorStore, webconsole);
+            }
+
+            const app = this.createWorkflow(llm, systemPrompt, ragTool, webconsole);
+
+            const config = {
+                configurable: {
+                    thread_id: sessionId,
+                }
+            };
+
+            let pastMessages = [];
+            if (saveMemory) {
+                webconsole.info("GOOGLE NODE | Loading chat history from PostgreSQL");
+                pastMessages = await this.loadChatHistory(sessionId, webconsole);
+                
+                if (pastMessages.length > 0) {
+                    const trimmedMessages = await trimMessages(pastMessages, {
+                        maxTokens: 30000,
+                        strategy: "last",
+                        tokenCounter: llm,
+                        includeSystem: true,
+                        startOn: "human",
+                    });
+
+                    await app.updateState(config, {
+                        messages: trimmedMessages,
+                    });
+                }
+            }
+
+            const inputMessages = [new HumanMessage(query)];
+
+            if (pastMessages.length === 0) {
+                inputMessages.unshift(new SystemMessage(systemPrompt));
+            }
+
+            webconsole.info("GOOGLE NODE | Invoking LangGraph workflow");
+            
+            const output = await app.invoke({ messages: inputMessages }, config);
+            const response = output.messages[output.messages.length - 1];
+
+            if (saveMemory) {
+                try {
+                    const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
+                    
+                    await chatHistory.addUserMessage(query);
+                    await chatHistory.addAIMessage(response.content);
+                    
+                    webconsole.success("GOOGLE NODE | Chat history saved to PostgreSQL");
+                } catch (error) {
+                    webconsole.error(`GOOGLE NODE | Error saving chat history: ${error.message}`);
+                }
+            }
+
+            webconsole.success("GOOGLE NODE | Successfully generated response with LangGraph");
+            return response.content;
+
         } catch (error) {
-            webconsole.error(`GOOGLE NODE | Some error occured: ${error}`);
-        
+            webconsole.error(`GOOGLE NODE | Error occurred: ${error.message}`);
+            console.error("GOOGLE NODE | Full error:", error);
             return null;
+        }
+    }
+
+    // Clean up PostgreSQL connections
+    async destroy() {
+        try {
+            if (this.pgPool) {
+                await this.pgPool.end();
+                console.log("GOOGLE NODE | PostgreSQL connection pool closed");
+            }
+        } catch (error) {
+            console.error("GOOGLE NODE | Error closing PostgreSQL pool:", error);
         }
     }
 }

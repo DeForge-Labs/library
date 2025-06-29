@@ -1,17 +1,17 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import { embedMany } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { PgVector } from "@mastra/pg";
-import { MDocument } from '@mastra/rag'
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { Document } from "@langchain/core/documents";
 import { Downloader } from "nodejs-file-downloader";
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import axios from "axios";
 
 const execAsync = promisify(exec);
-import axios from "axios";
 
 dotenv.config();
 
@@ -56,164 +56,305 @@ class rag_node extends BaseNode {
         super(config);
     }
 
-    async run(inputs, contents, webconsole, serverData) {
-        let isEmbedded = false;
-        let fileHash = "";
-        let index_name = "";
-        let md_data = "";
+    /**
+     * Generate table name from URL and workflow
+     */
+    generateTableName(dataURL, workflowId) {
+        const fileHash = crypto.createHash('sha256').update(dataURL).digest('hex').slice(0, 16);
+        const sanitizedWorkflowId = workflowId.replaceAll("-", "_");
+        return `rag_${sanitizedWorkflowId}_${fileHash}`;
+    }
 
-        const download_location = process.env.DOWNLOAD_LOCATION;
-
-        const workflowId = serverData.workflowId.replaceAll("-", "_");
-
-        const DataType = contents.filter((e) => e.name === "Data Type")[0].value;
-        const dataURLFilter = contents.filter((e) => e.name === "Link")
-        
-        if (dataURLFilter.length === 0) {
-            webconsole.error("No link provided");
-            return null;
-        }
-
-        const dataURL = dataURLFilter[0].value;
-
-        const store = new PgVector({
-            connectionString: process.env.POSTGRESS_URL,
-        });
-        const indices_list = await store.listIndexes();
-
-        if (DataType === "Link to a file") {
-
-            const downloader = new Downloader({
-                url: dataURL,
-                directory: "./runtime_files/",
-                cloneFiles: false,
-                onBeforeSave: (fileName) => {
-                    const file_ext = fileName.split(".").slice(-1)[0];
-
-                    fileHash = crypto.createHash('sha256').update(fileName).digest('hex').slice(0, 20);
-                    index_name = `pg_${workflowId}_${fileHash}`
-                    if (indices_list.includes(index_name)) {
-                        isEmbedded = true;
-                    }
-
-                    return `${index_name}.${file_ext}`;
-                }
+    /**
+     * Check if table already exists and has data
+     */
+    async checkTableExists(tableName, webconsole) {
+        try {
+            // Initialize embeddings to create vector store connection
+            const embeddings = new OpenAIEmbeddings({
+                model: "text-embedding-3-small",
+                apiKey: process.env.OPENAI_API_KEY,
             });
 
+            // Try to create vector store instance to test table existence
+            const vectorStore = new PGVectorStore(embeddings, {
+                postgresConnectionOptions: {
+                    connectionString: process.env.POSTGRESS_URL,
+                },
+                tableName: tableName,
+                columns: {
+                    idColumnName: "id",
+                    vectorColumnName: "vector",
+                    contentColumnName: "content",
+                    metadataColumnName: "metadata",
+                },
+            });
+
+            // Try to perform a similarity search to check if table has data
+            const results = await vectorStore.similaritySearch("test", 1);
+            if (results.length > 0) {
+                webconsole.success(`RAG NODE | Table '${tableName}' already exists with data`);
+                return true;
+            }
+            
+            webconsole.info(`RAG NODE | Table '${tableName}' exists but is empty`);
+            return false;
+        } catch (error) {
+            // If error, assume table doesn't exist
+            webconsole.info(`RAG NODE | Table '${tableName}' does not exist`);
+            return false;
+        }
+    }
+
+    /**
+     * Convert file to markdown using markitdown
+     */
+    async convertToMarkdown(filePath, workflowId, webconsole) {
+        try {
+            const outputPath = `./runtime_files/document_${workflowId}.md`;
+            const command = `markitdown "${filePath}" -o "${outputPath}"`;
+            
+            webconsole.info(`RAG NODE | Converting file to markdown with command: ${command}`);
+            
+            const { stdout, stderr } = await execAsync(command);
+            
+            if (stderr) {
+                webconsole.error(`RAG NODE | Markitdown stderr: ${stderr}`);
+            }
+            
+            if (stdout) {
+                webconsole.info(`RAG NODE | Markitdown stdout: ${stdout}`);
+            }
+
+            // Read the converted markdown file
+            const markdownContent = fs.readFileSync(outputPath, 'utf-8');
+            
+            // Clean up the markdown file
             try {
+                fs.unlinkSync(outputPath);
+                webconsole.info("RAG NODE | Cleaned up markdown file");
+            } catch (cleanupError) {
+                webconsole.error(`RAG NODE | Error cleaning up markdown file: ${cleanupError.message}`);
+            }
 
-                // Download file
-                const { filePath, downloadStatus } = await downloader.download();
+            return markdownContent;
+        } catch (error) {
+            webconsole.error(`RAG NODE | Error converting to markdown: ${error.message}`);
+            throw error;
+        }
+    }
 
-                if (isEmbedded) {
-                    // Delete downloaded file
-                    fs.unlink(`./runtime_files/${filePath.split('//').slice(-1)[0]}`, (err) => {
-                        if (err) {
-                            webconsole.error("RAG NODE | error deleting the file");
-                        }
-                    });
+    /**
+     * Save documents to PostgreSQL using PGVectorStore
+     */
+    async saveToPostgreSQL(documents, tableName, webconsole) {
+        try {
+            webconsole.info(`RAG NODE | Saving ${documents.length} documents to PostgreSQL table: ${tableName}`);
 
-                    webconsole.success("RAG NODE | DB already exists");
-                    return index_name;
+            const embeddings = new OpenAIEmbeddings({
+                model: "text-embedding-3-small",
+                apiKey: process.env.OPENAI_API_KEY,
+            });
+
+            // Use fromDocuments to create and populate the vector store
+            await PGVectorStore.fromDocuments(
+                documents,
+                embeddings,
+                {
+                    postgresConnectionOptions: {
+                        connectionString: process.env.POSTGRESS_URL,
+                    },
+                    tableName: tableName,
+                    columns: {
+                        idColumnName: "id",
+                        vectorColumnName: "vector",
+                        contentColumnName: "content",
+                        metadataColumnName: "metadata",
+                    },
                 }
+            );
 
-                // Convert file to markdown
-                const command = `markitdown "${download_location}/${filePath.split('//').slice(-1)[0]}" -o "${download_location}/document_${workflowId}.md"`;
+            webconsole.success(`RAG NODE | Successfully saved ${documents.length} documents to PostgreSQL`);
+            return true;
+        } catch (error) {
+            webconsole.error(`RAG NODE | Error saving to PostgreSQL: ${error.message}`);
+            return false;
+        }
+    }
+
+    async run(inputs, contents, webconsole, serverData) {
+        try {
+            webconsole.info("RAG NODE | Starting execution");
+            
+            // Validate environment variables
+            if (!process.env.OPENAI_API_KEY) {
+                webconsole.error("RAG NODE | OPENAI_API_KEY environment variable not set");
+                return null;
+            }
+            if (!process.env.POSTGRESS_URL) {
+                webconsole.error("RAG NODE | POSTGRESS_URL environment variable not set");
+                return null;
+            }
+
+            if (!serverData?.workflowId) {
+                webconsole.error("RAG NODE | No workflowId in serverData");
+                return null;
+            }
+            
+            const workflowId = serverData.workflowId;
+
+            // Get configuration from contents
+            const dataTypeContent = contents.find((e) => e.name === "Data Type");
+            const DataType = dataTypeContent?.value || "Link to a file";
+            
+            const linkContent = contents.find((e) => e.name === "Link");
+            if (!linkContent?.value) {
+                webconsole.error("RAG NODE | No link provided");
+                return null;
+            }
+
+            const dataURL = linkContent.value;
+            webconsole.info(`RAG NODE | Processing ${DataType}: ${dataURL}`);
+
+            // Generate table name
+            const tableName = this.generateTableName(dataURL, workflowId);
+            webconsole.info(`RAG NODE | Target PostgreSQL table: ${tableName}`);
+
+            // Check if table already exists and has data
+            const tableExists = await this.checkTableExists(tableName, webconsole);
+            if (tableExists) {
+                webconsole.success(`RAG NODE | Table '${tableName}' already exists with data, skipping processing`);
+                return tableName;
+            }
+
+            let markdownContent = "";
+
+            // Create runtime_files directory if it doesn't exist
+            if (!fs.existsSync("./runtime_files/")) {
+                fs.mkdirSync("./runtime_files/", { recursive: true });
+            }
+
+            if (DataType === "Link to a file") {
+                webconsole.info("RAG NODE | Processing file download");
                 
-                try {
-                    const { stdout, stderr } = await execAsync(command);
-                    if (stderr) {
-                        webconsole.error(`RAG NODE | Command stderr: ${stderr}`);
-                        return null;
+                const fileHash = crypto.createHash('sha256').update(dataURL).digest('hex').slice(0, 16);
+                const downloader = new Downloader({
+                    url: dataURL,
+                    directory: "./runtime_files/",
+                    cloneFiles: false,
+                    onBeforeSave: (fileName) => {
+                        const file_ext = fileName.split(".").slice(-1)[0];
+                        return `${tableName}_${fileHash}.${file_ext}`;
                     }
-                    webconsole.info(`RAG NODE | Command stdout: ${stdout}`);
+                });
+
+                try {
+                    const { filePath } = await downloader.download();
+                    const downloadedFilePath = `./runtime_files/${filePath.split('/').slice(-1)[0]}`;
+                    
+                    webconsole.info(`RAG NODE | File downloaded: ${downloadedFilePath}`);
+
+                    // Convert file to markdown using markitdown
+                    markdownContent = await this.convertToMarkdown(downloadedFilePath, workflowId, webconsole);
+                    
+                    // Clean up downloaded file
+                    try {
+                        fs.unlinkSync(downloadedFilePath);
+                        webconsole.info("RAG NODE | Cleaned up downloaded file");
+                    } catch (cleanupError) {
+                        webconsole.error(`RAG NODE | Error cleaning up file: ${cleanupError.message}`);
+                    }
+
                 } catch (error) {
-                    webconsole.error(`RAG NODE | Error executing command: ${error.message}`);
+                    webconsole.error(`RAG NODE | Error processing file: ${error.message}`);
                     return null;
                 }
 
-                // Delete downloaded file
-                fs.unlink(`./runtime_files/${filePath.split('//').slice(-1)[0]}`, (err) => {
-                    if (err) {
-                        webconsole.error("RAG NODE | error deleting the file");
+            } else if (DataType === "Link to a webpage") {
+                webconsole.info("RAG NODE | Processing webpage");
+                
+                try {
+                    const axiosConfig = {
+                        method: 'get',
+                        maxBodyLength: Infinity,
+                        url: `https://r.jina.ai/${dataURL}`,
+                        headers: {},
+                        timeout: 30000,
+                    };
+
+                    const response = await axios.request(axiosConfig);
+                    if (response.status === 200) {
+                        markdownContent = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+                        webconsole.info(`RAG NODE | Successfully extracted ${markdownContent.length} characters from webpage`);
+                    } else {
+                        throw new Error(`Failed to fetch webpage: ${response.status} ${response.statusText}`);
                     }
-                });
 
-                // Read markdown file
-                md_data = fs.readFileSync(`/root/DeForge server/runtime_files/document_${workflowId}.md`, 'utf-8');
-
-                // Delete converted markdown file
-                fs.unlink(`./runtime_files/document_${workflowId}.md`, (err) => {
-                    if (err) {
-                        webconsole.error("RAG NODE | error deleting the file");
-                    }
-                });
-            } catch (error) {
-                webconsole.error(`RAG NODE | some error occured while downloading and converting file: ${error}`);
-                return null;
-            }
-        }
-        else if (DataType === "Link to a webpage") {
-
-            fileHash = crypto.createHash('sha256').update(dataURL).digest('hex').slice(0, 20);
-            index_name = `pg_${workflowId}_${fileHash}`;
-
-            if (indices_list.includes(index_name)) {
-                webconsole.success("RAG NODE | DB already exists");
-                return index_name;
-            }
-
-            const config = {
-                method: 'get',
-                maxBodyLength: Infinity,
-                url: `https://r.jina.ai/${dataURL}`,
-                headers: {},
-            };
-
-            const response = await axios.request(config);
-            if (response.status == 200) {
-                md_data = JSON.stringify(response.data);
-            }
-            else {
-                webconsole.error(`RAG NODE | some error occured while gathering data from webpage: ${response.statusText}`);
+                } catch (error) {
+                    webconsole.error(`RAG NODE | Error processing webpage: ${error.message}`);
+                    return null;
+                }
+            } else {
+                webconsole.error("RAG NODE | Invalid data type");
                 return null;
             }
 
-        }
-        else {
-            webconsole.error("RAG NODE | How did you even get here? There is no other option");
-            return null;
-        }
+            if (!markdownContent || markdownContent.trim().length === 0) {
+                webconsole.error("RAG NODE | No content to process");
+                return null;
+            }
 
-        try {
-
-            const doc = MDocument.fromMarkdown(md_data);
-            const chunks = await doc.chunk();
-
-            const { embeddings } = await embedMany({
-                model: openai.embedding("text-embedding-3-small"),
-                values: chunks.map((chunk) => chunk.text),
+            webconsole.info("RAG NODE | Creating documents and splitting into chunks");
+            
+            // Create document
+            const document = new Document({
+                pageContent: markdownContent,
+                metadata: {
+                    source: dataURL,
+                    type: DataType,
+                    processed_at: new Date().toISOString(),
+                    workflow_id: workflowId,
+                    table_name: tableName,
+                }
             });
 
-            await store.createIndex({
-                indexName: index_name,
-                dimension: 1536,
+            // Split document into chunks
+            const textSplitter = new RecursiveCharacterTextSplitter({
+                chunkSize: 800,
+                chunkOverlap: 150,
             });
 
-            await store.upsert({
-                indexName: index_name,
-                vectors: embeddings,
-                metadata: chunks.map(chunk => ({ text: chunk.text }))
-            });
+            const chunks = await textSplitter.splitDocuments([document]);
+            
+            if (chunks.length === 0) {
+                webconsole.error("RAG NODE | No chunks created from document");
+                return null;
+            }
 
-            webconsole.success("RAG NODE | Vector DB created");
+            webconsole.info(`RAG NODE | Created ${chunks.length} chunks`);
 
-            return index_name;
+            // Save to PostgreSQL
+            const saved = await this.saveToPostgreSQL(chunks, tableName, webconsole);
+            
+            if (saved) {
+                webconsole.success(`RAG NODE | Successfully processed and saved ${chunks.length} document chunks to PostgreSQL`);
+                webconsole.success(`RAG NODE | PostgreSQL table name: ${tableName}`);
+                return tableName;
+            } else {
+                webconsole.error("RAG NODE | Failed to save documents to PostgreSQL");
+                return null;
+            }
 
         } catch (error) {
-            webconsole.error(`RAG NODE | some error occured: ${error}`);
+            webconsole.error(`RAG NODE | Error occurred: ${error.message}`);
+            console.error("RAG NODE | Full error:", error);
             return null;
         }
+    }
+
+    // Clean up method
+    async destroy() {
+        console.log("RAG NODE | No persistent connections to clean up");
     }
 }
 
