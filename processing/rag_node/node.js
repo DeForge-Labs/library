@@ -4,6 +4,7 @@ import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { Document } from "@langchain/core/documents";
 import { Downloader } from "nodejs-file-downloader";
+import { tavily } from "@tavily/core";
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
@@ -45,6 +46,12 @@ const config = {
             name: "Link",
             type: "Text",
             value: "https://yourlink.com/",
+        },
+        {
+            desc: "Go deeper into the given link to gain further information (only available for webpage type RAG)",
+            name: "Deep Search",
+            type: "CheckBox",
+            value: false,
         },
     ],
     difficulty: "easy",
@@ -126,7 +133,6 @@ class rag_node extends BaseNode {
                 webconsole.info(`RAG NODE | Markitdown stdout: ${stdout}`);
             }
 
-            // Read the converted markdown file
             const markdownContent = fs.readFileSync(outputPath, 'utf-8');
             
             // Clean up the markdown file
@@ -156,7 +162,6 @@ class rag_node extends BaseNode {
                 apiKey: process.env.OPENAI_API_KEY,
             });
 
-            // Use fromDocuments to create and populate the vector store
             await PGVectorStore.fromDocuments(
                 documents,
                 embeddings,
@@ -186,13 +191,16 @@ class rag_node extends BaseNode {
         try {
             webconsole.info("RAG NODE | Starting execution");
             
-            // Validate environment variables
             if (!process.env.OPENAI_API_KEY) {
                 webconsole.error("RAG NODE | OPENAI_API_KEY environment variable not set");
                 return null;
             }
             if (!process.env.POSTGRESS_URL) {
                 webconsole.error("RAG NODE | POSTGRESS_URL environment variable not set");
+                return null;
+            }
+            if (!process.env.TAVILY_API_KEY) {
+                webconsole.error("RAG NODE | TAVILY_API_KEY environment variable not set");
                 return null;
             }
 
@@ -203,7 +211,6 @@ class rag_node extends BaseNode {
             
             const workflowId = serverData.workflowId;
 
-            // Get configuration from contents
             const dataTypeContent = contents.find((e) => e.name === "Data Type");
             const DataType = dataTypeContent?.value || "Link to a file";
             
@@ -216,11 +223,12 @@ class rag_node extends BaseNode {
             const dataURL = linkContent.value;
             webconsole.info(`RAG NODE | Processing ${DataType}: ${dataURL}`);
 
-            // Generate table name
+            const deepSearchFilter = contents.find((e) => e.name === "Deep Search");
+            const deepSearch = deepSearchFilter?.value || false;
+
             const tableName = this.generateTableName(dataURL, workflowId);
             webconsole.info(`RAG NODE | Target PostgreSQL table: ${tableName}`);
 
-            // Check if table already exists and has data
             const tableExists = await this.checkTableExists(tableName, webconsole);
             if (tableExists) {
                 webconsole.success(`RAG NODE | Table '${tableName}' already exists with data, skipping processing`);
@@ -229,7 +237,6 @@ class rag_node extends BaseNode {
 
             let markdownContent = "";
 
-            // Create runtime_files directory if it doesn't exist
             if (!fs.existsSync("./runtime_files/")) {
                 fs.mkdirSync("./runtime_files/", { recursive: true });
             }
@@ -254,7 +261,6 @@ class rag_node extends BaseNode {
                     
                     webconsole.info(`RAG NODE | File downloaded: ${downloadedFilePath}`);
 
-                    // Convert file to markdown using markitdown
                     markdownContent = await this.convertToMarkdown(downloadedFilePath, workflowId, webconsole);
                     
                     // Clean up downloaded file
@@ -274,20 +280,44 @@ class rag_node extends BaseNode {
                 webconsole.info("RAG NODE | Processing webpage");
                 
                 try {
-                    const axiosConfig = {
-                        method: 'get',
-                        maxBodyLength: Infinity,
-                        url: `https://r.jina.ai/${dataURL}`,
-                        headers: {},
-                        timeout: 30000,
-                    };
+                    if (deepSearch) {
+                        const tavilyClient = tavily({
+                            apiKey: process.env.TAVILY_API_KEY,
+                        });
 
-                    const response = await axios.request(axiosConfig);
-                    if (response.status === 200) {
-                        markdownContent = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-                        webconsole.info(`RAG NODE | Successfully extracted ${markdownContent.length} characters from webpage`);
-                    } else {
-                        throw new Error(`Failed to fetch webpage: ${response.status} ${response.statusText}`);
+                        const response = await tavilyClient.crawl(dataURL, {
+                            extractDepth: "advanced",
+                            limit: 50,
+                            maxBreadth: 25,
+                        });
+
+                        if (!response.results) {
+                            const errorDetail = response.detail?.error || "Unknown error";
+                            throw new Error(`Some error occured with tavily: ${errorDetail}`);
+                        }
+
+                        const resultList = response.results;
+                        for (let data of resultList) {
+                            markdownContent += data.rawContent + "\n";
+                        }
+                        webconsole.success(`RAG NODE | Successfully extracted ${resultList.length} items`);
+                    }
+                    else {
+                        const axiosConfig = {
+                            method: 'get',
+                            maxBodyLength: Infinity,
+                            url: `https://r.jina.ai/${dataURL}`,
+                            headers: {},
+                            timeout: 30000,
+                        };
+
+                        const response = await axios.request(axiosConfig);
+                        if (response.status === 200) {
+                            markdownContent = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+                            webconsole.success(`RAG NODE | Successfully extracted ${markdownContent.length} characters from webpage`);
+                        } else {
+                            throw new Error(`Failed to fetch webpage: ${response.status} ${response.statusText}`);
+                        }
                     }
 
                 } catch (error) {
