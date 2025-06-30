@@ -104,10 +104,12 @@ class rag_node extends BaseNode {
             const results = await vectorStore.similaritySearch("test", 1);
             if (results.length > 0) {
                 webconsole.success(`RAG NODE | Table '${tableName}' already exists with data`);
+                await vectorStore.end();
                 return true;
             }
             
             webconsole.info(`RAG NODE | Table '${tableName}' exists but is empty`);
+            await vectorStore.end();
             return false;
         } catch (error) {
             // If error, assume table doesn't exist

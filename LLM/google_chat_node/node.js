@@ -198,12 +198,15 @@ class google_chat_node extends BaseNode {
                     webconsole.info(`GOOGLE NODE | Retrieved ${docs.length} relevant documents from PostgreSQL`);
                     
                     if (docs.length === 0) {
+                        await vectorStore.end();
                         return "No relevant information found in the knowledge base.";
                     }
                     
+                    await vectorStore.end();
                     return `Relevant context from knowledge base:\n${context}`;
                 } catch (error) {
                     webconsole.error(`GOOGLE NODE | Error in RAG tool: ${error.message}`);
+                    await vectorStore.end();
                     return "Error retrieving information from knowledge base.";
                 }
             },
