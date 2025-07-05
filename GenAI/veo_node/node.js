@@ -211,7 +211,7 @@ class veo_node extends BaseNode {
                 });
 
                 const operationName = response.data.name;
-                webconsole.info(`VEO NODE | Video generation initiated.`);
+                webconsole.info(`VEO NODE | Video generation initiated. Operation ID: ${operationName.split("/").at(-1)}`);
                 return operationName;
 
             } catch (error) {
@@ -237,7 +237,7 @@ class veo_node extends BaseNode {
             while (Date.now() - startTime < POLLING_TIMEOUT_MS) {
                 try {
                     const response = await axios.post(pollUrl, 
-                        { name: operationName }, 
+                        { "operationName": operationName }, 
                         {
                             headers: {
                                 'Authorization': `Bearer ${accessToken}`,
@@ -290,6 +290,7 @@ class veo_node extends BaseNode {
                 const response = await axios.post(url, form, {
                     headers: {
                         ...form.getHeaders(),
+                        'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
                     },
                 });
 
