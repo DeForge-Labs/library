@@ -148,9 +148,7 @@ class veo3_node extends BaseNode {
             const requestBody = {
                 instances: [
                     {
-                        prompt: {
-                            text: Prompt,
-                        },
+                        prompt: Prompt,
                     },
                 ],
                 parameters: {
