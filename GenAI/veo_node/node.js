@@ -127,8 +127,8 @@ class veo_node extends BaseNode {
         let Duration = DurationFilter?.value || contents.find((e) => e.name === "Duration")?.value || 8;
 
         const Model = contents.find((e) => e.name === "Model")?.value || "Veo3";
-        const Ratio = contents.find((e) => e.name === "Ratio")?.value || "16:9";
-        const Audio = contents.find((e) => e.name === "Generate Audio")?.value || true;
+        let Ratio = contents.find((e) => e.name === "Ratio")?.value || "16:9";
+        let Audio = contents.find((e) => e.name === "Generate Audio")?.value || true;
         const PersonFilter = contents.find((e) => e.name === "Person")?.value || "Allow adults";
         const Person = (PersonFilter == "Allow adults") ? "allow_adult" : "dont_allow";
 
