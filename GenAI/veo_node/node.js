@@ -168,7 +168,7 @@ class veo_node extends BaseNode {
         }
 
         const getAccessToken = () => {
-            webconsole.info('VEO NODE | Obtaining Google Cloud access token...');
+            webconsole.info('VEO NODE | Obtaining Google Cloud access token');
             return new Promise((resolve, reject) => {
                 exec('gcloud auth print-access-token', (error, stdout, stderr) => {
                     if (error) {
