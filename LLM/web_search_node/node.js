@@ -61,7 +61,7 @@ const config = {
             ],
         },
     ],
-    difficulty: "medium",
+    difficulty: "easy",
     tags: ["llm", "search", "web"],
 }
 
