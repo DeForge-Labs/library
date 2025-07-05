@@ -9,11 +9,11 @@ import FormData from "form-data";
 dotenv.config();
 
 const config = {
-    title: "Veo3 AI Video",
+    title: "Veo AI Video",
     category: "GenAI",
-    type: "veo3_node",
+    type: "veo_node",
     icon: {},
-    desc: "Generate AI videos using Google Veo3",
+    desc: "Generate AI videos using Google Veo",
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -29,6 +29,11 @@ const config = {
             desc: "Negative video generation prompt",
             name: "Negative Prompt",
             type: "Text",
+        },
+        {
+            desc: "Duration of the video (only applicable for Veo2)",
+            name: "Duration",
+            type: "Number",
         },
     ],
     outputs: [
@@ -52,7 +57,26 @@ const config = {
             value: "Enter text here...",
         },
         {
-            desc: "Aspect ratio of the video",
+            desc: "Duration of the video (only applicable for Veo2)",
+            name: "Duration",
+            type: "Slider",
+            value: 6,
+            min: 5,
+            max: 8,
+            step: 1,
+        },
+        {
+            desc: "Model to be used for video generation",
+            name: "Model",
+            type: "select",
+            value: "Veo3",
+            options: [
+            "Veo3",
+            "Veo2"        
+            ],
+        },
+        {
+            desc: "Aspect ratio of the video (applicable only for Veo2)",
             name: "Ratio",
             type: "select",
             value: "16:9",
@@ -62,13 +86,7 @@ const config = {
             ],
         },
         {
-            desc: "Enhance the prompt using Gemini",
-            name: "Enhance Prompt",
-            type: "CheckBox",
-            value: false,
-        },
-        {
-            desc: "Generate audio along with video",
+            desc: "Generate audio along with video (applicable only for Veo3)",
             name: "Generate Audio",
             type: "CheckBox",
             value: true,
@@ -88,7 +106,7 @@ const config = {
     tags: ["veo", "google", "ai", "video"],
 }
 
-class veo3_node extends BaseNode {
+class veo_node extends BaseNode {
 
     constructor() {
         super(config);
@@ -97,7 +115,7 @@ class veo3_node extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
 
-        webconsole.info("VEO3 NODE | Configuring model");
+        webconsole.info("VEO NODE | Configuring model");
         
         const PromptFilter = inputs.find((e) => e.name === "Prompt");
         const Prompt = PromptFilter?.value || contents.find((e) => e.name === "Prompt")?.value || "";
@@ -105,36 +123,56 @@ class veo3_node extends BaseNode {
         const NegPromptFilter = inputs.find((e) => e.name === "Negative Prompt");
         const NegPrompt = NegPromptFilter?.value || contents.find((e) => e.name === "Negative Prompt")?.value || "";
 
-        const Ratio = contents.find((e) => e.name === "Ratio")?.value || "16:9";
-        const Enhance = contents.find((e) => e.name === "Enhance Prompt")?.value || false;
-        const Audio = contents.find((e) => e.name === "Generate Audio")?.value || true;
+        const DurationFilter = inputs.find((e) => e.name === "Duration");
+        let Duration = DurationFilter?.value || contents.find((e) => e.name === "Duration")?.value || 8;
 
+        const Model = contents.find((e) => e.name === "Model")?.value || "Veo3";
+        const Ratio = contents.find((e) => e.name === "Ratio")?.value || "16:9";
+        const Audio = contents.find((e) => e.name === "Generate Audio")?.value || true;
         const PersonFilter = contents.find((e) => e.name === "Person")?.value || "Allow adults";
         const Person = (PersonFilter == "Allow adults") ? "allow_adult" : "dont_allow";
 
-        if (!Prompt) {
-            webconsole.error("VEO3 NODE | No Prompt provided");
+        const ModelDict = {
+            "Veo3": "veo-3.0-generate-preview",
+            "Veo2": "veo-2.0-generate-001"
+        }
+        if (!Object.keys(ModelDict).includes(Model)) {
+            webconsole.error("VEO NODE | Unknown model selected");
             return null;
+        }
+
+        if (!Prompt) {
+            webconsole.error("VEO NODE | No Prompt provided");
+            return null;
+        }
+
+        if (Model === "Veo3") {
+            Duration = 8;
+            Ratio = "16:9";
+        }
+        else {
+            Duration = Math.max(5, Math.min(Duration, 8));
+            Audio = false;
         }
 
         const PROJECT_ID = process.env.VEO_PROJECT_ID;
         const LOCATION_ID = process.env.VEO_LOCATION_ID || 'us-central1';
         const API_ENDPOINT = process.env.VEO_API_ENDPOINT || 'us-central1-aiplatform.googleapis.com';
-        const MODEL_ID = process.env.VEO_MODEL_ID || 'veo-3.0-generate-preview';
+        const MODEL_ID = ModelDict[Model];
         const POLLING_INTERVAL_MS = 10000;
         const POLLING_TIMEOUT_MS = 30 * 60 * 1000;
 
         if (!PROJECT_ID) {
-            webconsole.error("VEO3 NODE | VEO_PROJECT_ID not set in .env file");
+            webconsole.error("VEO NODE | VEO_PROJECT_ID not set in .env file");
             return null;
         }
 
         const getAccessToken = () => {
-            webconsole.info('VEO3 NODE | Obtaining Google Cloud access token...');
+            webconsole.info('VEO NODE | Obtaining Google Cloud access token...');
             return new Promise((resolve, reject) => {
                 exec('gcloud auth print-access-token', (error, stdout, stderr) => {
                     if (error) {
-                        webconsole.error(`VEO3 NODE | gcloud auth error: ${error.message}`);
+                        webconsole.error(`VEO NODE | gcloud auth error: ${error.message}`);
                         return reject(new Error('Failed to get Google Cloud access token. Is gcloud CLI installed and authenticated?'));
                     }
                     resolve(stdout.trim());
@@ -154,7 +192,7 @@ class veo3_node extends BaseNode {
                 parameters: {
                     aspectRatio: Ratio,
                     sampleCount: 1,
-                    durationSeconds: "8",
+                    durationSeconds: Duration,
                     personGeneration: Person,
                     addWatermark: true,
                     includeRaiReason: true,
@@ -163,7 +201,7 @@ class veo3_node extends BaseNode {
                 },
             };
 
-            webconsole.info('VEO3 NODE | Sending video generation request to Veo3...');
+            webconsole.info('VEO NODE | Sending video generation request to Veo3...');
             try {
                 const response = await axios.post(predictUrl, requestBody, {
                     headers: {
@@ -173,20 +211,20 @@ class veo3_node extends BaseNode {
                 });
 
                 const operationName = response.data.name;
-                webconsole.info(`VEO3 NODE | Video generation initiated. Operation ID: ${operationName}`);
+                webconsole.info(`VEO NODE | Video generation initiated.`);
                 return operationName;
 
             } catch (error) {
-                webconsole.error(`VEO3 NODE | Error initiating video generation with Veo3: ${error.message}`);
+                webconsole.error(`VEO NODE | Error initiating video generation with Veo3: ${error.message}`);
                 if (error.response) {
-                    webconsole.error(`VEO3 NODE | Veo3 Response: ${JSON.stringify(error.response.data)}`);
+                    webconsole.error(`VEO NODE | Veo3 Response: ${JSON.stringify(error.response.data)}`);
                 }
                 throw error;
             }
         }
 
         const pollVeo3Operation = async (accessToken, operationName) => {
-            const operationUrl = `https://${API_ENDPOINT}/v1/${operationName}`;
+            const pollUrl = `https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/${LOCATION_ID}/publishers/google/models/${MODEL_ID}:fetchPredictOperation`;
             const startTime = Date.now();
             const tempDir = "./runtime_files";
             if (!await fs.stat(tempDir).catch(() => null)) {
@@ -194,15 +232,19 @@ class veo3_node extends BaseNode {
             }
             const outputVideoFilename = path.join(tempDir, `generated_video_${Date.now()}.mp4`);
 
-            webconsole.info(`VEO3 NODE | Polling operation: ${operationName}`);
+            webconsole.info(`VEO NODE | Polling operation`);
 
             while (Date.now() - startTime < POLLING_TIMEOUT_MS) {
                 try {
-                    const response = await axios.get(operationUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                        },
-                    });
+                    const response = await axios.post(pollUrl, 
+                        { name: operationName }, 
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json; charset=utf-8',
+                            },
+                        }
+                    );
 
                     const operation = response.data;
 
@@ -210,22 +252,24 @@ class veo3_node extends BaseNode {
                         if (operation.error) {
                             throw new Error(`Veo3 operation failed: ${JSON.stringify(operation.error)}`);
                         }
-                        if (operation.response && operation.response.predictions && operation.response.predictions.length > 0) {
-                            const prediction = operation.response.predictions[0];
-                            if (prediction.video && prediction.video.blob) {
-                                const videoData = prediction.video.blob;
-                                const videoBuffer = Buffer.from(videoData, 'base64');
+                        if (operation.response && operation.response.videos && operation.response.videos.length > 0) {
+                            const video = operation.response.videos[0];
+                            if (video.bytesBase64Encoded) {
+                                const videoBuffer = Buffer.from(video.bytesBase64Encoded, 'base64');
                                 await fs.writeFile(outputVideoFilename, videoBuffer);
-                                webconsole.success(`VEO3 NODE | Video successfully saved to ${outputVideoFilename}`);
+                                webconsole.success(`VEO NODE | Video successfully saved to ${outputVideoFilename}`);
                                 return outputVideoFilename;
                             }
                         }
-                        throw new Error('Veo3 operation done, but no video blob found in response.');
+                        throw new Error('Veo3 operation done, but no video data found in response.');
                     } else {
-                        webconsole.info(`VEO3 NODE | Operation ${operationName} still in progress...`);
+                        webconsole.info(`VEO NODE | Operation still in progress...`);
                     }
                 } catch (error) {
-                    webconsole.error(`VEO3 NODE | Error polling Veo3 operation: ${error.message}`);
+                    webconsole.error(`VEO NODE | Error polling Veo3 operation: ${error.message}`);
+                    if (error.response) {
+                        webconsole.error(`VEO NODE | Polling Response: ${JSON.stringify(error.response.data)}`);
+                    }
                     throw error;
                 }
 
@@ -241,7 +285,7 @@ class veo3_node extends BaseNode {
             const fileStream = await fs.readFile(filePath);
             form.append('file', fileStream, { filename: path.basename(filePath) });
 
-            webconsole.info(`VEO3 NODE | Uploading ${filePath} to 0x0.st...`);
+            webconsole.info(`VEO NODE | Uploading ${filePath} to 0x0.st...`);
             try {
                 const response = await axios.post(url, form, {
                     headers: {
@@ -251,13 +295,13 @@ class veo3_node extends BaseNode {
 
                 if (response.status === 200) {
                     const uploadedUrl = response.data.trim();
-                    webconsole.success(`VEO3 NODE | Video uploaded successfully to: ${uploadedUrl}`);
+                    webconsole.success(`VEO NODE | Video uploaded successfully to: ${uploadedUrl}`);
                     return uploadedUrl;
                 } else {
                     throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
                 }
             } catch (error) {
-                webconsole.error(`VEO3 NODE | Error uploading to 0x0.st: ${error.message}`);
+                webconsole.error(`VEO NODE | Error uploading to 0x0.st: ${error.message}`);
                 throw error;
             }
         }
@@ -275,13 +319,13 @@ class veo3_node extends BaseNode {
             }
             return null;
         } catch (error) {
-            webconsole.error(`VEO3 NODE | An error occurred during the process: ${error.message}`);
+            webconsole.error(`VEO NODE | An error occurred during the process: ${error.message}`);
             if (videoFilePath) {
                 try {
                     await fs.unlink(videoFilePath);
-                    webconsole.info(`VEO3 NODE | Cleaned up temporary video file: ${videoFilePath}`);
+                    webconsole.info(`VEO NODE | Cleaned up temporary video file: ${videoFilePath}`);
                 } catch (cleanupError) {
-                    webconsole.error(`VEO3 NODE | Could not clean up ${videoFilePath}: ${cleanupError.message}`);
+                    webconsole.error(`VEO NODE | Could not clean up ${videoFilePath}: ${cleanupError.message}`);
                 }
             }
             return null;
@@ -289,4 +333,4 @@ class veo3_node extends BaseNode {
     }
 }
 
-export default veo3_node;
+export default veo_node;
