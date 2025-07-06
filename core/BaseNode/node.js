@@ -56,6 +56,9 @@ class Node {
      * The main method that runs all nodes.
      * Need to be overidden.
      * @param {JSON} inputs The inputs to the node
+     * @param {JSON} contents The field data of the nodes
+     * @param {Object} webconsole The console object for logging to the execution logs on the app
+     * @param {JSON} serverData contains useful information from the server
      */
     async run(inputs, contents, webconsole, serverData) {
         
