@@ -71,13 +71,25 @@ class cal_schedule extends BaseNode {
     const meetingLink =
       meetingLinkFilter.length > 0
         ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0].value;
+        : contents.filter((e) => e.name === "Meeting Link")[0].value
+        || "";
+
+    if (!meetingLink.trim()) {
+      webconsole.error("CAL BOOK | Meeting link not provided");
+      return null;
+    }
 
     const timezoneFilter = inputs.filter((e) => e.name === "timezone");
     const timezone =
       timezoneFilter.length > 0
         ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0].value;
+        : contents.filter((e) => e.name === "timezone")[0].value
+        || "";
+
+    if (!timezone.trim()) {
+      webconsole.error("CAL BOOK | No timezone provided");
+      return null;
+    }
 
     try {
       const userName = meetingLink.split("/")[3];

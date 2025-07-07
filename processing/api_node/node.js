@@ -79,21 +79,29 @@ class api_node extends BaseNode {
     const endpoint =
       endpointFilter.length > 0
         ? endpointFilter[0].value
-        : contents.filter((e) => e.name === "endpoint")[0].value;
+        : contents.filter((e) => e.name === "endpoint")[0].value
+        || "";
+
+    if (!endpoint.trim()) {
+      webconsole.error("API NODE | No endpoint found");
+      return null;
+    }
 
     const bodyFilter = inputs.filter((e) => e.name === "body");
     const body =
       bodyFilter.length > 0
         ? bodyFilter[0].value
-        : contents.filter((e) => e.name === "body")[0].value;
+        : contents.filter((e) => e.name === "body")[0].value
+        || {};
 
     const headersFilter = inputs.filter((e) => e.name === "headers");
     const headers =
       headersFilter.length > 0
         ? headersFilter[0].value
-        : contents.filter((e) => e.name === "headers")[0].value;
+        : contents.filter((e) => e.name === "headers")[0].value
+        || {};
 
-    const method = contents.filter((e) => e.name === "method")[0].value;
+    const method = contents.filter((e) => e.name === "method")[0].value || "GET";
 
     const requestConfig = {
       method: method,

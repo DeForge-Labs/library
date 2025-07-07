@@ -2,9 +2,9 @@
 
 This guide will help you create your own node for the Deforge system. Please follow all instructions carefully to ensure compatibility and maintainability.
 
-## 1. Extend from BaseNode
+## Extend from BaseNode
 
-Every node **must** extend the `BaseNode` class (imported from `../../core/BaseNode/node.js`).
+Every node **must** extend the `BaseNode` class (imported from `../../core/BaseNode/node.js`) and implement the `run()` method.
 
 ```js
 import BaseNode from "../../core/BaseNode/node.js";
@@ -14,10 +14,14 @@ class my_node extends BaseNode {
         super(config);
     }
     // ...
+
+    async run(inputs, contents, webconsole, serverData) {
+
+    }
 }
 ```
 
-## 2. Node Configuration Format
+## Node Configuration Format
 
 Each node file **must** define a `config` object at the top, following the format below (see `BaseNode/node.js` for reference):
 
@@ -45,7 +49,7 @@ const config = {
 }
 ```
 
-## 3. Accessing Inputs and Contents
+## Accessing Inputs and Contents
 
 Each node's `run` method receives `inputs` and `contents` arrays. To get a value, you should **prioritize `inputs` over `contents`**. Here is a recommended pattern:
 
@@ -62,7 +66,25 @@ const Link = inputs.find(e => e.name === "Link")?.value
     || "";
 ```
 
-## 4. Returning Output
+## Accessing other information
+
+You can access some information passed on from the server via the `serverData` object. The object contains the following data:
+
+```js
+serverData: {
+    workflowId: workflowId,
+    envList: envList,
+    socialList: socialList,
+    chatId: chatId,
+},
+```
+
+- `workflowId`: ID of the workflow being executed, that is calling the given node.
+- `envList`: A key-value pair list of env variables for the given workflow.
+- `socialList`: A key-value pair list of the social accounts and access tokens for the connected accounts in the given workflow.
+- `chatId`: A chat or user ID of the user executing the workflow. _(Must be passed as a `chatId` query via the deployment url)_
+
+## Returning Output
 
 Return an object with output names as keys:
 
@@ -77,7 +99,7 @@ return { "Video Link": uploadedUrl };
 
 If your node can fail, return `null`.
 
-## 5. Logging
+## Logging
 
 Use the `webconsole` object for logging. It has three methods:
 - `webconsole.success(...args)`
@@ -91,7 +113,7 @@ webconsole.success("Upload complete", resultUrl);
 webconsole.error("Failed to process", error.message);
 ```
 
-## 6. Node Self-Containment & Dependencies
+## Node Self-Containment & Dependencies
 
 Each node is **self-contained**. You must install all required npm packages for each node **inside that node's folder** (where its `package.json` is located). For example, if your node uses `axios`, run:
 
@@ -100,7 +122,7 @@ cd path/to/your/node_folder
 npm install axios
 ```
 
-## 7. Example Node Skeleton
+## Example Node Skeleton
 
 ```js
 import BaseNode from "../../core/BaseNode/node.js";

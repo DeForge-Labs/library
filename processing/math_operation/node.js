@@ -65,15 +65,30 @@ class math_operation extends BaseNode {
 
     const Number1Filter = inputs.filter((e) => e.name === "Number 1");
     const Number1data =
-      Number1Filter.length > 0 ? Number1Filter[0].value : contents[0].value;
+      Number1Filter.length > 0 ? Number1Filter[0].value : contents[0].value || "";
+
+    if (!Number1data) {
+      webconsole.error("MATH OPERATION | Number 1 not found");
+      return null;
+    }
 
     const Number2Filter = inputs.filter((e) => e.name === "Number 2");
     const Number2data =
-      Number2Filter.length > 0 ? Number2Filter[0].value : contents[1].value;
+      Number2Filter.length > 0 ? Number2Filter[0].value : contents[1].value || "";
+
+    if (!Number2data) {
+      webconsole.error("MATH OPERATION | Number 2 not found");
+      return null;
+    }
 
     const OperationFilter = inputs.filter((e) => e.name === "Operation");
     const Operationdata =
-      OperationFilter.length > 0 ? OperationFilter[0].value : contents[2].value;
+      OperationFilter.length > 0 ? OperationFilter[0].value : contents[2].value || "";
+
+    if (!Operationdata) {
+      webconsole.error("MATH OPERATION | Operator not found");
+      return null;
+    }
 
     try {
       if (

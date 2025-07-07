@@ -44,7 +44,7 @@ class num_to_text extends BaseNode {
   async run(inputs, contents, webconsole, serverData) {
     const NumFilter = inputs.filter((e) => e.name === "Number");
     const NumData =
-      NumFilter.length > 0 ? NumFilter[0].value : contents[0].value;
+      NumFilter.length > 0 ? NumFilter[0].value : contents[0].value || "";
 
     try {
       if (NumData === null || NumData === undefined || NumData === NaN) {

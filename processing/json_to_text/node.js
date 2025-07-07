@@ -44,7 +44,7 @@ class json_to_text extends BaseNode {
   async run(inputs, contents, webconsole, serverData) {
     const JSONFilter = inputs.filter((e) => e.name === "JSON");
     const JSONdata =
-      JSONFilter.length > 0 ? JSONFilter[0].value : contents[0].value;
+      JSONFilter.length > 0 ? JSONFilter[0].value : contents[0].value || {};
 
     try {
       if (JSONdata === null || JSONdata === undefined) {

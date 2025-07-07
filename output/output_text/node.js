@@ -37,11 +37,16 @@ class output_text extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        const StringOutput = Object.keys(inputs).length > 0 ? inputs[0].value : "";
+        try {
+            const StringOutput = Object.keys(inputs).length > 0 ? inputs[0].value : "";
 
-        webconsole.info("TEXT OUTPUT | Emmitting JSON output");
+            webconsole.info("TEXT OUTPUT | Emmitting JSON output");
 
-        return StringOutput;
+            return StringOutput;
+        } catch (error) {
+            webconsole.error("TEXT OUTPUT | Some error occured: ", error);
+            return null;
+        }
     }
 }
 

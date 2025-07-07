@@ -65,27 +65,39 @@ class tg_trigger extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        webconsole.info("TG NODE | Started execution");
+        try {
+            webconsole.info("TG NODE | Started execution");
 
-        const payload = serverData.tgPayload;
+            const payload = serverData.tgPayload;
 
-        const onStartFilter = inputs.filter((e) => e.name === "On Start");
-        let onStartText = onStartFilter.length > 0 ? onStartFilter[0].value : contents.filter((e) => e.name === "On Start")[0].value;
-        onStartText = onStartText.length > 4096 ? onStartText.slice(0, -3) + "..." : onStartText;
+            const onStartFilter = inputs.filter((e) => e.name === "On Start");
+            let onStartText = onStartFilter.length > 0 ? onStartFilter[0].value : contents.filter((e) => e.name === "On Start")[0].value || "";
+            onStartText = onStartText.length > 4096 ? onStartText.slice(0, -3) + "..." : onStartText;
 
-        const msg = payload.message.text;
-        const chatID = serverData.chatId;
-        const userName = payload.message.from.username;
-        const isCommand = Object.keys(payload.message).includes("entities");
+            const msg = payload.message.text;
+            const chatID = serverData.chatId;
+            const userName = payload.message.from.username;
+            const isCommand = Object.keys(payload.message).includes("entities");
 
-        const botToken = serverData.envList?.TG_API_KEY || "";
+            const botToken = serverData.envList?.TG_API_KEY || "";
 
-        if (isCommand && msg.startsWith("/start")) {
+            if (isCommand && msg.startsWith("/start")) {
 
-            const startResponse = await axios.get(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatID}&text=${onStartText}`);
+                const startResponse = await axios.get(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatID}&text=${onStartText}`);
 
-            if (startResponse.data.ok) {
-                webconsole.success("TG NODE | Recieved start message, responded successfully");
+                if (startResponse.data.ok) {
+                    webconsole.success("TG NODE | Recieved start message, responded successfully");
+                    return {
+                        "Flow": false,
+                        "Message": msg,
+                        "Chat ID": chatID,
+                        "Username": userName,
+                        "Is Command": isCommand,
+                        "__terminate": true,
+                    };
+                }
+
+                webconsole.error(`TG NODE | Recieved start message but some error occured when responding \nError code: ${startResponse.data.error_code}, Description: ${startResponse.data.description}`);
                 return {
                     "Flow": false,
                     "Message": msg,
@@ -96,25 +108,18 @@ class tg_trigger extends BaseNode {
                 };
             }
 
-            webconsole.error(`TG NODE | Recieved start message but some error occured when responding \nError code: ${startResponse.data.error_code}, Description: ${startResponse.data.description}`);
+            webconsole.success("TG NODE | Message recieved, continuing flow");
             return {
-                "Flow": false,
+                "Flow": true,
                 "Message": msg,
                 "Chat ID": chatID,
                 "Username": userName,
                 "Is Command": isCommand,
-                "__terminate": true,
             };
+        } catch (error) {
+            webconsole.error("TG NODE | Some error occured");
+            return null;
         }
-
-        webconsole.success("TG NODE | Message recieved, continuing flow");
-        return {
-            "Flow": true,
-            "Message": msg,
-            "Chat ID": chatID,
-            "Username": userName,
-            "Is Command": isCommand,
-        };
     }
 }
 

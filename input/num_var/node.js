@@ -32,8 +32,23 @@ class num_var extends BaseNode {
     }
 
     async run(inputs, contents, webconsole, serverData) {
-        webconsole.info("Number Input | emitting output value");
-        return contents[0].value;
+        try {
+            if (contents.length === 0) {
+                webconsole.error("NUMBER INPUT | No input given");
+                return null;
+            }
+
+            if ([NaN, undefined, null].includes(typeof(contents[0].value))) {
+                webconsole.error("NUMBER NODE | Invalid input given");
+                return null;
+            }
+
+            webconsole.info("NUMBER INPUT | emitting output value");
+            return contents[0].value;
+        } catch (error) {
+            webconsole.error("NUMBER NODE | Some error occured: ", error);
+            return null;
+        }
     }
 }
 

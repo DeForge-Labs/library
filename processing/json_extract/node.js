@@ -58,10 +58,10 @@ class json_extract extends BaseNode {
         webconsole.info("JSON EXTRACT | Executing node");
 
         const JSONFilter = inputs.filter((e) => e.name === "Object");
-        const JSONdata = JSONFilter.length > 0 ? JSONFilter[0].value : contents.filter((e) => e.name === "Object")[0].value;
+        const JSONdata = JSONFilter.length > 0 ? JSONFilter[0].value : contents.filter((e) => e.name === "Object")[0].value || {};
 
         const keyFilter = inputs.filter((e) => e.name === "Key");
-        const key = keyFilter.length > 0 ? keyFilter[0].value : contents.filter((e) => e.name === "Key")[0].value;
+        const key = keyFilter.length > 0 ? keyFilter[0].value : contents.filter((e) => e.name === "Key")[0].value || "";
 
         if (Object.keys(JSONdata).includes(key)) {
             const value = JSONdata[key];

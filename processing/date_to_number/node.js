@@ -47,7 +47,12 @@ class date_to_number extends BaseNode {
 
     const DateFilter = inputs.filter((e) => e.name === "Date");
     const Datedata =
-      DateFilter.length > 0 ? DateFilter[0].value : contents[0].value;
+      DateFilter.length > 0 ? DateFilter[0].value : contents[0].value || "";
+
+    if (!Datedata) {
+      webconsole.error("DATE TO NUM NODE | No date provided");
+      return null;
+    }
 
     try {
       if (Datedata === null || Datedata === undefined) {

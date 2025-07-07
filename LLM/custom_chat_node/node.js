@@ -320,20 +320,34 @@ class custom_chat_node extends BaseNode {
             webconsole.info("CUSTOM NODE | Starting LangGraph-based chat node");
             
             const endpointFilter = inputs.filter((e) => e.name === "Endpoint");
-            const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "Endpoint")[0].value;
+            const endpoint = endpointFilter.length > 0 ? endpointFilter[0].value : contents.filter((e) => e.name === "Endpoint")[0].value || "";
+
+            if (!endpoint.trim()) {
+                webconsole.error("CUSTOM NODE | No endpoint provided");
+                return null;
+            }
             
             const queryFilter = inputs.filter((e) => e.name === "Query");
-            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
+
+            if (!query.trim()) {
+                webconsole.error("CUSTOM NODE | No query provided");
+            }
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
-            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
+            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
-            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
+            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
 
-            const model = contents.filter((e) => e.name === "Model")[0].value;
-            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
+            const model = contents.filter((e) => e.name === "Model")[0].value || "";
+
+            if (!model.trim()) {
+                webconsole.error("CUSTOM NODE | No model provided");
+            }
+
+            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
             const ragTableName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";

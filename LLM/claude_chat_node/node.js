@@ -318,6 +318,11 @@ class claude_chat_node extends BaseNode {
             const queryFilter = inputs.filter((e) => e.name === "Query");
             let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
 
+            if (!query.trim()) {
+                webconsole.error(`CLAUDE NODE | No query found`);
+                return null;
+            }
+
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 

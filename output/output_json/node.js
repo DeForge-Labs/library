@@ -38,11 +38,16 @@ class output_json extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
 
-        const JSONOutput = Object.keys(inputs).length > 0 ? inputs[0].value : {};
+        try {
+            const JSONOutput = Object.keys(inputs).length > 0 ? inputs[0].value : {};
 
-        webconsole.info("JSON OUTPUT | Emmitting JSON output");
+            webconsole.info("JSON OUTPUT | Emmitting JSON output");
 
-        return JSONOutput;
+            return JSONOutput;
+        } catch (error) {
+            webconsole.error("JSON OUTPUT | Some error occured: ", error);
+            return null;
+        }
     }
 }
 

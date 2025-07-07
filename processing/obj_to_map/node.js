@@ -44,24 +44,29 @@ class obj_to_map extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
         
-        webconsole.info("OBJECT TO MAP NODE | Gathering objects");
-        let pairMap = {};
+        try {
+            webconsole.info("OBJECT TO MAP NODE | Gathering objects");
+            let pairMap = {};
 
-        const inputObjsFilter = inputs.find((e) => e.name === "objects");
-        const inputObjs = inputObjsFilter?.value || [];
+            const inputObjsFilter = inputs.find((e) => e.name === "objects");
+            const inputObjs = inputObjsFilter?.value || [];
 
-        for (const obj of inputObjs) {
-            const key = Object.keys(obj.value)[0];
-            const value = Object.values(obj.value)[0];
+            for (const obj of inputObjs) {
+                const key = Object.keys(obj.value)[0];
+                const value = Object.values(obj.value)[0];
 
-            pairMap[key] = value;
+                pairMap[key] = value;
+            }
+
+            webconsole.success(`OBJECT TO MAP NODE | Successfully converted  data`)
+
+            return {
+                "map": pairMap,
+            };
+        } catch (error) {
+            webconsole.error("OBJECT TO MAP NODE | Some error occured: ", error);
+            return null;
         }
-
-        webconsole.success(`OBJECT TO MAP NODE | Successfully converted  data`)
-
-        return {
-            "map": pairMap,
-        };
     }
 }
 

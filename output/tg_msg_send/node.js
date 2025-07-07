@@ -98,13 +98,28 @@ class tg_msg_send extends BaseNode {
         webconsole.info("TG MSG NODE | Started execution");
 
         const MessageFilter = inputs.filter((e) => e.name === "Message");
-        let Message = MessageFilter.length > 0 ? MessageFilter[0].value : contents.filter((e) => e.name === "Message")[0].value;
+        let Message = MessageFilter.length > 0 ? MessageFilter[0].value : contents.filter((e) => e.name === "Message")[0].value || "";
         Message = Message.length > 4096 ? Message.slice(0, -3) + "..." : Message;
 
+        if (!Message) {
+            webconsole.error("TG MSG NODE | Message contents empty");
+            return null;
+        }
+
         const UserFilter = inputs.filter((e) => e.name === "ChatID");
-        let UserID = UserFilter.length > 0 ? UserFilter[0].value : contents.filter((e) => e.name === "ChatID")[0].value;
+        let UserID = UserFilter.length > 0 ? UserFilter[0].value : contents.filter((e) => e.name === "ChatID")[0].value || "";
+        
+        if (!UserID) {
+            webconsole.error("TG MSG NODE | No User ID found");
+            return null;
+        }
 
         const botToken = serverData.envList?.TG_API_KEY || "";
+
+        if (!botToken) {
+            webconsole.error("TG MSG NODE | No Bot token found");
+            return null;
+        }
 
         // First try to send with MarkdownV2 format
         try {

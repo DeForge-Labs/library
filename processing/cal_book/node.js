@@ -110,37 +110,72 @@ class cal_book extends BaseNode {
     const name =
       nameFilter.length > 0
         ? nameFilter[0].value
-        : contents.filter((e) => e.name === "Name")[0].value;
+        : contents.filter((e) => e.name === "Name")[0].value
+        || "";
+
+    if (!name.trim()) {
+      webconsole.error("CAL BOOK | No Name found");
+      return null;
+    }
 
     const emailFilter = inputs.filter((e) => e.name === "Email");
     const email =
       emailFilter.length > 0
         ? emailFilter[0].value
-        : contents.filter((e) => e.name === "Email")[0].value;
+        : contents.filter((e) => e.name === "Email")[0].value
+        | "";
+
+    if (!email.trim()) {
+      webconsole.error("CAL BOOK | No email provided");
+      return null;
+    }
 
     const meetingLinkFilter = inputs.filter((e) => e.name === "Meeting Link");
     const meetingLink =
       meetingLinkFilter.length > 0
         ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0].value;
+        : contents.filter((e) => e.name === "Meeting Link")[0].value
+        || "";
+
+    if (!meetingLink.trim()) {
+      webconsole.error("CAL BOOK | Meeting link not provided");
+      return null;
+    }
 
     const timezoneFilter = inputs.filter((e) => e.name === "timezone");
     const timezone =
       timezoneFilter.length > 0
         ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0].value;
+        : contents.filter((e) => e.name === "timezone")[0].value
+        || "";
+
+    if (!timezone.trim()) {
+      webconsole.error("CAL BOOK | No timezone provided");
+      return null;
+    }
 
     const dateFilter = inputs.filter((e) => e.name === "Date");
     const date =
       dateFilter.length > 0
         ? dateFilter[0].value
-        : contents.filter((e) => e.name === "Date")[0].value;
+        : contents.filter((e) => e.name === "Date")[0].value || "";
+
+    if (!date) {
+      webconsole.error("CAL BOOK | No date provided");
+      return null;
+    }
 
     const durationFilter = inputs.filter((e) => e.name === "Duration");
     const duration =
       durationFilter.length > 0
         ? durationFilter[0].value
-        : contents.filter((e) => e.name === "Duration")[0].value;
+        : contents.filter((e) => e.name === "Duration")[0].value
+        || "30mins";
+
+    if (!duration.trim()) {
+      webconsole.error("CAL BOOK | Duration not selected");
+      return null;
+    }
 
     try {
       const eventIdPayload = await axios.get(meetingLink);

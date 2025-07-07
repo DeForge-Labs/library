@@ -50,16 +50,26 @@ class obj_var extends BaseNode {
 
     async run(inputs, contents, webconsole, serverData) {
         
-        const keyFilter = inputs.filter((e) => e.name === "key");
-        const key = keyFilter.length > 0 ? keyFilter[0].value : contents.filter((e) => e.name === "key")[0].value;
+        try {
+            const keyFilter = inputs.filter((e) => e.name === "key");
+            const key = keyFilter.length > 0 ? keyFilter[0].value : contents.filter((e) => e.name === "key")[0].value || "";
 
-        const valueFilter = inputs.filter((e) => e.name === "value");
-        const value = valueFilter.length > 0 ? valueFilter[0].value : contents.filter((e) => e.name === "value")[0].value;
+            const valueFilter = inputs.filter((e) => e.name === "value");
+            const value = valueFilter.length > 0 ? valueFilter[0].value : contents.filter((e) => e.name === "value")[0].value || "";
 
-        webconsole.success("OBJECT NODE | Emmitting JSON");
-        return {
-            [key]: value
-        };
+            if (!key || !value) {
+                webconsole.error("OBJECT NODE | Key or Value missing");
+                return null;
+            }
+
+            webconsole.success("OBJECT NODE | Emmitting JSON");
+            return {
+                [key]: value
+            };
+        } catch (error) {
+            webconsole.error("OBJECT NODE | Some error occured: ", error);
+            return null;
+        }
     }
 }
 

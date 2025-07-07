@@ -47,7 +47,12 @@ class text_to_date extends BaseNode {
 
     const TextFilter = inputs.filter((e) => e.name === "Text");
     const Textdata =
-      TextFilter.length > 0 ? TextFilter[0].value : contents[0].value;
+      TextFilter.length > 0 ? TextFilter[0].value : contents[0].value || "";
+
+    if (!Textdata.trim()) {
+      webconsole.error("TEXT TO DATE NODE | Date not provided");
+      return null;
+    }
 
     try {
       if (Textdata === null || Textdata === undefined) {

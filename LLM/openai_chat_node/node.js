@@ -312,7 +312,6 @@ class openai_chat_node extends BaseNode {
         try {
             webconsole.info("OPENAI NODE | Starting LangGraph-based chat node");
             
-
             // Model tokens per minute limits (approximate, update as needed)
             const modelTokensPerMinute = {
                 "gpt-4o": 40000,
@@ -326,20 +325,23 @@ class openai_chat_node extends BaseNode {
             };
 
             const queryFilter = inputs.filter((e) => e.name === "Query");
-            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
+
+            if (!query.trim()) {
+                webconsole.error("OPENAI NODE | Query not found");
+                return null;
+            }
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
-            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
+            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
-            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
+            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
 
-            const model = contents.filter((e) => e.name === "Model")[0].value;
+            const model = contents.filter((e) => e.name === "Model")[0].value || "gpt-4o";
 
-            // --- Tokenizer logic (simple, for English text) ---
             function estimateTokens(text) {
-                // Approximate: 1 token ≈ 4 characters
                 return Math.ceil(text.length / 4);
             }
 
@@ -352,7 +354,7 @@ class openai_chat_node extends BaseNode {
                 query = query.slice(-maxChars);
                 webconsole.warn(`OPENAI NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
             }
-            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
+            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
             const ragTableName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
