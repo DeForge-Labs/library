@@ -82,12 +82,11 @@ const config = {
             type: "select",
             value: "gemini-2.0-flash",
             options: [
-                "gemini-2.5-pro-preview-05-06",
-                "gemini-2.5-flash-preview-04-17",
+                "gemini-2.5-pro",
+                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite-preview-06-17",
                 "gemini-2.0-flash",
-                "gemini-1.5-pro-latest",
-                "gemini-1.5-flash-latest",
-                "gemini-1.5-flash-8b-latest",
+                "gemini-2.0-flash-lite",
             ],
         },
         {
@@ -307,8 +306,17 @@ class google_chat_node extends BaseNode {
         try {
             webconsole.info("GOOGLE NODE | Starting LangGraph-based chat node");
             
+            // Model tokens per minute limits (RPM * avg tokens per request, very approximate)
+            const modelTokensPerMinute = {
+                "gemini-2.5-pro": 32000,
+                "gemini-2.5-flash": 240000,
+                "gemini-2.5-flash-lite-preview-06-17": 240000,
+                "gemini-2.0-flash": 240000,
+                "gemini-2.0-flash-lite": 200000,
+            };
+
             const queryFilter = inputs.filter((e) => e.name === "Query");
-            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
@@ -318,6 +326,21 @@ class google_chat_node extends BaseNode {
             temperature = Number(temperature);
 
             const model = contents.filter((e) => e.name === "Model")[0].value;
+
+            
+            function estimateTokens(text) {
+                return Math.ceil(text.length / 4);
+            }
+
+            // Trim query if needed to fit within tokens per minute limit
+            const maxTokensPerMinute = modelTokensPerMinute[model] || 32000;
+            const queryTokens = estimateTokens(query);
+            if (queryTokens > maxTokensPerMinute) {
+                const maxChars = maxTokensPerMinute * 4;
+                query = query.slice(-maxChars);
+                webconsole.warn(`GOOGLE NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
+            }
+            
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");

@@ -82,12 +82,11 @@ const config = {
             type: "select",
             value: "claude-3-5-sonnet-20241022",
             options: [
-                "claude-3-7-sonnet-20250219",
-                "claude-3-5-sonnet-20241022",
-                "claude-3-5-haiku-20241022",
-                "claude-3-opus-20240229",
-                "claude-3-sonnet-20240229",
-                "claude-3-haiku-20240307",
+                "claude-opus-4-0",
+                "claude-sonnet-4-0",
+                "claude-3-7-sonnet-latest",
+                "claude-3-5-sonnet-latest",
+                "claude-3-5-haiku-latest",
             ],
         },
         {
@@ -306,9 +305,19 @@ class claude_chat_node extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("CLAUDE NODE | Starting LangGraph-based chat node");
+
+            // Model tokens per minute limits (very approximate, based on standard API tiers)
+            const modelTokensPerMinute = {
+                "claude-opus-4-0": 20000,
+                "claude-sonnet-4-0": 20000,
+                "claude-3-7-sonnet-latest": 20000, 
+                "claude-3-5-sonnet-latest": 40000,
+                "claude-3-5-sonnet-20241022": 40000, 
+                "claude-3-5-haiku-latest": 50000, 
+            };
             
             const queryFilter = inputs.filter((e) => e.name === "Query");
-            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
@@ -318,6 +327,22 @@ class claude_chat_node extends BaseNode {
             temperature = Number(temperature);
 
             const model = contents.filter((e) => e.name === "Model")[0].value;
+
+            // --- Tokenizer logic (simple, for English text) ---
+            function estimateTokens(text) {
+                // Approximate: 1 token ≈ 4 characters
+                return Math.ceil(text.length / 4);
+            }
+
+            // Trim query if needed to fit within tokens per minute limit
+            const maxTokensPerMinute = modelTokensPerMinute[model] || 400000; // Default to a safe limit
+            const queryTokens = estimateTokens(query);
+            if (queryTokens > maxTokensPerMinute) {
+                const maxChars = maxTokensPerMinute * 4;
+                query = query.slice(-maxChars);
+                webconsole.warn(`CLAUDE NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
+            }
+
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");

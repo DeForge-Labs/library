@@ -86,11 +86,8 @@ const config = {
                 "gpt-4.1-nano",
                 "gpt-4o",
                 "gpt-4o-mini",
-                "gpt-4-turbo",
                 "gpt-4",
-                "gpt-3.5-turbo",
                 "o3-mini",
-                "o3",
                 "o4-mini",
             ],
         },
@@ -315,8 +312,21 @@ class openai_chat_node extends BaseNode {
         try {
             webconsole.info("OPENAI NODE | Starting LangGraph-based chat node");
             
+
+            // Model tokens per minute limits (approximate, update as needed)
+            const modelTokensPerMinute = {
+                "gpt-4o": 40000,
+                "gpt-4o-mini": 40000,
+                "gpt-4.1": 20000,
+                "gpt-4.1-mini": 20000,
+                "gpt-4.1-nano": 20000,
+                "gpt-4": 10000,
+                "o3-mini": 10000,
+                "o4-mini": 40000,
+            };
+
             const queryFilter = inputs.filter((e) => e.name === "Query");
-            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
@@ -326,6 +336,22 @@ class openai_chat_node extends BaseNode {
             temperature = Number(temperature);
 
             const model = contents.filter((e) => e.name === "Model")[0].value;
+
+            // --- Tokenizer logic (simple, for English text) ---
+            function estimateTokens(text) {
+                // Approximate: 1 token ≈ 4 characters
+                return Math.ceil(text.length / 4);
+            }
+
+            // Trim query if needed to fit within tokens per minute limit
+            const maxTokensPerMinute = modelTokensPerMinute[model] || 10000;
+            const queryTokens = estimateTokens(query);
+            if (queryTokens > maxTokensPerMinute) {
+                // Trim from the start (keep last maxTokensPerMinute*4 chars)
+                const maxChars = maxTokensPerMinute * 4;
+                query = query.slice(-maxChars);
+                webconsole.warn(`OPENAI NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
+            }
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
@@ -380,7 +406,7 @@ class openai_chat_node extends BaseNode {
                 if (pastMessages.length > 0) {
                     
                     const trimmedMessages = await trimMessages(pastMessages, {
-                        maxTokens: 30000,
+                        maxTokens: 28000,
                         strategy: "last",
                         tokenCounter: llm,
                         includeSystem: true,
