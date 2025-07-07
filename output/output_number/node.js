@@ -8,6 +8,11 @@ const config = {
     desc: "Outputs number to the user",
     inputs: [
         {
+            desc: "The flow of the workflow",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Number to output",
             name: "Number",
             type: "Number",
