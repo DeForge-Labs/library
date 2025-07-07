@@ -80,7 +80,7 @@ const config = {
             desc: "The LLM model",
             name: "Model",
             type: "select",
-            value: "claude-3-5-sonnet-20241022",
+            value: "claude-3-7-sonnet-latest",
             options: [
                 "claude-opus-4-0",
                 "claude-sonnet-4-0",
@@ -312,21 +312,20 @@ class claude_chat_node extends BaseNode {
                 "claude-sonnet-4-0": 20000,
                 "claude-3-7-sonnet-latest": 20000, 
                 "claude-3-5-sonnet-latest": 40000,
-                "claude-3-5-sonnet-20241022": 40000, 
                 "claude-3-5-haiku-latest": 50000, 
             };
             
             const queryFilter = inputs.filter((e) => e.name === "Query");
-            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value;
+            let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
-            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value;
+            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
-            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value;
+            let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
 
-            const model = contents.filter((e) => e.name === "Model")[0].value;
+            const model = contents.filter((e) => e.name === "Model")[0].value || "claude-3-7-sonnet-latest";
 
             // --- Tokenizer logic (simple, for English text) ---
             function estimateTokens(text) {
@@ -343,7 +342,7 @@ class claude_chat_node extends BaseNode {
                 webconsole.warn(`CLAUDE NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
             }
 
-            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value;
+            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
             const ragTableName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
