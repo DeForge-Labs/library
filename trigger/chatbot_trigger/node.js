@@ -1,0 +1,58 @@
+import BaseNode from "../../core/BaseNode/node.js";
+
+const config = {
+    title: "Chat Bot Trigger",
+    category: "trigger",
+    type: "chatbot_trigger",
+    icon: {},
+    desc: "Triggers the flow when a message is recieved from the Chat Bot UI",
+    inputs: [],
+    outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
+            desc: "Message recieved by the bot",
+            name: "Message",
+            type: "Text",
+        },
+        {
+            desc: "Chat ID of the user",
+            name: "Chat ID",
+            type: "Text",
+        },
+    ],
+    fields: [],
+    difficulty: "easy",
+    tags: ["trigger", "chat", "bot"],
+}
+
+class chatbot_trigger extends BaseNode {
+    constructor() {
+        super(config);
+    }
+
+    async run(inputs, contents, webconsole, serverData) {
+        try {
+            webconsole.info("CHAT BOT NODE | Started execution");
+
+            const payload = serverData.supportPayload;
+            const msg = payload.Message || "";
+            const chatID = payload.queryId || "";
+
+            webconsole.success("CHAT BOT NODE | Message recieved, continuing flow");
+            return {
+                "Flow": true,
+                "Message": msg,
+                "Chat ID": chatID,
+            };
+        } catch (error) {
+            webconsole.error("CHAT BOT NODE | Some error occured");
+            return null;
+        }
+    }
+}
+
+export default chatbot_trigger;
