@@ -38,7 +38,7 @@ class chatbot_trigger extends BaseNode {
         try {
             webconsole.info("CHAT BOT NODE | Started execution");
 
-            const payload = serverData.supportPayload;
+            const payload = serverData.chatbotPayload;
             const msg = payload.Message || "";
             const chatID = payload.queryId || "";
 
