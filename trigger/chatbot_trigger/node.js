@@ -18,11 +18,6 @@ const config = {
             name: "Message",
             type: "Text",
         },
-        {
-            desc: "Chat ID of the user",
-            name: "Chat ID",
-            type: "Text",
-        },
     ],
     fields: [],
     difficulty: "easy",
@@ -40,13 +35,11 @@ class chatbot_trigger extends BaseNode {
 
             const payload = serverData.chatbotPayload;
             const msg = payload.Message || "";
-            const chatID = payload.queryId || "";
 
             webconsole.success("CHAT BOT NODE | Message recieved, continuing flow");
             return {
                 "Flow": true,
                 "Message": msg,
-                "Chat ID": chatID,
             };
         } catch (error) {
             webconsole.error("CHAT BOT NODE | Some error occured");

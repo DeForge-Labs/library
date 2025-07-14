@@ -17,11 +17,6 @@ const config = {
             name: "Message",
             type: "Text",
         },
-        {
-            desc: "Chat ID of the chat from where the text was send",
-            name: "ChatID",
-            type: "Text"
-        }
     ],
     outputs: [
         {
@@ -36,12 +31,6 @@ const config = {
             name: "Message",
             type: "TextArea",
             value: "text here ...",
-        },
-        {
-            desc: "Chat ID of the chat from where the text was send",
-            name: "ChatID",
-            type: "Text",
-            value: "123456",
         },
     ],
     difficulty: "easy",
@@ -64,8 +53,7 @@ class chatbot_msg_send extends BaseNode {
             return null;
         }
 
-        const ChatIDFilter = inputs.filter((e) => e.name === "ChatID");
-        const ChatId = ChatIDFilter.length > 0 ? ChatIDFilter[0].value : contents.filter((e) => e.name === "ChatID")[0].value || "";
+        const ChatId = serverData.chatbotPayload?.queryId || "";
         
         if (!ChatId) {
             webconsole.error("CHATBOT MSG NODE | No Chat ID found");
