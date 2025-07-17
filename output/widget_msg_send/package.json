@@ -1,7 +1,7 @@
 {
-  "name": "chatbot-msg-send",
+  "name": "widget-msg-send",
   "version": "0.0.1",
-  "description": "Send message on Chat Bot interface",
+  "description": "Send message on Support Bot widget",
   "main": "node.js",
   "type": "module",
   "scripts": {

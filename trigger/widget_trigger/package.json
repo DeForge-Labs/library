@@ -1,7 +1,7 @@
 {
-  "name": "chatbot-msg-send",
+  "name": "widget-trigger",
   "version": "0.0.1",
-  "description": "Send message on Chat Bot interface",
+  "description": "Trigger from widget based support bots",
   "main": "node.js",
   "type": "module",
   "scripts": {
