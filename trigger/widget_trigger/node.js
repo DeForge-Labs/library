@@ -49,7 +49,7 @@ class widget_trigger extends BaseNode {
             const IntroFilter = inputs.find((e) => e.name === "Intro");
             const Intro = IntroFilter?.value || contents.find((e) => e.name === "Intro")?.value || `🎉 Welcome! I'm your AI assistant. This is a demo workflow. Ask me anything!`;
 
-            const payload = serverData.chatbotPayload;
+            const payload = serverData.widgetPayload;
             const msg = payload.Message || "";
 
             const initReq = payload.init || false;

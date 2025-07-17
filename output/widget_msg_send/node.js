@@ -53,7 +53,7 @@ class widget_msg_send extends BaseNode {
             return null;
         }
 
-        const ChatId = serverData.chatbotPayload?.queryId || "";
+        const ChatId = serverData.widgetPayload?.queryId || "";
         
         if (!ChatId) {
             webconsole.error("WIDGET MSG NODE | No Chat ID found");
