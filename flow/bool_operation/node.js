@@ -1,21 +1,21 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-    title: "If Condition",
+    title: "Boolean Operation",
     category: "flow",
-    type: "if_condition",
+    type: "bool_operation",
     icon: {},
-    desc: "Performs a conditional operation based on a condition",
+    desc: "Performs a logical operation based on a condition",
     inputs: [
         {
             desc: "First input",
             name: "Input 1",
-            type: "Any",
+            type: "Boolean",
         },
         {
             desc: "Second input",
             name: "Input 2",
-            type: "Any",
+            type: "Boolean",
         },
     ],
     outputs: [
@@ -37,15 +37,15 @@ const config = {
     ],
     fields: [
         {
-            desc: "Condition",
-            name: "Condition",
+            desc: "Logic (NOT operation only works on input 1)",
+            name: "Logic",
             type: "select",
-            value: "==",
-            options: ["==", "!=", ">", "<", ">=", "<="],
+            value: "AND",
+            options: ["AND", "OR", "NOT"],
         },
     ],
     difficulty: "easy",
-    tags: ["condition", "if"],
+    tags: ["logic", "and", "or", "not"],
 }
 
 class if_condition extends BaseNode {
@@ -59,14 +59,14 @@ class if_condition extends BaseNode {
 
         const input1Filter = inputs.filter((e) => e.name === "Input 1");
         if (input1Filter.length === 0) {
-            webconsole.error("IF NODE | Input 1 required but not given");
+            webconsole.error("LOGICAL OPERATION NODE | Input 1 required but not given");
             return null;
         }
         const input1 = input1Filter[0].value;
 
         const input2Filter = inputs.filter((e) => e.name === "Input 2");
         if (input2Filter.length === 0) {
-            webconsole.error("IF NODE | Input 2 required but not given");
+            webconsole.error("LOGICAL OPERATION NODE | Input 2 required but not given");
             return null;
         }
         const input2 = input2Filter[0].value;
@@ -74,29 +74,20 @@ class if_condition extends BaseNode {
         const operation = contents[0].value;
         let res = true;
         switch (operation) {
-            case "==":
-                res = input1 == input2
+            case "AND":
+                res = input1 && input2
                 break;
-            case "!=":
-                res = input1 != input2
+            case "OR":
+                res = input1 || input2
                 break;
-            case ">":
-                res = input1 > input2;
+            case "NOT":
+                res = !input1
                 break;
-            case "<":
-                res = input1 < input2;
-                break;
-            case ">=":
-                res = input1 >= input2;
-                break;
-            case " <=":
-                res = input1 <= input2;
-                break;        
             default:
                 break;
         }
 
-        webconsole.success("IF NODE | Emmitting result");
+        webconsole.success("LOGICAL OPERATION NODE | Emmitting result");
         return { True: res, False: !res, Result: res };
     }
 }
