@@ -371,9 +371,11 @@ class openai_chat_node extends BaseNode {
                 throw new Error("POSTGRESS_URL environment variable not set");
             }
 
+            const doesModelLikeTemperature = !["o3-mini", "o4-mini"].includes(model);
+
             const llm = new ChatOpenAI({
                 model: model,
-                temperature: temperature,
+                ...(doesModelLikeTemperature && { temperature: temperature }),
                 apiKey: process.env.OPENAI_API_KEY,
             });
 
