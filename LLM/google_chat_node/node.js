@@ -246,9 +246,12 @@ class google_chat_node extends BaseNode {
 
     createWorkflow(llm, systemPrompt, ragTool, webconsole) {
 
-        const callModel = async (state) => {
+        const callModel = async (state, config) => {
             try {
-                const messages = state.messages;
+                let messages = state.messages;
+                if (!config.configurable.saveMemory) {
+                    messages = messages.slice(-2);
+                }
                 
                 const lastSystemMessage = messages.slice().reverse().find(msg => msg instanceof SystemMessage);
                 
@@ -394,6 +397,7 @@ class google_chat_node extends BaseNode {
             const config = {
                 configurable: {
                     thread_id: sessionId,
+                    saveMemory: saveMemory
                 }
             };
 
