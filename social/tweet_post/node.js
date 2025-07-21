@@ -173,7 +173,7 @@ class tweet_post extends BaseNode {
             
 
         } catch (error) {
-            webconsole.error(`X POST NODE | An error occurred: ${error.message}`);
+            webconsole.error(`TWEET POST NODE | An error occurred: ${error.message}`);
             return null;
         }
     }

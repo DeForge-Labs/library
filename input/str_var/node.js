@@ -44,7 +44,7 @@ class str_var extends BaseNode {
             }
 
             webconsole.info("USER INPUT | emitting output");
-            return contents[0].value;
+            return contents[0].value || "";
             
         } catch (error) {
             webconsole.error("USER INPUT | Some error occured: ", error);

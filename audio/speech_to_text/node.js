@@ -95,7 +95,7 @@ class speech_to_text extends BaseNode {
             };
             
         } catch (error) {
-            webconsole.error("TG NODE | Some error occured");
+            webconsole.error("SPEECH TO TEXT NODE | Some error occured: ", error);
             return null;
         }
     }

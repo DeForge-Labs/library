@@ -104,7 +104,7 @@ class tg_trigger extends BaseNode {
             let onStartText = onStartFilter.length > 0 ? onStartFilter[0].value : contents.filter((e) => e.name === "On Start")[0].value || "";
             onStartText = onStartText.length > 4096 ? onStartText.slice(0, -3) + "..." : onStartText;
 
-            const msg = payload.message.text;
+            const msg = payload.message.text || "";
             const voice = payload.message.voice?.file_id || "";
             const chatID = serverData.chatId;
             const userName = payload.message.from.username;
@@ -158,7 +158,7 @@ class tg_trigger extends BaseNode {
                 "Is Command": isCommand,
             };
         } catch (error) {
-            webconsole.error("TG NODE | Some error occured");
+            webconsole.error("TG NODE | Some error occured: ", error);
             return null;
         }
     }
