@@ -99,7 +99,7 @@ class tg_msg_send extends BaseNode {
 
         const MessageFilter = inputs.filter((e) => e.name === "Message");
         let Message = MessageFilter.length > 0 ? MessageFilter[0].value : contents.filter((e) => e.name === "Message")[0].value || "";
-        Message = Message.length > 4096 ? Message.slice(0, -3) + "..." : Message;
+        Message = Message.length > 3950 ? Message.slice(0, -3) + "..." : Message;
 
         if (!Message) {
             webconsole.error("TG MSG NODE | Message contents empty");
