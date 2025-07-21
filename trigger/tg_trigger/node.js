@@ -144,7 +144,7 @@ class tg_trigger extends BaseNode {
                 const getFileURL = await axios.get(`https://api.telegram.org/bot${botToken}/getFile?file_id=${voice}`)
                 if (getFileURL.data.ok) {
                     const fileURLFromTG = getFileURL.data.result.file_path;
-                    voiceFileURL = this.uploadTo0x0st(`https://api.telegram.org/file/bot${botToken}/${fileURLFromTG}`);
+                    voiceFileURL = await this.uploadTo0x0st(`https://api.telegram.org/file/bot${botToken}/${fileURLFromTG}`);
                 }
             }
 
