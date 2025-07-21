@@ -1,5 +1,8 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { Downloader } from "nodejs-file-downloader";
+import { fileTypeFromFile } from "file-type";
+import fs from "fs";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -76,8 +79,31 @@ class speech_to_text extends BaseNode {
 
             const elevenlabs = new ElevenLabsClient();
 
-            const fileResponse = await fetch(Link);
-            const audioBlob = new Blob([await fileResponse.arrayBuffer()], { type: "audio/ogg" });
+            const tempDir = "./runtime_files";
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+            }
+            
+            webconsole.info("SPEECH TO TEXT NODE | Downloading audio...");
+            const downloader = new Downloader({
+                url: Link,
+                directory: tempDir,
+            });
+
+            const { filePath } = await downloader.download();
+            if (!filePath) {
+                webconsole.error("SPEECH TO TEXT NODE | Audio download failed.");
+                return null;
+            }
+            
+            const fileType = await fileTypeFromFile(filePath);
+            if (!fileType || !fileType.mime.startsWith('audio/')) {
+                webconsole.error("SPEECH TO TEXT NODE | The downloaded file is not a valid audio file.");
+                fs.unlinkSync(filePath);
+                return null;
+            }
+            const audioBlobBuffer = fs.readFileSync(filePath);
+            const audioBlob = new Blob([audioBlobBuffer], {type: "audio/ogg"});
 
             webconsole.info("SPEECH TO TEXT NODE | Transcribing audio");
 
@@ -87,6 +113,8 @@ class speech_to_text extends BaseNode {
                 diarize: false,
                 tagAudioEvents: false,
             });
+
+            fs.unlinkSync(filePath);
 
             const transcribedText = transcription.text;
             webconsole.success("SPEECH TO TEXT NODE | Successfully transcribed audio");

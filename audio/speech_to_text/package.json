@@ -19,6 +19,8 @@
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.7.0",
-    "dotenv": "^17.2.0"
+    "dotenv": "^17.2.0",
+    "file-type": "^21.0.0",
+    "nodejs-file-downloader": "^4.13.0"
   }
 }
