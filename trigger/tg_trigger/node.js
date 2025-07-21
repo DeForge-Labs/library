@@ -71,28 +71,28 @@ class tg_trigger extends BaseNode {
     }
 
     uploadTo0x0st = async (fileURL) => {
-            const url = 'https://0x0.st';
-            const form = new FormData();
-            form.append("url", fileURL);
+        const url = 'https://0x0.st';
+        const form = new FormData();
+        form.append("url", fileURL);
 
-            try {
-                const response = await axios.post(url, form, {
-                    headers: {
-                        ...form.getHeaders(),
-                        'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
-                    },
-                });
+        try {
+            const response = await axios.post(url, form, {
+                headers: {
+                    ...form.getHeaders(),
+                    'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
+                },
+            });
 
-                if (response.status === 200) {
-                    const uploadedUrl = response.data.trim();
-                    return uploadedUrl;
-                } else {
-                    throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
-                }
-            } catch (error) {
-                webconsole.error(`TG NODE | Error uploading voice to 0x0.st: ${error.message}`);
+            if (response.status === 200) {
+                const uploadedUrl = response.data.trim();
+                return uploadedUrl;
+            } else {
+                throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
             }
+        } catch (error) {
+            webconsole.error(`TG NODE | Error uploading voice to 0x0.st: ${error.message}`);
         }
+    }
 
     async run(inputs, contents, webconsole, serverData) {
         try {

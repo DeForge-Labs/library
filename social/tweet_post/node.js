@@ -130,8 +130,8 @@ class tweet_post extends BaseNode {
                 client_secret: process.env.X_CLIENT_SECRET,
                 callback: "https://api.deforge.io/api/workflow/connectSocialCallback",
                 scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
+                token: x_token,
             });
-            authClient.token = x_token;
             
             const client = new Client(authClient);
         

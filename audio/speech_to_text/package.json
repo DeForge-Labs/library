@@ -1,0 +1,24 @@
+{
+  "name": "speech-to-text",
+  "version": "0.0.1",
+  "description": "Generate text from speech using Eleven Labs",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.7.0",
+    "dotenv": "^17.2.0"
+  }
+}
