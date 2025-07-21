@@ -57,6 +57,8 @@ class if_condition extends BaseNode {
         
         webconsole.info("IF NODE | Begin execution");
 
+        const operation = contents[0].value || "AND"
+
         const input1Filter = inputs.filter((e) => e.name === "Input 1");
         if (input1Filter.length === 0) {
             webconsole.error("LOGICAL OPERATION NODE | Input 1 required but not given");
@@ -65,13 +67,12 @@ class if_condition extends BaseNode {
         const input1 = input1Filter[0].value;
 
         const input2Filter = inputs.filter((e) => e.name === "Input 2");
-        if (input2Filter.length === 0) {
+        if (input2Filter.length === 0 && operation !== "NOT") {
             webconsole.error("LOGICAL OPERATION NODE | Input 2 required but not given");
             return null;
         }
         const input2 = input2Filter[0].value;
 
-        const operation = contents[0].value;
         let res = true;
         switch (operation) {
             case "AND":
