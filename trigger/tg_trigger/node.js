@@ -1,5 +1,6 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import axios from "axios";
+import FormData from "form-data";
 
 const config = {
     title: "Telegram Trigger",
@@ -23,6 +24,11 @@ const config = {
         {
             desc: "Message recieved by the bot",
             name: "Message",
+            type: "Text",
+        },
+        {
+            desc: "Link to the voice message recieved by the bot",
+            name: "Voice",
             type: "Text",
         },
         {
@@ -64,6 +70,30 @@ class tg_trigger extends BaseNode {
         super(config);
     }
 
+    uploadTo0x0st = async (fileURL) => {
+            const url = 'https://0x0.st';
+            const form = new FormData();
+            form.append("url", fileURL);
+
+            try {
+                const response = await axios.post(url, form, {
+                    headers: {
+                        ...form.getHeaders(),
+                        'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
+                    },
+                });
+
+                if (response.status === 200) {
+                    const uploadedUrl = response.data.trim();
+                    return uploadedUrl;
+                } else {
+                    throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
+                }
+            } catch (error) {
+                webconsole.error(`TG NODE | Error uploading voice to 0x0.st: ${error.message}`);
+            }
+        }
+
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("TG NODE | Started execution");
@@ -75,6 +105,7 @@ class tg_trigger extends BaseNode {
             onStartText = onStartText.length > 4096 ? onStartText.slice(0, -3) + "..." : onStartText;
 
             const msg = payload.message.text;
+            const voice = payload.message.voice?.file_id || "";
             const chatID = serverData.chatId;
             const userName = payload.message.from.username;
             const isCommand = Object.keys(payload.message).includes("entities");
@@ -108,10 +139,20 @@ class tg_trigger extends BaseNode {
                 };
             }
 
+            let voiceFileURL = "";
+            if (voice) {
+                const getFileURL = await axios.get(`https://api.telegram.org/bot${botToken}/getFile?file_id=${voice}`)
+                if (getFileURL.data.ok) {
+                    const fileURLFromTG = getFileURL.data.result.file_path;
+                    voiceFileURL = this.uploadTo0x0st(`https://api.telegram.org/file/bot${botToken}/${fileURLFromTG}`);
+                }
+            }
+
             webconsole.success("TG NODE | Message recieved, continuing flow");
             return {
                 "Flow": true,
                 "Message": msg,
+                "Voice": voiceFileURL,
                 "Chat ID": chatID,
                 "Username": userName,
                 "Is Command": isCommand,
