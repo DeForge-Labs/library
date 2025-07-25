@@ -132,6 +132,10 @@ class tweet_post extends BaseNode {
                 scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
                 token: x_token,
             });
+
+            if (authClient.isAccessTokenExpired) {
+                await authClient.refreshAccessToken();
+            }
             
             const client = new Client(authClient);
         
@@ -173,7 +177,7 @@ class tweet_post extends BaseNode {
             
 
         } catch (error) {
-            webconsole.error(`TWEET POST NODE | An error occurred: ${error.message}`);
+            webconsole.error(`TWEET POST NODE | An error occurred: ${error}`);
             return null;
         }
     }
