@@ -1,0 +1,224 @@
+import BaseNode from "../../core/BaseNode/node.js";
+import axios from "axios";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { createWriteStream } from "fs";
+import fs from "fs";
+import { v4 as uuid } from "uuid";
+import FormData from "form-data";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const config = {
+    title: "Text to Speech",
+    category: "audio",
+    type: "text_to_speech",
+    icon: {},
+    desc: "Convert text to speech using Eleven Labs",
+    inputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
+            desc: "Text to generate speech for",
+            name: "Content",
+            type: "Text",
+        },
+        {
+            desc: "Specific voice ID to use (will override the above option)",
+            name: "VoiceID",
+            type: "Text",
+        },
+        {
+            desc: "Emotional setting of the voice (lower is more emotional)",
+            name: "Emotion",
+            type: "Number",
+        },
+        {
+            desc: "Speed of the generated speech",
+            name: "Speed",
+            type: "Number",
+        },
+    ],
+    outputs: [
+        {
+            desc: "Generated audio",
+            name: "Audio Link",
+            type: "Text",
+        },
+    ],
+    fields: [
+        {
+            desc: "Text to generate speech for",
+            name: "Content",
+            type: "TextArea",
+            value: "Text here ...",
+        },
+        {
+            desc: "Voice model to use",
+            name: "Voice",
+            type: "select",
+            value: "George (warm resonance)",
+            options: [
+                "Aria (middle aged female calm)",
+                "Sarah (young adult woman confident)",
+                "Laura (young adult female sunny)",
+                "Charlie (young aussie male confident)",
+                "George (warm resonance)",
+                "Callum (gravelly edgy)",
+            ],
+        },
+        {
+            desc: "Specific voice ID to use (will override the above option)",
+            name: "VoiceID",
+            type: "Text",
+            value: "ID here ...",
+        },
+        {
+            desc: "Emotional setting of the voice (lower is more emotional)",
+            name: "Emotion",
+            type: "Slider",
+            value: 50,
+            min: 0,
+            max: 100,
+            step: 1,
+        },
+        {
+            desc: "Speed of the generated speech",
+            name: "Speed",
+            type: "Slider",
+            value: 1.0,
+            min: 0,
+            max: 2.0,
+            step: 0.1,
+        },
+        {
+            desc: "Model to use for speech generation",
+            name: "Model",
+            type: "select",
+            value: "eleven_multilingual_v2",
+            options: [
+                "eleven_multilingual_v2",
+                "eleven_v3",
+                "eleven_flash_v2_5",
+                "eleven_turbo_v2_5",
+            ],
+        },
+    ],
+    difficulty: "easy",
+    tags: ["transcribe", "audio", "elevenlabs"],
+}
+
+class text_to_speech extends BaseNode {
+    constructor() {
+        super(config);
+    }
+
+    uploadTo0x0st = async (fileURL) => {
+        const url = 'https://0x0.st';
+        const form = new FormData();
+        const fileStream = await fs.readFile(fileURL);
+        form.append('file', fileStream, { filename: path.basename(fileURL) });
+
+        try {
+            const response = await axios.post(url, form, {
+                headers: {
+                    ...form.getHeaders(),
+                    'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
+                },
+            });
+
+            if (response.status === 200) {
+                const uploadedUrl = response.data.trim();
+                return uploadedUrl;
+            } else {
+                throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
+            }
+        } catch (error) {
+            webconsole.error(`TEXT TO SPEECH NODE | Error uploading audio to 0x0.st: ${error.message}`);
+        }
+    }
+
+    async run(inputs, contents, webconsole, serverData) {
+        try {
+            webconsole.info("TEXT TO SPEECH NODE | Started execution");
+
+            const ContentFilter = inputs.find((e) => e.name === "Content");
+            const ContentText = ContentFilter?.value || contents.find((e) => e.name === "Content")?.value || "";
+
+            if (!ContentText) {
+                webconsole.error("TEXT TO SPEECH NODE | No text provided");
+                return null;
+            }
+
+            const VoiceIDFilter = inputs.find((e) => e.name === "VoiceID");
+            let VoiceID = VoiceIDFilter?.value || contents.find((e) => e.name === "VoiceID")?.value || "";
+
+            const Voice = contents.find((e) => e.name === "Voice")?.value || "George (warm resonance)";
+            const voiceMap = {
+                "Aria (middle aged female calm)": "9BWtsMINqrJLrRacOk9x",
+                "Sarah (young adult woman confident)": "EXAVITQu4vr4xnSDxMaL",
+                "Laura (young adult female sunny)": "FGY2WhTYpPnrIDTdsKH5",
+                "Charlie (young aussie male confident)": "IKne3meq5aSn9XLyUdCD",
+                "George (warm resonance)": "JBFqnCBsd6RMkjVDRZzb",
+                "Callum (gravelly edgy)": "N2lVS1w4EtoT3dr4eOWO",
+            }
+
+            if (!VoiceID) {
+                VoiceID = voiceMap[Voice];
+            }
+
+            const EmotionFilter = inputs.find((e) => e.name === "Emotion");
+            let Emotion = EmotionFilter?.value || contents.find((e) => e.name === "Emotion")?.value || 50;
+            Emotion = Math.max(0, Math.min(Emotion, 100));
+
+            const SpeedFilter = inputs.find((e) => e.name === "Speed");
+            let Speed = SpeedFilter?.value || contents.find((e) => e.name === "Speed")?.value || 1.0;
+            Speed = Math.max(0.0, Math.min(Speed, 2.0));
+
+            const Model = contents.find((e) => e.name === "Model")?.value || "eleven_multilingual_v2";
+
+            const elevenlabs = new ElevenLabsClient();
+
+            const tempDir = "./runtime_files";
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+            }
+
+            webconsole.info("TEXT TO SPEECH NODE | Generating audio");
+
+            const audio = await elevenlabs.textToSpeech.convert(VoiceID, {
+                modelId: Model,
+                text: ContentText,
+                outputFormat: "mp3_44100_128",
+                voiceSettings: {
+                    stability: Number.parseInt(Emotion),
+                    speed: Number.parseFloat(Speed),
+                },
+            });
+
+            webconsole.success("TEXT TO SPEECH NODE | Audio generated successfully");
+
+            const fileName = `${uuid()}.mp3`;
+            const fileStream = createWriteStream(`./runtime_files/${fileName}`);
+
+            await audio.pipeTo(fileStream);
+            const audioLink = await this.uploadTo0x0st(`./runtime_files/${fileName}`);
+            fs.unlinkSync(`./runtime_files/${fileName}`);
+
+
+            webconsole.success("TEXT TO SPEECH NODE | Successfully uploaded audio");
+            return {
+                "Audio Link": audioLink,
+            };
+            
+        } catch (error) {
+            webconsole.error("SPEECH TO TEXT NODE | Some error occured: ", error);
+            return null;
+        }
+    }
+}
+
+export default text_to_speech;

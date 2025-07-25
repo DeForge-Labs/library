@@ -133,8 +133,10 @@ class tweet_post extends BaseNode {
                 token: x_token,
             });
 
-            if (authClient.isAccessTokenExpired) {
-                await authClient.refreshAccessToken();
+            if (authClient.isAccessTokenExpired()) {
+                webconsole.info("TWEET POST NODE | Refreshing token");
+                const { token } = await authClient.refreshAccessToken();
+                authClient.token = token;
             }
             
             const client = new Client(authClient);
@@ -158,6 +160,8 @@ class tweet_post extends BaseNode {
             const postRes = await client.tweets.createTweet({
                 text: Post,
             });
+
+            webconsole.success("TWEET POST NODE | Successfully tweeted your post");
 
             if (postRes.errors?.length > 0) {
                 webconsole.error("TWEET POST NODE | Some error occured posting the tweet: ", JSON.stringify(postRes.errors));
