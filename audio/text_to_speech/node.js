@@ -80,10 +80,10 @@ const config = {
             desc: "Emotional setting of the voice (lower is more emotional)",
             name: "Emotion",
             type: "Slider",
-            value: 50,
-            min: 0,
-            max: 100,
-            step: 1,
+            value: 0.5,
+            min: 0.0,
+            max: 1.0,
+            step: 0.1,
         },
         {
             desc: "Speed of the generated speech",
@@ -108,7 +108,7 @@ const config = {
         },
     ],
     difficulty: "easy",
-    tags: ["transcribe", "audio", "elevenlabs"],
+    tags: ["TTS", "audio", "elevenlabs"],
 }
 
 class text_to_speech extends BaseNode {
@@ -171,8 +171,8 @@ class text_to_speech extends BaseNode {
             }
 
             const EmotionFilter = inputs.find((e) => e.name === "Emotion");
-            let Emotion = EmotionFilter?.value || contents.find((e) => e.name === "Emotion")?.value || 50;
-            Emotion = Math.max(0, Math.min(Emotion, 100));
+            let Emotion = EmotionFilter?.value || contents.find((e) => e.name === "Emotion")?.value || 0.5;
+            Emotion = Math.max(0.0, Math.min(Emotion, 1.0));
 
             const SpeedFilter = inputs.find((e) => e.name === "Speed");
             let Speed = SpeedFilter?.value || contents.find((e) => e.name === "Speed")?.value || 1.0;
