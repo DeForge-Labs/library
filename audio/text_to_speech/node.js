@@ -3,6 +3,7 @@ import axios from "axios";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { createWriteStream } from "fs";
 import fs from "fs";
+import path from "path";
 import { v4 as uuid } from "uuid";
 import FormData from "form-data";
 import dotenv from "dotenv";
@@ -119,7 +120,7 @@ class text_to_speech extends BaseNode {
     uploadTo0x0st = async (fileURL) => {
         const url = 'https://0x0.st';
         const form = new FormData();
-        const fileStream = await fs.readFile(fileURL);
+        const fileStream = fs.readFileSync(fileURL);
         form.append('file', fileStream, { filename: path.basename(fileURL) });
 
         try {
@@ -204,7 +205,23 @@ class text_to_speech extends BaseNode {
             const fileName = `${uuid()}.mp3`;
             const fileStream = createWriteStream(`./runtime_files/${fileName}`);
 
-            await audio.pipeTo(fileStream);
+            const audioReader = audio.getReader();
+            const writeChunks = async () => {
+                while (true) {
+                    const { done, value } = await audioReader.read();
+                    if (done) {
+                        break;
+                    }
+                    fileStream.write(value);
+                }
+                fileStream.end();
+            };
+            await writeChunks();
+            await new Promise((resolve, reject) => {
+                fileStream.on('finish', resolve);
+                fileStream.on('error', reject);
+            });
+
             const audioLink = await this.uploadTo0x0st(`./runtime_files/${fileName}`);
             fs.unlinkSync(`./runtime_files/${fileName}`);
 
