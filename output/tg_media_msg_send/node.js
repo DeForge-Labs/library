@@ -86,11 +86,6 @@ class tg_media_msg_send extends BaseNode {
         let Caption = CaptionFilter.length > 0 ? CaptionFilter[0].value : contents.filter((e) => e.name === "Caption")[0].value || "";
         Caption = Caption.length > 1024 ? Caption.slice(0, -3) + "..." : Caption;
 
-        if (!Caption) {
-            webconsole.error("TG MEDIA MSG NODE | Message contents empty");
-            return null;
-        }
-
         const UserFilter = inputs.filter((e) => e.name === "ChatID");
         const UserID = UserFilter.length > 0 ? UserFilter[0].value : contents.filter((e) => e.name === "ChatID")[0].value || "";
         
@@ -131,7 +126,7 @@ class tg_media_msg_send extends BaseNode {
             const plainResponse = await axios.get(`https://api.telegram.org/bot${botToken}/${routeMap[mediaType]}`, {
                 params: {
                     chat_id: UserID,
-                    caption: Caption,
+                    ...(Caption && { caption: Caption }),
                     [mediaType]: MediaLink,
                 }
             });
