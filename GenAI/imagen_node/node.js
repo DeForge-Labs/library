@@ -291,7 +291,7 @@ class imagen_node extends BaseNode {
         try {
             const accessToken = await getAccessToken();
             const { imageContent, imageFormat } = await generateImageWithImagen(accessToken);
-            imageFilePath = await saveImageFile(imageContent);
+            imageFilePath = await saveImageFile(imageContent, imageFormat);
 
             if (imageFilePath) {
                 const uploadedUrl = await uploadTo0x0st(imageFilePath);
