@@ -1,7 +1,7 @@
 {
-  "name": "lyria-node",
+  "name": "imagen-node",
   "version": "0.0.1",
-  "description": "Node to generate videos using Google Lyria",
+  "description": "Node to generate images using Google Imagen",
   "main": "node.js",
   "type": "module",
   "scripts": {
