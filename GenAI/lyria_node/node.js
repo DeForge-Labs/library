@@ -147,14 +147,20 @@ class lyria_node extends BaseNode {
                         'Authorization': `Bearer ${accessToken}`,
                     },
                 });
-
+                
                 // Extract the audio content from the response
                 if (response.data.predictions && response.data.predictions.length > 0) {
-                    const audioContent = response.data.predictions[0].audioContent;
+                    const prediction = response.data.predictions[0];
+                    
+                    const audioContent = prediction.bytesBase64Encoded;
+                    if (!audioContent) {
+                        throw new Error('audioContent field is missing or empty in Lyria response');
+                    }
+                    
                     webconsole.info(`LYRIA NODE | Music generation completed successfully`);
                     return audioContent;
                 } else {
-                    throw new Error('No audio content found in Lyria response');
+                    throw new Error('No predictions found in Lyria response');
                 }
 
             } catch (error) {
@@ -167,6 +173,14 @@ class lyria_node extends BaseNode {
         }
 
         const saveAudioFile = async (audioContent) => {
+            if (!audioContent) {
+                throw new Error('audioContent is undefined or null');
+            }
+            
+            if (typeof audioContent !== 'string') {
+                throw new Error(`audioContent should be a string, but received: ${typeof audioContent}`);
+            }
+            
             const tempDir = "./runtime_files";
             if (!await fs.stat(tempDir).catch(() => null)) {
                 await fs.mkdir(tempDir, { recursive: true });
