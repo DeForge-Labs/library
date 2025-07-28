@@ -253,6 +253,9 @@ class dub_media extends BaseNode {
                         "Dubbed Link": dubLink
                     };
                 }
+                
+                // Wait 1 second before next poll
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
         } catch (error) {
