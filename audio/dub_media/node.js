@@ -195,6 +195,8 @@ class dub_media extends BaseNode {
                 targetLang: langMap[DubLanguage]
             });
 
+            webconsole.info("DUB MEDIA NODE | Created Eleven Labs dubbing job with ID: ", dubInstance.dubbingId);
+
             fs.unlinkSync(filePath);
 
             while (true) {
@@ -254,8 +256,8 @@ class dub_media extends BaseNode {
                     };
                 }
                 
-                // Wait 1 second before next poll
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Wait 5 second before next poll
+                await new Promise(resolve => setTimeout(resolve, 5000));
             }
             
         } catch (error) {

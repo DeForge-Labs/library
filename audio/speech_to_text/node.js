@@ -103,7 +103,7 @@ class speech_to_text extends BaseNode {
                 return null;
             }
             const audioBlobBuffer = fs.readFileSync(filePath);
-            const audioBlob = new Blob([audioBlobBuffer], {type: "audio/ogg"});
+            const audioBlob = new Blob([audioBlobBuffer], {type: fileType.mime});
 
             webconsole.info("SPEECH TO TEXT NODE | Transcribing audio");
 
