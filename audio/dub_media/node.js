@@ -180,7 +180,7 @@ class dub_media extends BaseNode {
             }
             
             const fileType = await fileTypeFromFile(filePath);
-            if (!fileType || !fileType.mime.startsWith('audio/') || !fileType.mime.startsWith('video/')) {
+            if (!fileType || (!fileType.mime.startsWith('audio/') && !fileType.mime.startsWith('video/'))) {
                 webconsole.error("DUB MEDIA NODE | The downloaded file is not a valid media file.");
                 fs.unlinkSync(filePath);
                 return null;
