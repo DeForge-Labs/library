@@ -1,0 +1,25 @@
+{
+  "name": "persona-generator",
+  "version": "0.0.1",
+  "description": "Node to generate a prompt for persona of an user",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "@google/genai": "^1.11.0",
+    "agent-twitter-client": "^0.0.18",
+    "dotenv": "^17.0.0"
+  }
+}
