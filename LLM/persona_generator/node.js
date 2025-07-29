@@ -134,7 +134,7 @@ class persona_generator extends BaseNode {
         let posts = [];
 
         switch (social) {
-            case "twitter":
+            case "Twitter":
                 try {
                     const xUtil = new twitterUtils();
                     // Extract username from various Twitter/X input formats
@@ -146,12 +146,14 @@ class persona_generator extends BaseNode {
                     }
                     
                     webconsole.info(`PERSONA CREATOR NODE | Extracted Twitter username: ${username}`);
+
                     
                     const scraper = new Scraper();
                     await scraper.login(
                         process.env.TWITTER_USERNAME,
                         process.env.TWITTER_PASSWORD,
                         process.env.TWITTER_EMAIL,
+                        process.env.TWITTER_TWO_FACTOR_SECRET,
                         process.env.TWITTER_API_KEY,
                         process.env.TWITTER_API_SECRET_KEY,
                         process.env.TWITTER_ACCESS_TOKEN,
@@ -165,12 +167,12 @@ class persona_generator extends BaseNode {
                     }
 
                     const tweetGenerator = scraper.getTweets(username, 10);
-                    for (const tweet of tweetGenerator) {
+                    for await (const tweet of tweetGenerator) {
                         posts.push(tweet);
                     }
                     
                 } catch (error) {
-                    webconsole.error(`PERSONA CREATOR NODE | Error processing Twitter input: ${error.message}`);
+                    webconsole.error(`PERSONA CREATOR NODE | Error processing Twitter input: ${error}`);
                     return null;
                 }
                 break;
