@@ -211,12 +211,11 @@ class persona_generator extends BaseNode {
         const social = socialFilter?.value || "twitter";
 
         let posts = [];
+        let username = null;
 
         switch (social) {
             case "Twitter":
                 try {
-                    let username = null;
-
                     // Extract username first
                     const xUtil = new twitterUtils();
                     username = xUtil.extractTwitterUsername(user);
@@ -296,7 +295,7 @@ class persona_generator extends BaseNode {
             const gemini = new GoogleGenAI({});
             const geminiResponse = await gemini.models.generateContent({
                 model: "gemini-2.5-flash",
-                contents: `Analyze these twitter posts and reply properly: ${JSON.stringify(posts)}`,
+                contents: `Analyze these twitter posts by ${username} and reply properly: ${JSON.stringify(posts)}`,
                 config: {
                     systemInstruction: "You analyze Twitter posts and generate a prompt that describes the persona of the user whose posts you analyzed for LLMs to use it as their persona instruction. Generate a prompt with clear instructions for the LLM to act like the user. Do not reply with any greeting or any other information, reply with just the prompt. This is necessary as your reply will be directly fed to another LLM.",
                 },
