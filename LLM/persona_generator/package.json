@@ -20,6 +20,7 @@
   "dependencies": {
     "@google/genai": "^1.11.0",
     "agent-twitter-client": "^0.0.18",
-    "dotenv": "^17.0.0"
+    "dotenv": "^17.0.0",
+    "postgres": "^3.4.7"
   }
 }

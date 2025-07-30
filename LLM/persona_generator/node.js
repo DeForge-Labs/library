@@ -1,6 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { Scraper } from "agent-twitter-client";
 import { GoogleGenAI } from "@google/genai";
+import postgres from "postgres";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -110,6 +111,81 @@ class twitterUtils {
     }
 }
 
+class PersonaDatabase {
+    constructor() {
+        this.sql = postgres(process.env.POSTGRES_URL);
+        this.initialized = false;
+    }
+
+    async initializeTable() {
+        if (this.initialized) return;
+        
+        try {
+            await this.sql`
+                CREATE TABLE IF NOT EXISTS personas (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(15) NOT NULL,
+                    social_media VARCHAR(50) NOT NULL DEFAULT 'twitter',
+                    persona_prompt TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(username, social_media)
+                )
+            `;
+            
+            // Create index for faster lookups
+            await this.sql`
+                CREATE INDEX IF NOT EXISTS idx_personas_username_social 
+                ON personas(username, social_media)
+            `;
+            
+            this.initialized = true;
+        } catch (error) {
+            throw new Error(`Failed to initialize personas table: ${error.message}`);
+        }
+    }
+
+    async getPersona(username, socialMedia = 'twitter') {
+        await this.initializeTable();
+        
+        try {
+            const result = await this.sql`
+                SELECT persona_prompt, created_at, updated_at 
+                FROM personas 
+                WHERE username = ${username} AND social_media = ${socialMedia}
+            `;
+            
+            return result.length > 0 ? result[0] : null;
+        } catch (error) {
+            throw new Error(`Failed to retrieve persona: ${error.message}`);
+        }
+    }
+
+    async savePersona(username, personaPrompt, socialMedia = 'twitter') {
+        await this.initializeTable();
+        
+        try {
+            const result = await this.sql`
+                INSERT INTO personas (username, social_media, persona_prompt, updated_at)
+                VALUES (${username}, ${socialMedia}, ${personaPrompt}, CURRENT_TIMESTAMP)
+                ON CONFLICT (username, social_media)
+                DO UPDATE SET 
+                    persona_prompt = ${personaPrompt},
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING id, created_at, updated_at
+            `;
+            
+            return result[0];
+        } catch (error) {
+            throw new Error(`Failed to save persona: ${error.message}`);
+        }
+    }
+
+    async close() {
+        await this.sql.end();
+    }
+}
+
 class persona_generator extends BaseNode {
 
     constructor() {
@@ -119,6 +195,9 @@ class persona_generator extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("PERSONA CREATOR NODE | Searching your given user");
+
+        const redisUtil = serverData.redisUtil;
+        const personaDB = new PersonaDatabase();
 
         const userFilter = inputs.find((e) => e.name === "Username");
         const user = userFilter?.value || contents.find((e) => e.name === "Username")?.value || "";
@@ -136,33 +215,62 @@ class persona_generator extends BaseNode {
         switch (social) {
             case "Twitter":
                 try {
+                    let username = null;
+
+                    // Extract username first
                     const xUtil = new twitterUtils();
-                    // Extract username from various Twitter/X input formats
-                    let username = xUtil.extractTwitterUsername(user);
+                    username = xUtil.extractTwitterUsername(user);
                     
                     if (!username) {
                         webconsole.error("PERSONA CREATOR NODE | Invalid Twitter username or link provided");
                         return null;
                     }
-                    
+
                     webconsole.info(`PERSONA CREATOR NODE | Extracted Twitter username: ${username}`);
 
-                    
+                    // Check if we already have a cached persona for this user
+                    try {
+                        const cachedPersona = await personaDB.getPersona(username, social.toLowerCase());
+                        if (cachedPersona) {
+                            webconsole.info(`PERSONA CREATOR NODE | Found cached persona for ${username}`);
+                            await personaDB.close();
+                            return {
+                                "Persona": cachedPersona.persona_prompt
+                            };
+                        }
+                    } catch (error) {
+                        webconsole.warn(`PERSONA CREATOR NODE | Database error (continuing with scraping): ${error.message}`);
+                    }
+
+                    webconsole.info(`PERSONA CREATOR NODE | No cached persona found, scraping ${social} for ${username}`);
                     const scraper = new Scraper();
-                    await scraper.login(
-                        process.env.TWITTER_USERNAME,
-                        process.env.TWITTER_PASSWORD,
-                        process.env.TWITTER_EMAIL,
-                        process.env.TWITTER_TWO_FACTOR_SECRET,
-                        process.env.TWITTER_API_KEY,
-                        process.env.TWITTER_API_SECRET_KEY,
-                        process.env.TWITTER_ACCESS_TOKEN,
-                        process.env.TWITTER_ACCESS_TOKEN_SECRET
-                    );
+
+                    const cookies = await redisUtil.getKey("deforge:twitter:cookies");
+                    if (cookies) {
+                        await scraper.setCookies(JSON.parse(cookies).cookies);
+                    }
+                    else {
+                        await scraper.login(
+                            process.env.TWITTER_USERNAME,
+                            process.env.TWITTER_PASSWORD,
+                            process.env.TWITTER_EMAIL,
+                            process.env.TWITTER_TWO_FACTOR_SECRET,
+                            process.env.TWITTER_API_KEY,
+                            process.env.TWITTER_API_SECRET_KEY,
+                            process.env.TWITTER_ACCESS_TOKEN,
+                            process.env.TWITTER_ACCESS_TOKEN_SECRET
+                        );
+
+                        const newCookies = await scraper.getCookies();
+                        await redisUtil.setKey("deforge:twitter:cookies",
+                            JSON.stringify({ cookies: newCookies.map((cookie) => cookie.toString()) })
+                        );
+                    }
 
                     const profile = await scraper.getProfile(username);
                     if (!profile) {
                         webconsole.error("PERSONA CREATOR NODE | No profile found with username: ", username);
+                        await personaDB.close();
                         return null;
                     }
 
@@ -173,12 +281,14 @@ class persona_generator extends BaseNode {
                     
                 } catch (error) {
                     webconsole.error(`PERSONA CREATOR NODE | Error processing Twitter input: ${error}`);
+                    await personaDB.close();
                     return null;
                 }
                 break;
         
             default:
                 webconsole.error(`PERSONA CREATOR NODE | Unsupported social media: ${social}`);
+                await personaDB.close();
                 return null;
         }
 
@@ -195,11 +305,22 @@ class persona_generator extends BaseNode {
             const personaPrompt = geminiResponse.text;
             webconsole.success("PERSONA CREATOR NODE | Successfully generated persona");
 
+            // Save the generated persona to the database
+            try {
+                await personaDB.savePersona(username, personaPrompt, social.toLowerCase());
+                webconsole.info(`PERSONA CREATOR NODE | Persona saved to database for ${username}`);
+            } catch (error) {
+                webconsole.error(`PERSONA CREATOR NODE | Failed to save persona to database: ${error.message}`);
+            }
+
+            await personaDB.close();
+
             return {
                 "Persona": personaPrompt
             };
         } catch (error) {
             webconsole.error("PERSONA CREATOR NODE | Some error occured while generating persona: ", error);
+            await personaDB.close();
             return null;
         }
     }

@@ -76,6 +76,7 @@ serverData: {
     envList: envList,
     socialList: socialList,
     chatId: chatId,
+    redisUtil: redisUtil
 },
 ```
 
@@ -83,6 +84,7 @@ serverData: {
 - `envList`: A key-value pair list of env variables for the given workflow.
 - `socialList`: A key-value pair list of the social accounts and access tokens for the connected accounts in the given workflow.
 - `chatId`: A chat or user ID of the user executing the workflow. _(Must be passed as a `chatId` query via the deployment url)_
+- `redisUtil`: A utility class that contains three methods: `setKey`, `deleteKey` and `getKey` that can be used to store data in redis. _(Key format: `deforge:subcontext:task`. Example: `deforge:twitter:cookies`)_
 
 ## Returning Output
 
