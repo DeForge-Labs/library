@@ -238,7 +238,7 @@ class persona_generator extends BaseNode {
                             };
                         }
                     } catch (error) {
-                        webconsole.warn(`PERSONA CREATOR NODE | Database error (continuing with scraping): ${error.message}`);
+                        webconsole.error(`PERSONA CREATOR NODE | Database error (continuing with scraping): ${error.message}`);
                     }
 
                     webconsole.info(`PERSONA CREATOR NODE | No cached persona found, scraping ${social} for ${username}`);
