@@ -113,7 +113,11 @@ class twitterUtils {
 
 class PersonaDatabase {
     constructor() {
-        this.sql = postgres(process.env.POSTGRES_URL);
+        this.sql = postgres(process.env.POSTGRES_URL, {
+            ssl: {
+                rejectUnauthorized: false
+            }
+        });
         this.initialized = false;
     }
 
