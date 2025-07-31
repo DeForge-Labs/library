@@ -113,7 +113,7 @@ class twitterUtils {
 
 class PersonaDatabase {
     constructor() {
-        this.sql = postgres(process.env.POSTGRES_URL, {
+        this.sql = postgres(process.env.POSTGRESS_URL, {
             ssl: {
                 rejectUnauthorized: false
             }
@@ -248,7 +248,11 @@ class persona_generator extends BaseNode {
                     webconsole.info(`PERSONA CREATOR NODE | No cached persona found, scraping ${social} for ${username}`);
                     const scraper = new Scraper();
 
-                    const cookies = await redisUtil.getKey("deforge:twitter:cookies");
+                    const cookiesRes = await redisUtil.getKey("deforge:twitter:cookies");
+                    let cookies;
+                    if (cookiesRes.success) {
+                        cookies = cookiesRes.value;
+                    }
                     if (cookies) {
                         await scraper.setCookies(JSON.parse(cookies).cookies);
                     }
@@ -299,9 +303,9 @@ class persona_generator extends BaseNode {
             const gemini = new GoogleGenAI({});
             const geminiResponse = await gemini.models.generateContent({
                 model: "gemini-2.5-flash",
-                contents: `Analyze these twitter posts by ${username} and reply properly: ${JSON.stringify(posts)}`,
+                contents: `Analyze these posts by ${username} and reply properly: ${JSON.stringify(posts)}`,
                 config: {
-                    systemInstruction: "You analyze Twitter posts and generate a prompt that describes the persona of the user whose posts you analyzed for LLMs to use it as their persona instruction. Generate a prompt with clear instructions for the LLM to act like the user. Do not reply with any greeting or any other information, reply with just the prompt. This is necessary as your reply will be directly fed to another LLM.",
+                    systemInstruction: "You analyze social media posts and generate a prompt that describes the persona of the user whose posts you analyzed for LLMs to use it as their persona instruction. Generate a prompt with clear instructions for the LLM to act like the user. Do not reply with any greeting or any other information, reply with just the prompt. This is necessary as your reply will be directly fed to another LLM.",
                 },
             });
 
