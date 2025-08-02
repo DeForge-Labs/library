@@ -10,6 +10,7 @@ const config = {
     type: "web_search_node",
     icon: {},
     desc: "Search the web and get summarised information",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

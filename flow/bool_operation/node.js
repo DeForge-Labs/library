@@ -6,6 +6,7 @@ const config = {
     type: "bool_operation",
     icon: {},
     desc: "Performs a logical operation based on a condition",
+    credit: 100,
     inputs: [
         {
             desc: "First input",

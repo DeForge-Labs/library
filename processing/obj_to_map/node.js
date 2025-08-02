@@ -6,6 +6,7 @@ const config = {
     type: "obj_to_map",
     icon: {},
     desc: "Convert object to map",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

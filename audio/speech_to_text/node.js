@@ -13,6 +13,7 @@ const config = {
     type: "speech_to_text",
     icon: {},
     desc: "Convert speech to text using Eleven Labs",
+    credit: 100,
     inputs: [
         {
             desc: "The Flow to trigger",

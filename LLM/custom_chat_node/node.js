@@ -35,6 +35,7 @@ const config = {
     type: "custom_chat_node",
     icon: {},
     desc: "Chat with custom OpenAI-compatible LLMs",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

@@ -6,6 +6,7 @@ const config = {
     type: "widget_trigger",
     icon: {},
     desc: "Triggers the flow when a message is recieved from the support bot Widget",
+    credit: 100,
     inputs: [
         {
             desc: "Intro message shown by the bot",

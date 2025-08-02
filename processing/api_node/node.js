@@ -7,6 +7,7 @@ const config = {
   type: "api_node",
   icon: {},
   desc: "call external API",
+  credit: 100,
   inputs: [
     {
       desc: "The flow of the workflow",

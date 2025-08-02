@@ -6,6 +6,7 @@ const config = {
     type: "output_number",
     icon: {},
     desc: "Outputs number to the user",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

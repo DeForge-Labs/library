@@ -8,6 +8,7 @@ const config = {
     type: "tg_trigger",
     icon: {},
     desc: "Triggers the flow when a message is recieved on the telegram bot",
+    credit: 100,
     inputs: [
         {
             desc: "Text to send when recieving the /start command",

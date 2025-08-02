@@ -14,6 +14,7 @@ const config = {
     type: "lyria_node",
     icon: {},
     desc: "Generate AI music using Google Lyria",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

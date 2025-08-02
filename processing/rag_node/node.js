@@ -22,6 +22,7 @@ const config = {
     type: "rag_node",
     icon: {},
     desc: "Process your Knowledge Base to use it in LLMs",
+    credit: 100,
     inputs: [],
     outputs: [
         {

@@ -6,6 +6,7 @@ const config = {
     type: "chatbot_msg_send",
     icon: {},
     desc: "Send a response to your chat bot chat",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

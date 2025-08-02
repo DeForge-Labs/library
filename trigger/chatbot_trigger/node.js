@@ -6,6 +6,7 @@ const config = {
     type: "chatbot_trigger",
     icon: {},
     desc: "Triggers the flow when a message is recieved from the Chat Bot UI",
+    credit: 100,
     inputs: [],
     outputs: [
         {

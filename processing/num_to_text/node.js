@@ -6,6 +6,7 @@ const config = {
   type: "num_to_text",
   icon: {},
   desc: "Converts Number to text",
+  credit: 100,
   inputs: [
     {
       desc: "The flow of the workflow",

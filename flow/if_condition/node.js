@@ -6,6 +6,7 @@ const config = {
     type: "if_condition",
     icon: {},
     desc: "Performs a conditional operation based on a condition",
+    credit: 100,
     inputs: [
         {
             desc: "First input",

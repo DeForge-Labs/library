@@ -13,6 +13,7 @@ const config = {
     type: "yt_upload",
     icon: {},
     desc: "Upload videos to your YouTube channel",
+    credit: 100,
     inputs: [
         {
             desc: "Link to the video to upload",

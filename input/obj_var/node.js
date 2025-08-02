@@ -6,6 +6,7 @@ const config = {
     type: "obj_var",
     icon: {},
     desc: "Object variable",
+    credit: 100,
     inputs: [
         {
             desc: "The key of the object",

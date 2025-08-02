@@ -6,6 +6,7 @@ const config = {
     type: "str_var",
     icon: {},
     desc: "String input from users",
+    credit: 100,
     inputs: [],
     outputs: [
         {

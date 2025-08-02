@@ -14,6 +14,7 @@ const config = {
     type: "imagen_node",
     icon: {},
     desc: "Generate AI images using Google Imagen",
+    credit: 100,
     inputs: [
         {
             desc: "The flow of the workflow",

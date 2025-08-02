@@ -6,6 +6,7 @@ const config = {
     type: "cron_trigger",
     icon: {},
     desc: "Triggers a flow at a specific time",
+    credit: 100,
     inputs: [],
     outputs: [
         {
