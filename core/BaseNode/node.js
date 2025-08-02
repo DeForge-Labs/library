@@ -7,6 +7,7 @@ const sampleConfig = {
         content: "base64 of the image"
     },
     desc: "Optinal node description",
+    credit: 0, // Amount credit this node should cost
     inputs: [
         {
             name: "Name",
@@ -44,6 +45,7 @@ class Node {
         this.type = configJSON.type;
         this.icon = configJSON.icon;
         this.desc = configJSON.desc;
+        this.credit = configJSON.credit;
         this.inputs = configJSON.inputs;
         this.outputs = configJSON.outputs;
 
@@ -74,6 +76,7 @@ class Node {
             type: this.type,
             icon: this.icon,
             desc: this.desc,
+            credit: this.credit,
             inputs: this.inputs,
             outputs: this.outputs,
             tags: this.tags,
