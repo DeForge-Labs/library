@@ -86,6 +86,24 @@ class Node {
 
         return config;
     }
+
+    /**
+     * Returns the current value of the credit being cost
+     * @returns The current credit cost
+     */
+    getCredit() {
+        return this.credit;
+    }
+
+    /**
+     * Sets the credit cost for the node
+     * @param {number} value The new credit cost
+     */
+    setCredit(value) {
+        if (typeof value === "number") {
+            this.credit = value;
+        }
+    }
 }
 
 export default Node;
