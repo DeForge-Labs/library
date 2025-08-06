@@ -208,8 +208,8 @@ class rag_node extends BaseNode {
                 webconsole.error("RAG NODE | POSTGRESS_URL environment variable not set");
                 return null;
             }
-            if (!process.env.TAVILY_API_KEY) {
-                webconsole.error("RAG NODE | TAVILY_API_KEY environment variable not set");
+            if (!process.env.FIRECRAWL_API_KEY) {
+                webconsole.error("RAG NODE | FIRECRAWL_API_KEY environment variable not set");
                 return null;
             }
 
