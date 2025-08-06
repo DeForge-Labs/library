@@ -4,7 +4,7 @@ import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { Document } from "@langchain/core/documents";
 import { Downloader } from "nodejs-file-downloader";
-import { tavily } from "@tavily/core";
+import FirecrawlApp from '@mendable/firecrawl-js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
@@ -290,26 +290,31 @@ class rag_node extends BaseNode {
                 
                 try {
                     if (deepSearch) {
-                        const tavilyClient = tavily({
-                            apiKey: process.env.TAVILY_API_KEY,
-                        });
+                        webconsole.info("RAG NODE | Performing deep search on webpage");
 
-                        const response = await tavilyClient.crawl(dataURL, {
-                            extractDepth: "advanced",
+                        const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+
+                        const crawResult = await firecrawl.crawlUrl(dataURL, {
                             limit: 50,
-                            maxBreadth: 25,
+                            maxDepth: 3,
+                            scrapeOptions: {
+                                formats: ["markdown"],
+                                onlyMainContent: true,
+                                parsePDF: false,
+                                maxAge: 14400000,
+                            }
                         });
 
-                        if (!response.results) {
-                            const errorDetail = response.detail?.error || "Unknown error";
-                            throw new Error(`Some error occured with tavily: ${errorDetail}`);
+                        if (!crawResult.success) {
+                            webconsole.error(`RAG NODE | Firecrawl error: ${crawResult.error}`);
+                            throw new Error(`Firecrawl error: ${crawResult.error}`);
                         }
 
-                        const resultList = response.results;
-                        for (let data of resultList) {
-                            markdownContent += data.rawContent + "\n";
+                        for (const item of crawResult.data) {
+                            markdownContent += `Data from URL: ${item.metadata.sourceURL}\n${item.markdown}\n\n`;
                         }
-                        webconsole.success(`RAG NODE | Successfully extracted ${resultList.length} items`);
+
+                        webconsole.success(`RAG NODE | Successfully extracted ${crawResult.data?.length} items`);
                     }
                     else {
                         const axiosConfig = {

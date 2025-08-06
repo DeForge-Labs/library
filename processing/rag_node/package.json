@@ -21,7 +21,7 @@
     "@langchain/community": "^0.3.47",
     "@langchain/core": "^0.3.60",
     "@langchain/openai": "^0.5.14",
-    "@tavily/core": "^0.5.8",
+    "@mendable/firecrawl-js": "^1.29.3",
     "axios": "^1.10.0",
     "dotenv": "^16.4.5",
     "langchain": "^0.3.29",
