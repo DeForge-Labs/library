@@ -1,5 +1,5 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import { RestliClient, AuthClient, RestliClient } from "linkedin-api-client";
+import { RestliClient, AuthClient } from "linkedin-api-client";
 import { fileTypeFromFile } from "file-type";
 import { Downloader } from "nodejs-file-downloader";
 import fs from "fs";
