@@ -261,16 +261,7 @@ class linkedin_post extends BaseNode {
         }
 
         try {
-            const clientParams = {
-                clientId: process.env.LINKEDIN_CLIENT_ID,
-                clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-                redirect_uri: "https://api.deforge.io/api/workflow/connectSocialCallback",
-            };
-
-            const linkedInClient = new AuthClient(clientParams);
-            const refreshToken = linkedin_token.refresh_token;
-
-            const { access_token } = await linkedInClient.exchangeRefreshTokenForAccessToken(refreshToken);
+            const access_token = linkedin_token.access_token;
 
             webconsole.info("LINKEDIN POST NODE | Getting connected user information");
             const restClientLinkedin = new RestliClient();
