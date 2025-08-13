@@ -1,0 +1,25 @@
+{
+  "name": "linkedin-post",
+  "version": "0.0.1",
+  "description": "Create a post on LinkedIn",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "file-type": "^21.0.0",
+    "linkedin-api-client": "^0.3.0",
+    "nodejs-file-downloader": "^4.13.0"
+  }
+}

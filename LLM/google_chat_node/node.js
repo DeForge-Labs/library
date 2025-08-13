@@ -119,7 +119,7 @@ const config = {
         },
     ],
     difficulty: "medium",
-    tags: ["api", "llm", "chatbot", "rag"],
+    tags: ["api", "llm", "chatbot", "gemini"],
 }
 
 class google_chat_node extends BaseNode {
