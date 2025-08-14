@@ -3,6 +3,7 @@ import { RestliClient, AuthClient } from "linkedin-api-client";
 import { fileTypeFromFile } from "file-type";
 import { Downloader } from "nodejs-file-downloader";
 import fs from "fs";
+import axios from "axios";
 import path from "path";
 import dotenv from "dotenv";
 
@@ -186,7 +187,7 @@ class linkedin_post extends BaseNode {
                 accessToken: accessToken
             });
 
-            const { uploadInstructions, video } = initResponse.data.value;
+            const { uploadInstructions, video, uploadToken } = initResponse.data.value;
             const uploadedPartIds = [];
 
             webconsole.info("LINKEDIN POST NODE | Uploading video parts...");
@@ -210,6 +211,7 @@ class linkedin_post extends BaseNode {
                 data: {
                     finalizeUploadRequest: {
                         video: video,
+                        uploadToken: uploadToken,
                         uploadedPartIds: uploadedPartIds
                     }
                 },
@@ -267,11 +269,11 @@ class linkedin_post extends BaseNode {
             const restClientLinkedin = new RestliClient();
 
             const meResponse = await restClientLinkedin.get({
-                resourcePath: '/me',
+                resourcePath: '/userinfo',
                 accessToken: access_token
             });
 
-            const author = `urn:li:person:${meResponse.data.id}`;
+            const author = `urn:li:person:${meResponse.data.sub}`;
 
             let postContent = {};
             if (ImageLink) {
@@ -314,7 +316,7 @@ class linkedin_post extends BaseNode {
                 resourcePath: '/posts',
                 entity: postEntity,
                 accessToken: access_token,
-                versionString: '202401'
+                versionString: '202504'
             });
 
             const postId = postsCreateResponse.createdEntityId;

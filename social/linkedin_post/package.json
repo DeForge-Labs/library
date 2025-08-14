@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
+    "axios": "^1.11.0",
     "dotenv": "^17.2.1",
     "file-type": "^21.0.0",
     "linkedin-api-client": "^0.3.0",
