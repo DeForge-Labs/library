@@ -1,0 +1,24 @@
+{
+  "name": "jobs-search",
+  "version": "0.0.1",
+  "description": "Node to search for jobs with a given search term",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "dotenv": "^17.0.0"
+  }
+}
