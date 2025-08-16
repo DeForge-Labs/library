@@ -319,6 +319,42 @@ class google_chat_node extends BaseNode {
                 "gemini-2.0-flash-lite": 4000000,
             };
 
+            // Model pricing per million tokens in deforge credits less than 200K tokens
+            const modelPricingInputUnder200 = {
+                "gemini-2.5-pro": 834,
+                "gemini-2.5-flash": 200,
+                "gemini-2.5-flash-lite-preview-06-17": 67,
+                "gemini-2.0-flash": 100,
+                "gemini-2.0-flash-lite": 50,
+            }
+
+            // Model pricing per million tokens in deforge credits more than 200K tokens
+            const modelPricingInputOver200 = {
+                "gemini-2.5-pro": 1667,
+                "gemini-2.5-flash": 200,
+                "gemini-2.5-flash-lite-preview-06-17": 67,
+                "gemini-2.0-flash": 100,
+                "gemini-2.0-flash-lite": 50,
+            }
+
+            // Model pricing output per million tokens in deforge credits less than 200K tokens
+            const modelPricingOutputUnder200 = {
+                "gemini-2.5-pro": 6667,
+                "gemini-2.5-flash": 1667,
+                "gemini-2.5-flash-lite-preview-06-17": 267,
+                "gemini-2.0-flash": 400,
+                "gemini-2.0-flash-lite": 200,
+            }
+
+            // Model pricing output per million tokens in deforge credits more than 200K tokens
+            const modelPricingOutputOver200 = {
+                "gemini-2.5-pro": 10000,
+                "gemini-2.5-flash": 1667,
+                "gemini-2.5-flash-lite-preview-06-17": 267,
+                "gemini-2.0-flash": 400,
+                "gemini-2.0-flash-lite": 200,
+            }
+
             const queryFilter = inputs.filter((e) => e.name === "Query");
             let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
 
@@ -432,6 +468,18 @@ class google_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+
+            const inputTokenUsage = response.usage_metadata.input_tokens;
+            const outputTokenUsage = response.usage_metadata.output_tokens;
+
+            const inputCreditRate = inputTokenUsage > 200000 ? modelPricingInputOver200[model] : modelPricingInputUnder200[model];
+            const outputCreditRate = outputTokenUsage > 200000 ? modelPricingOutputOver200[model] : modelPricingOutputUnder200[model];
+
+            const inputCreditUsage = inputTokenUsage * (inputCreditRate / 1e6);
+            const outputCreditUsage = outputTokenUsage * (outputCreditRate / 1e6);
+            const totalCreditUsage = inputCreditUsage + outputCreditUsage;
+
+            this.setCredit(totalCreditUsage);
 
             if (saveMemory) {
                 try {

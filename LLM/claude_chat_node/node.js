@@ -86,7 +86,6 @@ const config = {
                 "claude-opus-4-0",
                 "claude-sonnet-4-0",
                 "claude-3-7-sonnet-latest",
-                "claude-3-5-sonnet-latest",
                 "claude-3-5-haiku-latest",
             ],
         },
@@ -314,10 +313,25 @@ class claude_chat_node extends BaseNode {
             const modelTokensPerMinute = {
                 "claude-opus-4-0": 20000,
                 "claude-sonnet-4-0": 20000,
-                "claude-3-7-sonnet-latest": 20000, 
-                "claude-3-5-sonnet-latest": 40000,
+                "claude-3-7-sonnet-latest": 20000,
                 "claude-3-5-haiku-latest": 50000, 
             };
+
+            // Input pricing per million tokens in deforge credits
+            const modelPricingInput = {
+                "claude-opus-4-0": 10000,
+                "claude-sonnet-4-0": 2000,
+                "claude-3-7-sonnet-latest": 2000,
+                "claude-3-5-haiku-latest": 534,
+            }
+
+            // Output pricing per million tokens in deforge credits
+            const modelPricingOutput = {
+                "claude-opus-4-0": 50000,
+                "claude-sonnet-4-0": 10000,
+                "claude-3-7-sonnet-latest": 10000,
+                "claude-3-5-haiku-latest": 2667,
+            }
             
             const queryFilter = inputs.filter((e) => e.name === "Query");
             let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
@@ -433,6 +447,15 @@ class claude_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+
+            const inputTokenUsage = response.usage_metadata.input_tokens;
+            const outputTokenUsage = response.usage_metadata.output_tokens;
+
+            const totalInputCost = inputTokenUsage * (modelPricingInput[model] / 1e6);
+            const totalOutputCost = outputTokenUsage * (modelPricingOutput[model] / 1e6);
+            const totalCost = totalInputCost + totalOutputCost;
+
+            this.setCredit(totalCost);
 
             if (saveMemory) {
                 try {

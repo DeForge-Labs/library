@@ -326,6 +326,28 @@ class openai_chat_node extends BaseNode {
                 "o4-mini": 40000,
             };
 
+            // Input pricing per million tokens in deforge credits
+            const modelPricingInput = {
+                "gpt-4o": 1667,
+                "gpt-4o-mini": 100,
+                "gpt-4.1": 1334,
+                "gpt-4.1-mini": 267,
+                "gpt-4.1-nano": 67,
+                "o3-mini": 734,
+                "o4-mini": 734,
+            };
+
+            // Output pricing per million tokens in deforge credits
+            const modelPricingOutput = {
+                "gpt-4o": 6667,
+                "gpt-4o-mini": 400,
+                "gpt-4.1": 5334,
+                "gpt-4.1-mini": 1067,
+                "gpt-4.1-nano": 267,
+                "o3-mini": 2934,
+                "o4-mini": 2934,
+            };
+
             const queryFilter = inputs.filter((e) => e.name === "Query");
             let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
 
@@ -436,6 +458,15 @@ class openai_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+
+            const inputTokenUsage = response.usage_metadata.input_tokens;
+            const outputTokenUsage = response.usage_metadata.output_tokens;
+
+            const totalInputCost = inputTokenUsage * (modelPricingInput[model] / 1e6);
+            const totalOutputCost = outputTokenUsage * (modelPricingOutput[model] / 1e6);
+            const totalCost = totalInputCost + totalOutputCost;
+
+            this.setCredit(totalCost);
 
             if (saveMemory) {
                 try {
