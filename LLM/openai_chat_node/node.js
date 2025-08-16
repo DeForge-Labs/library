@@ -459,11 +459,13 @@ class openai_chat_node extends BaseNode {
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
 
-            const inputTokenUsage = response.usage_metadata.input_tokens;
-            const outputTokenUsage = response.usage_metadata.output_tokens;
+            const resJSON = response.toJSON();
 
-            const totalInputCost = inputTokenUsage * (modelPricingInput[model] / 1e6);
-            const totalOutputCost = outputTokenUsage * (modelPricingOutput[model] / 1e6);
+            const inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
+            const outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+
+            const totalInputCost = Math.ceil(inputTokenUsage * (modelPricingInput[model] / 1e6));
+            const totalOutputCost = Math.ceil(outputTokenUsage * (modelPricingOutput[model] / 1e6));
             const totalCost = totalInputCost + totalOutputCost;
 
             this.setCredit(totalCost);

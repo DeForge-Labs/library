@@ -469,14 +469,16 @@ class google_chat_node extends BaseNode {
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
 
-            const inputTokenUsage = response.usage_metadata.input_tokens;
-            const outputTokenUsage = response.usage_metadata.output_tokens;
+            const resJSON = response.toJSON();
+
+            const inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
+            const outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
 
             const inputCreditRate = inputTokenUsage > 200000 ? modelPricingInputOver200[model] : modelPricingInputUnder200[model];
             const outputCreditRate = outputTokenUsage > 200000 ? modelPricingOutputOver200[model] : modelPricingOutputUnder200[model];
 
-            const inputCreditUsage = inputTokenUsage * (inputCreditRate / 1e6);
-            const outputCreditUsage = outputTokenUsage * (outputCreditRate / 1e6);
+            const inputCreditUsage = Math.ceil(inputTokenUsage * (inputCreditRate / 1e6));
+            const outputCreditUsage = Math.ceil(outputTokenUsage * (outputCreditRate / 1e6));
             const totalCreditUsage = inputCreditUsage + outputCreditUsage;
 
             this.setCredit(totalCreditUsage);
