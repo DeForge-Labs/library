@@ -36,7 +36,7 @@ const config = {
     type: "google_chat_node",
     icon: {},
     desc: "Chat with Google based LLM",
-    credit: 100,
+    credit: 200,
     inputs: [
         {
             desc: "The flow of the workflow",

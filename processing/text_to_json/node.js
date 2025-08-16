@@ -7,7 +7,7 @@ const config = {
   type: "text_to_json",
   icon: {},
   desc: "Converts text to JSON",
-  credit: 100,
+  credit: 0,
   inputs: [
     {
       desc: "The flow of the workflow",

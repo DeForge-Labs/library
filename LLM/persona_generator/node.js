@@ -12,7 +12,7 @@ const config = {
     type: "persona_generator",
     icon: {},
     desc: "Generate a persona of any user from any social media and add to a LLM",
-    credit: 100,
+    credit: 200,
     inputs: [
         {
             desc: "Username or Link to the user",

@@ -7,7 +7,7 @@ const config = {
   type: "cal_book",
   icon: {},
   desc: "Book cal.com meeting",
-  credit: 100,
+  credit: 0,
   inputs: [
     {
       desc: "The flow of the workflow",

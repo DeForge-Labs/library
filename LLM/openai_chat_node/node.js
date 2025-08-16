@@ -87,7 +87,6 @@ const config = {
                 "gpt-4.1-nano",
                 "gpt-4o",
                 "gpt-4o-mini",
-                "gpt-4",
                 "o3-mini",
                 "o4-mini",
             ],
@@ -323,7 +322,6 @@ class openai_chat_node extends BaseNode {
                 "gpt-4.1": 20000,
                 "gpt-4.1-mini": 20000,
                 "gpt-4.1-nano": 20000,
-                "gpt-4": 10000,
                 "o3-mini": 10000,
                 "o4-mini": 40000,
             };

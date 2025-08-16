@@ -10,7 +10,7 @@ const config = {
     type: "tweet_post",
     icon: {},
     desc: "Post an update to your twitter account",
-    credit: 100,
+    credit: 10,
     inputs: [
         {
             desc: "The flow of the workflow",

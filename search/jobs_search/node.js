@@ -10,7 +10,7 @@ const config = {
     type: "jobs_search",
     icon: {},
     desc: "Search for jobs with a given search term using adzuna",
-    credit: 100,
+    credit: 10,
     inputs: [
         {
             desc: "The flow of the workflow",

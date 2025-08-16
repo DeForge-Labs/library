@@ -15,7 +15,7 @@ const config = {
     type: "linkedin_post",
     icon: {},
     desc: "Make a post on LinkedIn",
-    credit: 100,
+    credit: 0,
     inputs: [
         {
             desc: "Text content to post",

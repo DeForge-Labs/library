@@ -6,7 +6,7 @@ const config = {
     type: "output_text",
     icon: {},
     desc: "Outputs text to the user",
-    credit: 100,
+    credit: 0,
     inputs: [
         {
             desc: "The flow of the workflow",

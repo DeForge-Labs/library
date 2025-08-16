@@ -6,7 +6,7 @@ const config = {
     type: "bool_var",
     icon: {},
     desc: "Boolean variable",
-    credit: 100,
+    credit: 0,
     inputs: [],
     outputs: [
         {

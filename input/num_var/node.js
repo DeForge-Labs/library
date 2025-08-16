@@ -6,7 +6,7 @@ const config = {
     type: "num_var",
     icon: {},
     desc: "Number variable",
-    credit: 100,
+    credit: 0,
     inputs: [],
     outputs: [
         {

@@ -6,7 +6,7 @@ const config = {
     type: "text_join",
     icon: {},
     desc: "Joins multiple text strings into a single string",
-    credit: 100,
+    credit: 0,
     inputs: [
         {
             desc: "The flow of the workflow",

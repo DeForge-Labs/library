@@ -6,7 +6,7 @@ const config = {
   type: "math_operation",
   icon: {},
   desc: "Performs a mathematical operation on two numbers",
-  credit: 100,
+  credit: 0,
   inputs: [
     {
       desc: "The flow of the workflow",

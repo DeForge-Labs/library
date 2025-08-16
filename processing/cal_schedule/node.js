@@ -7,7 +7,7 @@ const config = {
   type: "cal_schedule",
   icon: {},
   desc: "Get cal.com schedule",
-  credit: 100,
+  credit: 0,
   inputs: [
     {
       desc: "The flow of the workflow",

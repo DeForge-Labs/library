@@ -6,7 +6,7 @@ const config = {
   type: "text_to_date",
   icon: {},
   desc: "Converts Text(ISO Date String) to Date",
-  credit: 100,
+  credit: 0,
   inputs: [
     {
       desc: "The flow of the workflow",

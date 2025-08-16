@@ -6,7 +6,7 @@ const config = {
     type: "json_extract",
     icon: {},
     desc: "Gets the Value from JSON and Provided key as input",
-    credit: 100,
+    credit: 0,
     inputs: [
         {
             desc: "The flow of the workflow",

@@ -7,7 +7,7 @@ const config = {
     type: "tg_media_msg_send",
     icon: {},
     desc: "Send a media message via your telegram bot",
-    credit: 100,
+    credit: 0,
     inputs: [
         {
             desc: "The flow of the workflow",

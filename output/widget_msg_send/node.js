@@ -6,7 +6,7 @@ const config = {
     type: "widget_msg_send",
     icon: {},
     desc: "Send a response to your support bot widget",
-    credit: 100,
+    credit: 0,
     inputs: [
         {
             desc: "The flow of the workflow",

@@ -36,7 +36,7 @@ const config = {
     type: "claude_chat_node",
     icon: {},
     desc: "Chat with Anthropic based LLM",
-    credit: 100,
+    credit: 1200,
     inputs: [
         {
             desc: "The flow of the workflow",

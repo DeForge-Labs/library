@@ -35,7 +35,7 @@ const config = {
     type: "custom_chat_node",
     icon: {},
     desc: "Chat with custom OpenAI-compatible LLMs",
-    credit: 100,
+    credit: 10,
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -128,7 +128,7 @@ const config = {
         },
     ],
     difficulty: "hard",
-    tags: ["api", "llm", "chatbot", "rag"],
+    tags: ["api", "llm", "chatbot"],
 }
 
 class custom_chat_node extends BaseNode {
