@@ -196,6 +196,10 @@ class dub_media extends BaseNode {
                 targetLang: langMap[DubLanguage]
             });
 
+            const durationInSeconds = dubInstance.expectedDurationSec;
+            const creditUsage = Math.ceil(durationInSeconds * (400 / 60));
+            this.setCredit(creditUsage);
+
             webconsole.info("DUB MEDIA NODE | Created Eleven Labs dubbing job with ID: ", dubInstance.dubbingId);
 
             fs.unlinkSync(filePath);

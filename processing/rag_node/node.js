@@ -163,6 +163,9 @@ class rag_node extends BaseNode {
         try {
             webconsole.info(`RAG NODE | Saving ${documents.length} documents to PostgreSQL table: ${tableName}`);
 
+            const currentCreditUsage = this.getCredit();
+            this.setCredit(currentCreditUsage + 15);
+
             const embeddings = new OpenAIEmbeddings({
                 model: "text-embedding-3-small",
                 apiKey: process.env.OPENAI_API_KEY,
@@ -313,6 +316,9 @@ class rag_node extends BaseNode {
                         for (const item of crawResult.data) {
                             markdownContent += `Data from URL: ${item.metadata.sourceURL}\n${item.markdown}\n\n`;
                         }
+
+                        const currentCreditUsage = this.getCredit();
+                        this.setCredit(currentCreditUsage + 367);
 
                         webconsole.success(`RAG NODE | Successfully extracted ${crawResult.data?.length} items`);
                     }

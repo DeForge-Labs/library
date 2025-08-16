@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuid } from "uuid";
 import FormData from "form-data";
+import { parseFile } from 'music-metadata';
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -222,6 +223,12 @@ class text_to_speech extends BaseNode {
                 fileStream.on('finish', resolve);
                 fileStream.on('error', reject);
             });
+
+            const metadata = await parseFile(`./runtime_files/${fileName}`);
+            const durationInSeconds = metadata.format.duration || 60;
+
+            const creditUsage = Math.ceil(durationInSeconds * (100 / 60));
+            this.setCredit(creditUsage);
 
             const audioLink = await this.uploadTo0x0st(`./runtime_files/${fileName}`);
             fs.unlinkSync(`./runtime_files/${fileName}`);

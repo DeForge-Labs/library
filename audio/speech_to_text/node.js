@@ -2,6 +2,7 @@ import BaseNode from "../../core/BaseNode/node.js";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { Downloader } from "nodejs-file-downloader";
 import { fileTypeFromFile } from "file-type";
+import { parseFile } from "music-metadata";
 import fs from "fs";
 import dotenv from "dotenv";
 
@@ -103,6 +104,10 @@ class speech_to_text extends BaseNode {
                 fs.unlinkSync(filePath);
                 return null;
             }
+
+            const metadata = await parseFile(filePath);
+            const durationInSeconds = metadata.format.duration || 60;
+
             const audioBlobBuffer = fs.readFileSync(filePath);
             const audioBlob = new Blob([audioBlobBuffer], {type: fileType.mime});
 
@@ -116,6 +121,9 @@ class speech_to_text extends BaseNode {
             });
 
             fs.unlinkSync(filePath);
+
+            const creditUsage = Math.ceil(durationInSeconds * (274 / 3600));
+            this.setCredit(creditUsage);
 
             const transcribedText = transcription.text;
             webconsole.success("SPEECH TO TEXT NODE | Successfully transcribed audio");
