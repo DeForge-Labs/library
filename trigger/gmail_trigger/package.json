@@ -1,0 +1,24 @@
+{
+  "name": "gmail-trigger",
+  "version": "0.0.1",
+  "description": "Trigger frm Gmail",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "googleapis": "^156.0.0"
+  }
+}
