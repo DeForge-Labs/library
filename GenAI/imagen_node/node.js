@@ -145,6 +145,19 @@ class imagen_node extends BaseNode {
         imageFormat = imageFormat === "jpeg" ? "image/jpeg" : "image/png";
         imageQuality = Math.max(0, Math.min(Number.parseInt(imageQuality), 100));
 
+        // Model pricing in deforge tokens
+        const modelPricing = {
+            "imagen-4.0-generate-preview-06-06": 27,
+            "imagen-4.0-fast-generate-preview-06-06": 14,
+            "imagen-4.0-ultra-generate-preview-06-06": 40,
+            "imagen-3.0-generate-002": 27,
+            "imagen-3.0-generate-001": 27,
+            "imagen-3.0-fast-generate-001": 14,
+        };
+
+        const creditUsage = modelPricing[Model];
+        this.setCredit(creditUsage);
+
         if (!Prompt) {
             webconsole.error("IMAGEN NODE | No Prompt provided");
             return null;

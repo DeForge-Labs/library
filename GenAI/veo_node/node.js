@@ -36,6 +36,11 @@ const config = {
             name: "Duration",
             type: "Number",
         },
+        {
+            desc: "Generate audio along with video (applicable only for Veo3)",
+            name: "Generate Audio",
+            type: "Boolean",
+        },
     ],
     outputs: [
         {
@@ -150,10 +155,12 @@ class veo_node extends BaseNode {
         if (Model === "Veo3") {
             Duration = 8;
             Ratio = "16:9";
+            this.setCredit(4000)
         }
         else {
             Duration = Math.max(5, Math.min(Duration, 8));
             Audio = false;
+            this.setCredit(334 * Duration);
         }
 
         const PROJECT_ID = process.env.VEO_PROJECT_ID;
