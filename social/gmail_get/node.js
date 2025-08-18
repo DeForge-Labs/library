@@ -13,6 +13,11 @@ const config = {
     credit: 0,
     inputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Search query for email (same as gmail search bar)",
             name: "Search Query",
             type: "Text",
@@ -24,11 +29,6 @@ const config = {
         },
     ],
     outputs: [
-        {
-            desc: "The Flow to trigger",
-            name: "Flow",
-            type: "Flow",
-        },
         {
             desc: "All email data",
             name: "All Email",
@@ -178,7 +178,6 @@ class gmail_get extends BaseNode {
             webconsole.success("GMAIL GET NODE | All emails processed successfully");
 
             return {
-                "Flow": true,
                 "All Email": allEmailData,
                 "Subject": allEmailData.emails.length === 1 ? allEmailData.emails[0].subject : "Multiple or no emails",
                 "Body": allEmailData.emails.length === 1 ? allEmailData.emails[0].body : "Multiple or no emails",
