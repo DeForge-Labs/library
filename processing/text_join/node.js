@@ -53,7 +53,7 @@ class text_join extends BaseNode {
         try {
             webconsole.info("TEXT JOIN NODE | Gathering texts");
 
-            const inputTextsFilter = inputs.find((e) => e.name === "objects");
+            const inputTextsFilter = inputs.find((e) => e.name === "Text");
             const inputTexts = inputTextsFilter?.value || [];
 
             const separatorFilter = contents.find((e) => e.name === "Separator");
