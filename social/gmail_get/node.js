@@ -87,7 +87,7 @@ class gmail_get extends BaseNode {
         // If multipart
         for (const part of parts) {
             if (part.parts) {
-                const found = findTextPart(part.parts);
+                const found = this.findTextPart(part.parts);
                 if (found) return found;
             }
         }

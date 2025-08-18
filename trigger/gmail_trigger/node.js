@@ -62,7 +62,7 @@ class gmail_trigger extends BaseNode {
         // If multipart
         for (const part of parts) {
             if (part.parts) {
-                const found = findTextPart(part.parts);
+                const found = this.findTextPart(part.parts);
                 if (found) return found;
             }
         }
@@ -151,6 +151,8 @@ class gmail_trigger extends BaseNode {
                     allEmailData.emails.push(emailData);
                 }
             }
+
+            webconsole.success("GMAIL TRIGGER NODE | All emails processed successfully");
 
             return {
                 "Flow": true,
