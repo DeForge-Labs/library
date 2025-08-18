@@ -64,7 +64,7 @@ class text_join extends BaseNode {
             webconsole.success("TEXT JOIN NODE | Joined texts");
             return res;
         } catch (error) {
-            webconsole.error("TEXT JOIN NODE | Gathering texts");
+            webconsole.error("TEXT JOIN NODE | Some error occured: ", error);
             return null;
         }
     }

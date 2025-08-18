@@ -41,7 +41,7 @@ class output_text extends BaseNode {
         try {
             const StringOutput = Object.keys(inputs).length > 0 ? inputs[0].value : "";
 
-            webconsole.info("TEXT OUTPUT | Emmitting JSON output");
+            webconsole.info("TEXT OUTPUT | Emmitting Text output");
 
             return StringOutput;
         } catch (error) {
