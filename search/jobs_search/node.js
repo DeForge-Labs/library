@@ -1,7 +1,6 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import dotenv from "dotenv";
 import axios from "axios";
-import { json2csv } from "json-2-csv";
 
 dotenv.config();
 
@@ -90,6 +89,27 @@ class web_search_node extends BaseNode {
 
     constructor() {
         super(config);
+    }
+
+    /**
+     * Convert JSON to CSV format
+     * @param {Object} json 
+     * @returns {String} CSV formatted string
+     */
+    json2csv(json) {
+        const rows = [];
+        const headers = Object.keys(json[0]);
+        rows.push(headers.join(","));
+        for (const row of json) {
+            rows.push(headers.map(header => {
+                const value = row[header];
+                if (typeof value === "string") {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            }).join(","));
+        }
+        return rows.join("\n");
     }
 
     formatSalary(min, max, currencyCode) {
@@ -220,7 +240,7 @@ class web_search_node extends BaseNode {
                     "jobList": jobList
                 };
 
-                const outputCSV = json2csv(jobList);
+                const outputCSV = this.json2csv(jobList);
 
                 return {
                     "Job List": outputJSON,
