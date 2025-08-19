@@ -7,7 +7,7 @@ dotenv.config();
 
 const config = {
     title: "Create Google Sheet",
-    category: "social",
+    category: "office",
     type: "google_sheets",
     icon: {},
     desc: "Create a sheet in google sheets",
