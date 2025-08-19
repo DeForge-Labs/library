@@ -2,6 +2,7 @@ import BaseNode from "../../core/BaseNode/node.js";
 import dotenv from "dotenv";
 import { google } from "googleapis";
 import axios from "axios";
+import Papa from "papaparse";
 
 dotenv.config();
 
@@ -76,9 +77,16 @@ class google_sheets extends BaseNode {
         super(config);
     }
 
+    /**
+     * Parses a CSV string into a 2D array using Papa Parse.
+     *
+     * @param {string} csvString The raw CSV string to parse.
+     * @returns {string[][]} A 2D array representing the CSV data.
+     */
     parseCsvTo2dArray(csvString) {
-        if (!csvString) return [];
-        return csvString.trim().split("\n").map(row => row.split(","));
+        // The 'header: false' option ensures it returns a 2D array instead of objects.
+        const result = Papa.parse(csvString.trim(), { header: false });
+        return result.data;
     }
 
     async run(inputs, contents, webconsole, serverData) {
