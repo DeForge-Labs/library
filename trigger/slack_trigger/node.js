@@ -29,6 +29,11 @@ const config = {
             name: "User ID",
             type: "Text",
         },
+        {
+            desc: "Was the bot mentioned in the text ?",
+            name: "Is Bot Mentioned",
+            type: "Boolean"
+        }
     ],
     fields: [
         {
@@ -52,7 +57,7 @@ class slack_trigger extends BaseNode {
             webconsole.info("SLACK TRIGGER | Started execution");
 
             const payload = serverData.slackPayload;
-            if (payload?.event) {
+            if (!payload?.event) {
                 webconsole.error("SLACK TRIGGER | Invalid or missing Slack payload");
                 return null;
             }
@@ -61,12 +66,16 @@ class slack_trigger extends BaseNode {
             const channelID = payload.event.channel;
             const userID = payload.event.user;
 
+            const botId = payload.authorizations[0].user_id;
+            const isMentioned = payload.event.text.includes(`<@${botId}>`);
+
             webconsole.success("SLACK TRIGGER | Message recieved, continuing flow");
             return {
                 "Flow": true,
                 "Message": msg,
                 "Channel ID": channelID,
                 "User ID": userID,
+                "Is Bot Mentioned": isMentioned,
             };
         } catch (error) {
             webconsole.error("SLACK TRIGGER | Some error occured: ", error);
