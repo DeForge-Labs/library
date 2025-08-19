@@ -35,7 +35,14 @@ const config = {
             type: "Boolean"
         }
     ],
-    fields: [],
+    fields: [
+        {
+            desc: "Connect to your Slack account",
+            name: "Slack",
+            type: "social",
+            defaultValue: "",
+        },
+    ],
     difficulty: "easy",
     tags: ["trigger", "slack", "bot"],
 }
