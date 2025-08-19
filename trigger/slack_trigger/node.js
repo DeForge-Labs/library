@@ -29,11 +29,6 @@ const config = {
             name: "User ID",
             type: "Text",
         },
-        {
-            desc: "Is the message a bot command ?",
-            name: "Is Command",
-            type: "Boolean"
-        }
     ],
     fields: [
         {
