@@ -1,6 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import dotenv from "dotenv";
 import axios from "axios";
+import { json2csv } from "json-2-csv";
 
 dotenv.config();
 
@@ -34,6 +35,11 @@ const config = {
             name: "Job List",
             type: "JSON",
         },
+        {
+            desc: "The list of jobs but in CSV format",
+            name: "Job List CSV",
+            type: "Text",
+        }
     ],
     fields: [
         {
@@ -214,8 +220,11 @@ class web_search_node extends BaseNode {
                     "jobList": jobList
                 };
 
+                const outputCSV = json2csv(jobList);
+
                 return {
-                    "Job List": outputJSON
+                    "Job List": outputJSON,
+                    "Job List CSV": outputCSV,
                 };
             }
             else {
