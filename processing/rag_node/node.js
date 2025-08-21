@@ -23,7 +23,13 @@ const config = {
     icon: {},
     desc: "Process your Knowledge Base to use it in LLMs",
     credit: 15,
-    inputs: [],
+    inputs: [
+        {
+            desc: "The knowledge base link",
+            name: "Link",
+            type: "Text",
+        },
+    ],
     outputs: [
         {
             desc: "RAG Database",
