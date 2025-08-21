@@ -126,6 +126,8 @@ class tweet_post extends BaseNode {
                 return null;
             }
 
+            const refreshTokenHandler = serverData.refreshUtil;
+
             const authClient = new auth.OAuth2User({
                 client_id: process.env.X_CLIENT_ID,
                 client_secret: process.env.X_CLIENT_SECRET,
@@ -138,6 +140,8 @@ class tweet_post extends BaseNode {
                 webconsole.info("TWEET POST NODE | Refreshing token");
                 const { token } = await authClient.refreshAccessToken();
                 authClient.token = token;
+
+                await refreshTokenHandler.handleTwitterToken(token);
             }
             
             const client = new Client(authClient);
