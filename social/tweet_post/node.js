@@ -163,7 +163,7 @@ class tweet_post extends BaseNode {
             webconsole.info("TWEET POST NODE | Tweeting your thoughts");
 
             const postRes = await client.tweets.createTweet({
-                text: Post,
+                text: Post.replace(/\\n/g, "\n"),
             });
 
             webconsole.success("TWEET POST NODE | Successfully tweeted your post");
