@@ -434,13 +434,13 @@ class openai_chat_node extends BaseNode {
             const llm = new ChatOpenAI({
                 model: modelMap[model],
                 ...(doesModelLikeTemperature && { temperature: temperature }),
-                apiKey: process.env.OPENAROUTER_API_KEY,
                 configuration: {
                     baseURL: "https://openrouter.ai/api/v1",
                     defaultHeaders: {
                         'HTTP-Referer': 'https://deforge.io',
                         'X-Title': 'Deforge',
                     },
+                    apiKey: process.env.OPENROUTER_API_KEY,
                 },
             });
 

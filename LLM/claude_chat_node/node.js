@@ -389,9 +389,6 @@ class claude_chat_node extends BaseNode {
 
             webconsole.info(`CLAUDE NODE | Configuration - Model: ${model}, Temperature: ${temperature}, Save Memory: ${saveMemory}, RAG Table: ${ragTableName || 'None'}`);
 
-            if (!process.env.ANTHROPIC_API_KEY) {
-                throw new Error("ANTHROPIC_API_KEY environment variable not set");
-            }
             if (!process.env.POSTGRESS_URL) {
                 throw new Error("POSTGRESS_URL environment variable not set");
             }
@@ -399,13 +396,13 @@ class claude_chat_node extends BaseNode {
             const llm = new ChatOpenAI({
                 model: modelMap[model],
                 temperature: temperature,
-                apiKey: process.env.OPENROUTER_API_KEY,
                 configuration: {
-                    baseURL: "https://api.openrouter.ai/v1",
+                    baseURL: "https://openrouter.ai/api/v1",
                     defaultHeaders: {
                         'HTTP-Refererer': 'https://deforge.io',
                         'X-Title': 'Deforge',
                     },
+                    apiKey: process.env.OPENROUTER_API_KEY,
                 },
             });
 
