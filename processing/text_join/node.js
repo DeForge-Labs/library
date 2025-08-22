@@ -57,7 +57,7 @@ class text_join extends BaseNode {
             const inputTexts = inputTextsFilter?.value || [];
 
             const separatorFilter = contents.find((e) => e.name === "Separator");
-            const separator = separatorFilter?.value || " ";
+            const separator = separatorFilter?.value || "";
 
             const res = inputTexts.join(separator);
 
