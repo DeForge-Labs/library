@@ -389,9 +389,11 @@ class openai_chat_node extends BaseNode {
                 webconsole.error("OPENAI NODE | Query not found");
                 return null;
             }
+            query = query.slice(0, 20000);
 
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
-            const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
+            let systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
+            systemPrompt = systemPrompt.slice(0, 4000);
 
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
