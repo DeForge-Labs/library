@@ -68,7 +68,7 @@ class json_extract extends BaseNode {
             const value = JSONdata[key];
             webconsole.success("JSON EXTRACT | Extracted data, emitting");
 
-            return value;
+            return JSON.stringify(value);
         }
         else {
             webconsole.error("JSON EXTRACT | Extracted failed, no such key");
