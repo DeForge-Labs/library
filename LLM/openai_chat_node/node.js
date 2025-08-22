@@ -35,7 +35,7 @@ const config = {
     type: "openai_chat_node",
     icon: {},
     desc: "Chat with OpenAI based LLMs",
-    credit: 100,
+    credit: 50,
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -82,6 +82,9 @@ const config = {
             type: "select",
             value: "gpt-4o",
             options: [
+                "gpt-5",
+                "gpt-5-mini",
+                "gpt-5-nano",
                 "gpt-4.1",
                 "gpt-4.1-mini",
                 "gpt-4.1-nano",
@@ -120,7 +123,7 @@ const config = {
         },
     ],
     difficulty: "medium",
-    tags: ["api", "llm", "chatbot", "rag"],
+    tags: ["api", "llm", "chatbot"],
 }
 
 class openai_chat_node extends BaseNode {
@@ -311,23 +314,51 @@ class openai_chat_node extends BaseNode {
         return workflow.compile({ checkpointer: this.memoryStore });
     }
 
-    async run(inputs, contents, webconsole, serverData) {
+    estimateUsage(inputs, content, serverData) {
         try {
-            webconsole.info("OPENAI NODE | Starting LangGraph-based chat node");
-            
-            // Model tokens per minute limits (approximate, update as needed)
-            const modelTokensPerMinute = {
-                "gpt-4o": 40000,
-                "gpt-4o-mini": 40000,
-                "gpt-4.1": 20000,
-                "gpt-4.1-mini": 20000,
-                "gpt-4.1-nano": 20000,
-                "o3-mini": 10000,
-                "o4-mini": 40000,
-            };
+            const queryFilter = inputs.filter((e) => e.name === "Query");
+            const query = queryFilter.length > 0 ? queryFilter[0].value : content.find((e) => e.name === "Query")?.value || "";
+
+            const model = content.find((e) => e.name === "Model")?.value || "gpt-4o";
+
+            function estimateTokens(text) {
+                return Math.ceil(text.length / 4);
+            }
 
             // Input pricing per million tokens in deforge credits
             const modelPricingInput = {
+                "gpt-5": 834,
+                "gpt-5-mini": 167,
+                "gpt-5-nano": 34,
+                "gpt-4o": 1667,
+                "gpt-4o-mini": 100,
+                "gpt-4.1": 1334,
+                "gpt-4.1-mini": 267,
+                "gpt-4.1-nano": 67,
+                "o3-mini": 734,
+                "o4-mini": 734,
+            };
+
+            const inputTokens = estimateTokens(query);
+
+            const inputPrice = modelPricingInput[model] || 1667;
+
+            return Math.ceil(inputTokens * (inputPrice / 1e6))
+        } catch (error) {
+            webconsole.error("OPENAI NODE | Falling back to min required credits | Error estimating usage: ", error);
+            return this.getCredit();
+        }
+    }
+
+    async run(inputs, contents, webconsole, serverData) {
+        try {
+            webconsole.info("OPENAI NODE | Starting LangGraph-based chat node");
+
+            // Input pricing per million tokens in deforge credits
+            const modelPricingInput = {
+                "gpt-5": 834,
+                "gpt-5-mini": 167,
+                "gpt-5-nano": 34,
                 "gpt-4o": 1667,
                 "gpt-4o-mini": 100,
                 "gpt-4.1": 1334,
@@ -339,6 +370,9 @@ class openai_chat_node extends BaseNode {
 
             // Output pricing per million tokens in deforge credits
             const modelPricingOutput = {
+                "gpt-5": 6667,
+                "gpt-5-mini": 1334,
+                "gpt-5-nano": 267,
                 "gpt-4o": 6667,
                 "gpt-4o-mini": 400,
                 "gpt-4.1": 5334,
@@ -364,20 +398,23 @@ class openai_chat_node extends BaseNode {
             temperature = Number(temperature);
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "gpt-4o";
+            const modelMap = {
+                "gpt-5": "openai/gpt-5",
+                "gpt-5-mini": "openai/gpt-5-mini",
+                "gpt-5-nano": "openai/gpt-5-nano",
+                "gpt-4o": "openai/gpt-4o",
+                "gpt-4o-mini": "openai/gpt-4o-mini",
+                "gpt-4.1": "openai/gpt-4.1",
+                "gpt-4.1-mini": "openai/gpt-4.1-mini",
+                "gpt-4.1-nano": "openai/gpt-4.1-nano",
+                "o3-mini": "openai/o3-mini",
+                "o4-mini": "openai/o4-mini",
+            }
 
             function estimateTokens(text) {
                 return Math.ceil(text.length / 4);
             }
 
-            // Trim query if needed to fit within tokens per minute limit
-            const maxTokensPerMinute = modelTokensPerMinute[model] || 10000;
-            const queryTokens = estimateTokens(query);
-            if (queryTokens > maxTokensPerMinute) {
-                // Trim from the start (keep last maxTokensPerMinute*4 chars)
-                const maxChars = maxTokensPerMinute * 4;
-                query = query.slice(-maxChars);
-                webconsole.warn(`OPENAI NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
-            }
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
@@ -395,9 +432,16 @@ class openai_chat_node extends BaseNode {
             const doesModelLikeTemperature = !["o3-mini", "o4-mini"].includes(model);
 
             const llm = new ChatOpenAI({
-                model: model,
+                model: modelMap[model],
                 ...(doesModelLikeTemperature && { temperature: temperature }),
-                apiKey: process.env.OPENAI_API_KEY,
+                apiKey: process.env.OPENAROUTER_API_KEY,
+                configuration: {
+                    baseURL: "https://openrouter.ai/api/v1",
+                    defaultHeaders: {
+                        'HTTP-Referer': 'https://deforge.io',
+                        'X-Title': 'Deforge',
+                    },
+                },
             });
 
             // Create session ID for memory

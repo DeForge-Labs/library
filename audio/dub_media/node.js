@@ -17,7 +17,7 @@ const config = {
     type: "dub_media",
     icon: {},
     desc: "Dub your video or audio to another language using Eleven Labs",
-    credit: 2000,
+    credit: 500,
     inputs: [
         {
             desc: "The Flow to trigger",

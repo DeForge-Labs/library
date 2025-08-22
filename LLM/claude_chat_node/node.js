@@ -1,6 +1,5 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import { ChatAnthropic } from "@langchain/anthropic";
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { OpenAIEmbeddings, ChatOpenAI } from "@langchain/openai";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { PostgresChatMessageHistory } from "@langchain/community/stores/message/postgres";
 import { formatDocumentsAsString } from "langchain/util/document";
@@ -36,7 +35,7 @@ const config = {
     type: "claude_chat_node",
     icon: {},
     desc: "Chat with Anthropic based LLM",
-    credit: 1200,
+    credit: 200,
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -118,7 +117,7 @@ const config = {
         },
     ],
     difficulty: "medium",
-    tags: ["api", "llm", "chatbot", "rag"],
+    tags: ["api", "llm", "chatbot"],
 }
 
 class claude_chat_node extends BaseNode {
@@ -305,17 +304,44 @@ class claude_chat_node extends BaseNode {
         return workflow.compile({ checkpointer: this.memoryStore });
     }
 
+    estimateUsage(inputs, contents, serverData) {
+        try {
+            // estimate credit usage based on the size of the query and the model chosen and its pricing
+            const queryFilter = inputs.filter((e) => e.name === "Query");
+            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
+
+            const model = contents.find((e) => e.name === "Model")?.value || "claude-3-7-sonnet-latest";
+
+            
+
+            // --- Tokenizer logic (simple, for English text) ---
+            function estimateTokens(text) {
+                // Approximate: 1 token ≈ 4 characters
+                return Math.ceil(text.length / 4);
+            }
+
+            const modelPricingInput = {
+                "claude-opus-4-0": 10000,
+                "claude-sonnet-4-0": 2000,
+                "claude-3-7-sonnet-latest": 2000,
+                "claude-3-5-haiku-latest": 534,
+            }
+            
+
+            // Estimate credit usage based on query length and model pricing
+            const queryTokens = estimateTokens(query);
+            const inputPrice = modelPricingInput[model] || 10000;
+
+            return Math.ceil(queryTokens * (inputPrice / 1e6));
+        } catch (error) {
+            console.error(`CLAUDE NODE | Falling back to default value | Error estimating usage: ${error.message}`);
+            return this.getCredit();
+        }
+    }
+
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("CLAUDE NODE | Starting LangGraph-based chat node");
-
-            // Model tokens per minute limits (very approximate, based on standard API tiers)
-            const modelTokensPerMinute = {
-                "claude-opus-4-0": 20000,
-                "claude-sonnet-4-0": 20000,
-                "claude-3-7-sonnet-latest": 20000,
-                "claude-3-5-haiku-latest": 50000, 
-            };
 
             // Input pricing per million tokens in deforge credits
             const modelPricingInput = {
@@ -349,20 +375,11 @@ class claude_chat_node extends BaseNode {
             temperature = Number(temperature);
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "claude-3-7-sonnet-latest";
-
-            // --- Tokenizer logic (simple, for English text) ---
-            function estimateTokens(text) {
-                // Approximate: 1 token ≈ 4 characters
-                return Math.ceil(text.length / 4);
-            }
-
-            // Trim query if needed to fit within tokens per minute limit
-            const maxTokensPerMinute = modelTokensPerMinute[model] || 400000; // Default to a safe limit
-            const queryTokens = estimateTokens(query);
-            if (queryTokens > maxTokensPerMinute) {
-                const maxChars = maxTokensPerMinute * 4;
-                query = query.slice(-maxChars);
-                webconsole.warn(`CLAUDE NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
+            const modelMap = {
+                "claude-opus-4-0": "anthropic/claude-opus-4",
+                "claude-sonnet-4-0": "anthropic/claude-sonnet-4",
+                "claude-3-7-sonnet-latest": "anthropic/claude-3.7-sonnet",
+                "claude-3-5-haiku-latest": "anthropic/claude-3.5-haiku",
             }
 
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
@@ -379,10 +396,17 @@ class claude_chat_node extends BaseNode {
                 throw new Error("POSTGRESS_URL environment variable not set");
             }
 
-            const llm = new ChatAnthropic({
-                model: model,
+            const llm = new ChatOpenAI({
+                model: modelMap[model],
                 temperature: temperature,
-                apiKey: process.env.ANTHROPIC_API_KEY,
+                apiKey: process.env.OPENROUTER_API_KEY,
+                configuration: {
+                    baseURL: "https://api.openrouter.ai/v1",
+                    defaultHeaders: {
+                        'HTTP-Refererer': 'https://deforge.io',
+                        'X-Title': 'Deforge',
+                    },
+                },
             });
 
             // Create session ID for memory

@@ -14,7 +14,7 @@ const config = {
     type: "imagen_node",
     icon: {},
     desc: "Generate AI images using Google Imagen",
-    credit: 40,
+    credit: 14,
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -125,6 +125,22 @@ class imagen_node extends BaseNode {
         super(config);
     }
 
+    estimateUsage(inputs, contents, serverData) {
+        const Model = contents.find((e) => e.name === "Model")?.value || "imagen-3.0-generate-002";
+
+        const modelPricing = {
+            "imagen-4.0-generate-preview-06-06": 27,
+            "imagen-4.0-fast-generate-preview-06-06": 14,
+            "imagen-4.0-ultra-generate-preview-06-06": 40,
+            "imagen-3.0-generate-002": 27,
+            "imagen-3.0-generate-001": 27,
+            "imagen-3.0-fast-generate-001": 14,
+        };
+
+        const creditUsage = modelPricing[Model];
+
+        return creditUsage;
+    }
 
     async run(inputs, contents, webconsole, serverData) {
 

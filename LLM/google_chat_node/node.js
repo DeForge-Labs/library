@@ -306,6 +306,50 @@ class google_chat_node extends BaseNode {
         return workflow.compile({ checkpointer: this.memoryStore });
     }
 
+    estimateUsage(inputs, contents, serverData) {
+        try {
+            // estimate credit usage based on the size of the query and the model chosen and its pricing
+            const queryFilter = inputs.filter((e) => e.name === "Query");
+            const query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
+
+            const model = contents.find((e) => e.name === "Model")?.value || "gemini-2.0-flash";
+
+            // --- Tokenizer logic (simple, for English text) ---
+            function estimateTokens(text) {
+                // Approximate: 1 token ≈ 4 characters
+                return Math.ceil(text.length / 4);
+            }
+
+            // Model pricing per million tokens in deforge credits less than 200K tokens
+            const modelPricingInputUnder200 = {
+                "gemini-2.5-pro": 834,
+                "gemini-2.5-flash": 200,
+                "gemini-2.5-flash-lite-preview-06-17": 67,
+                "gemini-2.0-flash": 100,
+                "gemini-2.0-flash-lite": 50,
+            }
+
+            // Model pricing per million tokens in deforge credits more than 200K tokens
+            const modelPricingInputOver200 = {
+                "gemini-2.5-pro": 1667,
+                "gemini-2.5-flash": 200,
+                "gemini-2.5-flash-lite-preview-06-17": 67,
+                "gemini-2.0-flash": 100,
+                "gemini-2.0-flash-lite": 50,
+            }
+            
+
+            // Estimate credit usage based on query length and model pricing
+            const queryTokens = estimateTokens(query);
+            const inputPrice = queryTokens > 200000 ? modelPricingInputOver200[model] : modelPricingInputUnder200[model];
+
+            return Math.ceil(queryTokens * (inputPrice / 1e6));
+        } catch (error) {
+            webconsole.error(`GOOGLE NODE | Fallback to default value | Error estimating usage: ${error.message}`);
+            return this.getCredit();
+        }
+    }
+
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("GOOGLE NODE | Starting LangGraph-based chat node");

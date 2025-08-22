@@ -14,7 +14,7 @@ const config = {
     type: "veo_node",
     icon: {},
     desc: "Generate AI videos using Google Veo",
-    credit: 4000,
+    credit: 1667,
     inputs: [
         {
             desc: "The flow of the workflow",
@@ -118,6 +118,28 @@ class veo_node extends BaseNode {
         super(config);
     }
 
+    estimateUsage(inputs, contents, serverData) {
+        const Model = contents.find((e) => e.name === "Model")?.value || "Veo3";
+        
+        const DurationFilter = inputs.find((e) => e.name === "Duration");
+        let Duration = DurationFilter?.value || contents.find((e) => e.name === "Duration")?.value || 8;
+
+        const AudioFilter = inputs.find((e) => e.name === "Generate Audio");
+        let Audio = AudioFilter?.value || contents.find((e) => e.name === "Generate Audio")?.value || true;
+
+        if (Model === "Veo3") {
+            if (Audio) {
+                return 4000;
+            }
+            else {
+                return 2667;
+            }
+        }
+        else {
+            Duration = Math.max(5, Math.min(Duration, 8));
+            return 334 * Duration;
+        }
+    }
 
     async run(inputs, contents, webconsole, serverData) {
 
@@ -132,9 +154,11 @@ class veo_node extends BaseNode {
         const DurationFilter = inputs.find((e) => e.name === "Duration");
         let Duration = DurationFilter?.value || contents.find((e) => e.name === "Duration")?.value || 8;
 
+        const AudioFilter = inputs.find((e) => e.name === "Generate Audio");
+        let Audio = AudioFilter?.value || contents.find((e) => e.name === "Generate Audio")?.value || true;
+
         const Model = contents.find((e) => e.name === "Model")?.value || "Veo3";
-        let Ratio = contents.find((e) => e.name === "Ratio")?.value || "16:9";
-        let Audio = contents.find((e) => e.name === "Generate Audio")?.value || true;
+        let Ratio = contents.find((e) => e.name === "Ratio")?.value || "16:9";        
         const PersonFilter = contents.find((e) => e.name === "Person")?.value || "Allow adults";
         const Person = (PersonFilter == "Allow adults") ? "allow_adult" : "dont_allow";
 
@@ -155,7 +179,12 @@ class veo_node extends BaseNode {
         if (Model === "Veo3") {
             Duration = 8;
             Ratio = "16:9";
-            this.setCredit(4000)
+            if (Audio) {
+                this.setCredit(4000)
+            }
+            else {
+                this.setCredit(2667)
+            }
         }
         else {
             Duration = Math.max(5, Math.min(Duration, 8));
