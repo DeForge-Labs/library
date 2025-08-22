@@ -104,6 +104,10 @@ class Node {
             this.credit = value;
         }
     }
+
+    estimateUsage(inputs, contents, serverData) {
+        return this.credit;
+    }
 }
 
 export default Node;
