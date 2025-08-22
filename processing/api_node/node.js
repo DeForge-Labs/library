@@ -118,7 +118,9 @@ class api_node extends BaseNode {
       webconsole.success(
         "API NODE | Response: \n" + JSON.stringify(response.data)
       );
-      return JSON.stringify(response.data);
+      return {
+        "output": response.data,
+      };
     } catch (error) {
       webconsole.error("API NODE | Error: " + error);
       return JSON.stringify(error);
