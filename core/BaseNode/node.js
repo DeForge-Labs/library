@@ -32,12 +32,24 @@ const sampleConfig = {
     ],
     difficulty: "easy/medium/hard",
     tags: ['smaller', 'tag', 'names'],
-}
-
-class Node {
+};
+;
+;
+;
+;
+;
+;
+;
+;
+;
+/**
+ * The Base Node class.
+ * All nodes must extend this class
+ */
+export default class BaseNode {
     /**
      * Initialize a node
-     * @param {JSON} configJSON configuration of the node
+     * @param {NodeConfig} configJSON configuration of the node
      */
     constructor(configJSON) {
         this.title = configJSON.title;
@@ -48,29 +60,17 @@ class Node {
         this.credit = configJSON.credit;
         this.inputs = configJSON.inputs;
         this.outputs = configJSON.outputs;
-
         this.tags = configJSON.tags;
         this.fields = configJSON.fields;
         this.difficulty = configJSON.difficulty;
     }
-
-    /**
-     * The main method that runs all nodes.
-     * Need to be overidden.
-     * @param {JSON} inputs The inputs to the node
-     * @param {JSON} contents The field data of the nodes
-     * @param {Object} webconsole The console object for logging to the execution logs on the app
-     * @param {JSON} serverData contains useful information from the server
-     */
-    async run(inputs, contents, webconsole, serverData) {
-        
-    }
-
     /**
      * Get the config for a node
+     *
+     * @returns The config for the node
      */
     getConfig() {
-        const config = {
+        return {
             title: this.title,
             category: this.category,
             type: this.type,
@@ -82,11 +82,8 @@ class Node {
             tags: this.tags,
             fields: this.fields,
             difficulty: this.difficulty,
-        }
-
-        return config;
+        };
     }
-
     /**
      * Returns the current value of the credit being cost
      * @returns The current credit cost
@@ -94,7 +91,6 @@ class Node {
     getCredit() {
         return this.credit;
     }
-
     /**
      * Sets the credit cost for the node
      * @param {number} value The new credit cost
@@ -104,10 +100,18 @@ class Node {
             this.credit = value;
         }
     }
-
+    /**
+     * Estimates the credit usage of the node
+     *
+     * Can be overriden to add custom logic
+     *
+     * @param {Inputs[]} inputs The inputs to the node
+     * @param {Contents[]} contents The contents of the node
+     * @param {IServerData} serverData contains useful information from the server
+     *
+     * @returns The estimated credit usage
+     */
     estimateUsage(inputs, contents, serverData) {
         return this.credit;
     }
 }
-
-export default Node;

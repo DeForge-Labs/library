@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/DeForge-Labs/library/issues"
   },
-  "homepage": "https://github.com/DeForge-Labs/library#readme"
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
 }

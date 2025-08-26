@@ -2,6 +2,9 @@
 
 This guide will help you create your own node for the Deforge system. Please follow all instructions carefully to ensure compatibility and maintainability.
 
+## Use VS Code snippet
+Use the snippet `node` to generate a boiler plate for your node. This will generate a boilerplate which leverages typescript types to provide better type hinting while writing the code.
+
 ## Extend from BaseNode
 
 Every node **must** extend the `BaseNode` class (imported from `../../core/BaseNode/node.js`) and implement the `run()` method.
@@ -35,6 +38,7 @@ const config = {
         content: "base64 of the image"
     },
     desc: "Optional node description",
+    credits: 0, // Amount of deforge credits to be used by the node
     inputs: [
         { name: "Name", type: "NodeType", desc: "" },
     ],
@@ -77,6 +81,7 @@ serverData: {
     socialList: socialList,
     chatId: chatId,
     redisUtil: redisUtil
+    refreshUtil: refreshUtil
 },
 ```
 
@@ -84,7 +89,8 @@ serverData: {
 - `envList`: A key-value pair list of env variables for the given workflow.
 - `socialList`: A key-value pair list of the social accounts and access tokens for the connected accounts in the given workflow.
 - `chatId`: A chat or user ID of the user executing the workflow. _(Must be passed as a `chatId` query via the deployment url)_
-- `redisUtil`: A utility class that contains three methods: `setKey`, `deleteKey` and `getKey` that can be used to store data in redis. _(Key format: `deforge:subcontext:task`. Example: `deforge:twitter:cookies`)_
+- `redisUtil`: An utility class that contains three methods: `setKey`, `deleteKey` and `getKey` that can be used to store data in redis. _(Key format: `deforge:subcontext:task`. Example: `deforge:twitter:cookies`)_
+- `refreshUtil`: An utility to update refreshed oauth tokens in the database.
 
 ## Returning Output
 
