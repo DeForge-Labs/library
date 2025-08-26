@@ -37,6 +37,15 @@ class cron_trigger extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         
         try {
@@ -58,6 +67,7 @@ class cron_trigger extends BaseNode {
             return {
                 "Flow": true,
                 "timeStamp": date,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("CRON TRIGGER NODE | Some error occured: ", error);

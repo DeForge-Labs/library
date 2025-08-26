@@ -42,6 +42,15 @@ class num_to_text extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     const NumFilter = inputs.filter((e) => e.name === "Number");
     const NumData =
@@ -60,7 +69,10 @@ class num_to_text extends BaseNode {
 
       const text = NumData.toString();
       webconsole.success("NUMBER TO TEXT NODE | Successfully converted Number");
-      return text;
+      return {
+        "Text": text,
+        "Credits": this.getCredit(),
+      }
     } catch (error) {
       webconsole.error("NUMBER TO TEXT NODE | Some error occured: " + error);
       return null;

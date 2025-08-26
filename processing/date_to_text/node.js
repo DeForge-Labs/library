@@ -54,6 +54,15 @@ class date_to_text extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("DATE TO TEXT NODE | Executing logic");
 
@@ -114,7 +123,10 @@ class date_to_text extends BaseNode {
         ).toLocaleString("en-US");
         webconsole.success("DATE TO TEXT NODE | successfully converted date fallback to en-US");
 
-        return data;
+        return {
+          "Text": data,
+          "Credits": this.getCredit(),
+        }
       }
       else {
         webconsole.error("DATE TO TEXT NODE | Some error occured: " + error);

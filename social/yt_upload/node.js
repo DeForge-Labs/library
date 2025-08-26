@@ -119,7 +119,15 @@ class yt_upload extends BaseNode {
         super(config);
     }
 
-
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("YOUTUBE UPLOAD NODE | Starting configuration");
@@ -238,7 +246,7 @@ class yt_upload extends BaseNode {
             if (response.data.id) {
                 const videoLink = `https://www.youtube.com/watch?v=${response.data.id}`;
                 webconsole.success(`YOUTUBE UPLOAD NODE | Video uploaded successfully: ${videoLink}`);
-                return { "Video Link": videoLink };
+                return { "Video Link": videoLink, "Credits": this.getCredit() };
             } else {
                 webconsole.error("YOUTUBE UPLOAD NODE | Failed to upload video to YouTube.");
                 return null;

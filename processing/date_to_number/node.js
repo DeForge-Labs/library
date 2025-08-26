@@ -43,6 +43,15 @@ class date_to_number extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("DATE TO NUM NODE | Executing logic");
 
@@ -85,7 +94,10 @@ class date_to_number extends BaseNode {
       ).getTime();
       webconsole.success("DATE TO NUM NODE | successfully converted date");
 
-      return data;
+      return {
+        "Number": data,
+        "Credits": this.getCredit(),
+      }
     } catch (error) {
       webconsole.error("DATE TO NUM NODE | Some error occured: " + error);
       return null;

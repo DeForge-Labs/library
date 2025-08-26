@@ -319,6 +319,15 @@ class custom_chat_node extends BaseNode {
         return workflow.compile({ checkpointer: this.memoryStore });
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("CUSTOM NODE | Starting LangGraph-based chat node");
@@ -447,7 +456,10 @@ class custom_chat_node extends BaseNode {
             }
 
             webconsole.success("CUSTOM NODE | Successfully generated response with LangGraph");
-            return response.content;
+            return {
+                "output": response.content,
+                "Credits": this.getCredit()
+            };
 
         } catch (error) {
             webconsole.error(`CUSTOM NODE | Error occurred: ${error.message}`);

@@ -306,6 +306,14 @@ class google_chat_node extends BaseNode {
         return workflow.compile({ checkpointer: this.memoryStore });
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     estimateUsage(inputs, contents, serverData) {
         try {
             // estimate credit usage based on the size of the query and the model chosen and its pricing
@@ -350,6 +358,15 @@ class google_chat_node extends BaseNode {
         }
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("GOOGLE NODE | Starting LangGraph-based chat node");
@@ -543,7 +560,10 @@ class google_chat_node extends BaseNode {
             }
 
             webconsole.success("GOOGLE NODE | Successfully generated response with LangGraph");
-            return response.content;
+            return {
+                "output": response.content,
+                "Credits": this.getCredit()
+            };
 
         } catch (error) {
             webconsole.error(`GOOGLE NODE | Error occurred: ${error.message}`);

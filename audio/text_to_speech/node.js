@@ -144,6 +144,15 @@ class text_to_speech extends BaseNode {
         }
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("TEXT TO SPEECH NODE | Started execution");
@@ -237,10 +246,12 @@ class text_to_speech extends BaseNode {
             webconsole.success("TEXT TO SPEECH NODE | Successfully uploaded audio");
             return {
                 "Audio Link": audioLink,
+                "Credits": this.getCredit(),
             };
             
         } catch (error) {
             webconsole.error("SPEECH TO TEXT NODE | Some error occured: ", error);
+            this.setCredit(0);
             return null;
         }
     }

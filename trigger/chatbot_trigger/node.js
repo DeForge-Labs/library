@@ -30,6 +30,15 @@ class chatbot_trigger extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("CHAT BOT NODE | Started execution");
@@ -41,6 +50,7 @@ class chatbot_trigger extends BaseNode {
             return {
                 "Flow": true,
                 "Message": msg,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("CHAT BOT NODE | Some error occured");

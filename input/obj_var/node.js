@@ -49,6 +49,15 @@ class obj_var extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         
         try {
@@ -65,7 +74,8 @@ class obj_var extends BaseNode {
 
             webconsole.success("OBJECT NODE | Emmitting JSON");
             return {
-                [key]: value
+                [key]: value,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("OBJECT NODE | Some error occured: ", error);

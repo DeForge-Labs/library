@@ -314,6 +314,14 @@ class openai_chat_node extends BaseNode {
         return workflow.compile({ checkpointer: this.memoryStore });
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     estimateUsage(inputs, content, serverData) {
         try {
             const queryFilter = inputs.filter((e) => e.name === "Query");
@@ -350,6 +358,15 @@ class openai_chat_node extends BaseNode {
         }
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("OPENAI NODE | Starting LangGraph-based chat node");
@@ -530,7 +547,10 @@ class openai_chat_node extends BaseNode {
             }
 
             webconsole.success("OPENAI NODE | Successfully generated response with LangGraph");
-            return response.content;
+            return {
+                "output": response.content,
+                "Credits": this.getCredit()
+            };
 
         } catch (error) {
             webconsole.error(`OPENAI NODE | Error occurred: ${error.message}`);

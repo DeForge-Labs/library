@@ -131,6 +131,15 @@ class web_search_node extends BaseNode {
         return 'Not specified';
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         try {
@@ -245,6 +254,7 @@ class web_search_node extends BaseNode {
                 return {
                     "Job List": outputJSON,
                     "Job List CSV": outputCSV,
+                    "Credits": this.getCredit(),
                 };
             }
             else {

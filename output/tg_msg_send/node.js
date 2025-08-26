@@ -95,6 +95,15 @@ class tg_msg_send extends BaseNode {
         return backticks % 2 === 0 && asterisks % 2 === 0 && underscores % 2 === 0 && tildes % 2 === 0;
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         webconsole.info("TG MSG NODE | Started execution");
 

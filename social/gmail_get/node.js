@@ -126,6 +126,15 @@ class gmail_get extends BaseNode {
         };
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("GMAIL GET NODE | Started execution");
@@ -181,6 +190,7 @@ class gmail_get extends BaseNode {
                 "All Email": allEmailData,
                 "Subject": allEmailData.emails.length === 1 ? allEmailData.emails[0].subject : "Multiple or no emails",
                 "Body": allEmailData.emails.length === 1 ? allEmailData.emails[0].body : "Multiple or no emails",
+                "Credits": this.getCredit(),
             };
 
         } catch (error) {

@@ -83,7 +83,15 @@ class lyria_node extends BaseNode {
         super(config);
     }
 
-
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("LYRIA NODE | Configuring model");
@@ -238,7 +246,7 @@ class lyria_node extends BaseNode {
             if (audioFilePath) {
                 const uploadedUrl = await uploadTo0x0st(audioFilePath);
                 await fs.unlink(audioFilePath);
-                return { "Audio Link": uploadedUrl };
+                return { "Audio Link": uploadedUrl, "Credits": this.getCredit() };
             }
             return null;
         } catch (error) {
@@ -251,6 +259,7 @@ class lyria_node extends BaseNode {
                     webconsole.error(`LYRIA NODE | Could not clean up ${audioFilePath}: ${cleanupError.message}`);
                 }
             }
+            this.setCredit(0);
             return null;
         }
     }

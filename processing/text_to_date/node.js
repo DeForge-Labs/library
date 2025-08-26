@@ -43,6 +43,15 @@ class text_to_date extends BaseNode {
     super(config);
   }
 
+  /**
+  * @override
+  * @inheritdoc
+  * 
+  * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+  * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+  * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+  * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+  */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("TEXT TO DATE NODE | Executing logic");
 
@@ -79,6 +88,7 @@ class text_to_date extends BaseNode {
       webconsole.success("TEXT TO DATE NODE | Successfully converted text");
       return {
         "Date": date,
+        "Credits": this.getCredit(),
       };
     } catch (error) {
       webconsole.error("TEXT TO DATE NODE | Some error occured: " + error);

@@ -54,6 +54,15 @@ class if_condition extends BaseNode {
         super(config);
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         
         webconsole.info("IF NODE | Begin execution");
@@ -98,7 +107,12 @@ class if_condition extends BaseNode {
         }
 
         webconsole.success("IF NODE | Emmitting result");
-        return { True: res, False: !res, Result: res };
+        return {
+            "True": res,
+            "False": !res,
+            "Result": res,
+            "Credits": this.getCredit(),
+        };
     }
 }
 

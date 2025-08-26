@@ -72,7 +72,15 @@ class web_search_node extends BaseNode {
         super(config);
     }
 
-
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         
         const langDict = {
@@ -143,7 +151,10 @@ class web_search_node extends BaseNode {
                 searchResultMD += `- Title: ${searchResItem.title}, Content: ${searchResItem.content}\n`;
             }
 
-            return searchResultMD;
+            return {
+                "output": searchResultMD,
+                "Credits": this.getCredit(),
+            };
         }
         else {
             webconsole.error("WEB SEARCH NODE | Some error occured");

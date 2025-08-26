@@ -230,6 +230,15 @@ class linkedin_post extends BaseNode {
         }
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("LINKEDIN POST NODE | Starting configuration");
@@ -323,7 +332,7 @@ class linkedin_post extends BaseNode {
             const postLink = `https://www.linkedin.com/feed/update/${postId}/`;
             webconsole.success(`LINKEDIN POST NODE | Post created successfully: ${postLink}`);
 
-            return { "Post Link": postLink };
+            return { "Post Link": postLink, "Credits": this.getCredit() };
 
 
         } catch (error) {

@@ -116,6 +116,15 @@ class dub_media extends BaseNode {
         }
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("DUB MEDIA NODE | Started execution");
@@ -257,7 +266,8 @@ class dub_media extends BaseNode {
                     fs.unlinkSync(newFilePath);
 
                     return {
-                        "Dubbed Link": dubLink
+                        "Dubbed Link": dubLink,
+                        "Credits": this.getCredit()
                     };
                 }
                 
@@ -267,6 +277,7 @@ class dub_media extends BaseNode {
             
         } catch (error) {
             webconsole.error("DUB MEDIA NODE | Some error occured: ", error);
+            this.setCredit(0);
             return null;
         }
     }

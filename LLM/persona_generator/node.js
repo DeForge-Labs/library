@@ -197,6 +197,15 @@ class persona_generator extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("PERSONA CREATOR NODE | Searching your given user");
@@ -324,7 +333,8 @@ class persona_generator extends BaseNode {
             await personaDB.close();
 
             return {
-                "Persona": personaPrompt
+                "Persona": personaPrompt,
+                "Credits": this.getCredit()
             };
         } catch (error) {
             webconsole.error("PERSONA CREATOR NODE | Some error occured while generating persona: ", error);

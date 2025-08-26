@@ -43,6 +43,15 @@ class widget_trigger extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("WIDGET NODE | Started execution");
@@ -62,6 +71,7 @@ class widget_trigger extends BaseNode {
                     "Message": "",
                     "intro": Intro,
                     "__terminate": true,
+                    "Credits": this.getCredit(),
                 };
             }
 
@@ -69,6 +79,7 @@ class widget_trigger extends BaseNode {
             return {
                 "Flow": true,
                 "Message": msg,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("WIDGET NODE | Some error occured");

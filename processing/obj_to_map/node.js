@@ -43,6 +43,15 @@ class obj_to_map extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         
         try {
@@ -63,6 +72,7 @@ class obj_to_map extends BaseNode {
 
             return {
                 "map": pairMap,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("OBJECT TO MAP NODE | Some error occured: ", error);

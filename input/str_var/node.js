@@ -32,6 +32,15 @@ class str_var extends BaseNode {
         super(config);
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             if (contents.length === 0) {
@@ -45,7 +54,10 @@ class str_var extends BaseNode {
             }
 
             webconsole.info("USER INPUT | emitting output");
-            return contents[0].value || "";
+            return {
+                "Text": contents[0].value || "",
+                "Credits": this.getCredit(),
+            };
             
         } catch (error) {
             webconsole.error("USER INPUT | Some error occured: ", error);

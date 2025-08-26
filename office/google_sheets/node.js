@@ -89,6 +89,15 @@ class google_sheets extends BaseNode {
         return result.data;
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("GOOGLE SHEETS CREATE NODE | Started execution");
@@ -174,6 +183,7 @@ class google_sheets extends BaseNode {
 
             return {
                 "Sheet URL": spreadsheetUrl,
+                "Credits": this.getCredit(),
             };
 
         } catch (error) {

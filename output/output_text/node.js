@@ -37,13 +37,25 @@ class output_text extends BaseNode {
         super(config);
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
-            const StringOutput = Object.keys(inputs).length > 0 ? inputs[0].value : "";
+            const StringOutput = inputs.find((e) => e.name === "Text")?.value || "";
 
             webconsole.info("TEXT OUTPUT | Emmitting Text output");
 
-            return StringOutput;
+            return {
+                "Text": StringOutput,
+                "Credits": this.getCredit(),
+            };
         } catch (error) {
             webconsole.error("TEXT OUTPUT | Some error occured: ", error);
             return null;

@@ -43,6 +43,15 @@ class chatbot_msg_send extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         webconsole.info("CHATBOT MSG NODE | Started execution");
 
@@ -71,7 +80,8 @@ class chatbot_msg_send extends BaseNode {
             webconsole.success("CHATBOT MSG NODE | Successfully generated and emitted respons object");
 
             return {
-                "Result": responseObj
+                "Result": responseObj,
+                "Credits": this.getCredit(),
             };
         
         } catch (error) {

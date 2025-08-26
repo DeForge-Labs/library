@@ -49,6 +49,15 @@ class text_join extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("TEXT JOIN NODE | Gathering texts");
@@ -62,7 +71,10 @@ class text_join extends BaseNode {
             const res = inputTexts.join(separator);
 
             webconsole.success("TEXT JOIN NODE | Joined texts");
-            return res;
+            return {
+                "Text": res,
+                "Credits": this.getCredit(),
+            }
         } catch (error) {
             webconsole.error("TEXT JOIN NODE | Some error occured: ", error);
             return null;

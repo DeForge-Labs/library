@@ -118,6 +118,14 @@ class veo_node extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     estimateUsage(inputs, contents, serverData) {
         const Model = contents.find((e) => e.name === "Model")?.value || "Veo3";
         
@@ -141,6 +149,15 @@ class veo_node extends BaseNode {
         }
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("VEO NODE | Configuring model");
@@ -353,7 +370,7 @@ class veo_node extends BaseNode {
             if (videoFilePath) {
                 const uploadedUrl = await uploadTo0x0st(videoFilePath);
                 await fs.unlink(videoFilePath);
-                return { "Video Link": uploadedUrl };
+                return { "Video Link": uploadedUrl, "Credits": this.getCredit() };
             }
             return null;
         } catch (error) {
@@ -366,6 +383,7 @@ class veo_node extends BaseNode {
                     webconsole.error(`VEO NODE | Could not clean up ${videoFilePath}: ${cleanupError.message}`);
                 }
             }
+            this.setCredit(0);
             return null;
         }
     }

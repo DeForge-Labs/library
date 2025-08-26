@@ -104,6 +104,15 @@ class cal_book extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("CAL BOOK | Begin execution");
 
@@ -267,6 +276,7 @@ class cal_book extends BaseNode {
       webconsole.success("CAL BOOK | Booking successful");
       return {
         "Success": true,
+        "Credits": this.getCredit(),
         "Error": false,
         "Error payload": "",
       };
@@ -275,6 +285,7 @@ class cal_book extends BaseNode {
       webconsole.error("CAL BOOK | Error: " + error);
       return {
         "Success": false,
+        "Credits": this.getCredit(),
         "Error": true,
         "Error payload": JSON.stringify(error),
       };

@@ -65,6 +65,15 @@ class cal_schedule extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("CAL SCHEDULE | Begin execution");
 
@@ -111,6 +120,7 @@ class cal_schedule extends BaseNode {
       );
       return {
         "Slots": response.data,
+        "Credits": this.getCredit(),
         "Error": false,
         "Error payload": "",
       };
@@ -119,6 +129,7 @@ class cal_schedule extends BaseNode {
       webconsole.error("CAL SCHEDULE | Error: " + error);
       return {
         "Slots": {},
+        "Credits": this.getCredit(),
         "Error": true,
         "Error payload": JSON.stringify(error),
       };

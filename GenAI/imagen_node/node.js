@@ -125,6 +125,14 @@ class imagen_node extends BaseNode {
         super(config);
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     estimateUsage(inputs, contents, serverData) {
         const Model = contents.find((e) => e.name === "Model")?.value || "imagen-3.0-generate-002";
 
@@ -142,6 +150,15 @@ class imagen_node extends BaseNode {
         return creditUsage;
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
 
         webconsole.info("IMAGEN NODE | Configuring model");
@@ -326,7 +343,7 @@ class imagen_node extends BaseNode {
             if (imageFilePath) {
                 const uploadedUrl = await uploadTo0x0st(imageFilePath);
                 await fs.unlink(imageFilePath);
-                return { "Image Link": uploadedUrl };
+                return { "Image Link": uploadedUrl, "Credits": this.getCredit() };
             }
             return null;
         } catch (error) {
@@ -339,6 +356,7 @@ class imagen_node extends BaseNode {
                     webconsole.error(`IMAGEN NODE | Could not clean up ${imageFilePath}: ${cleanupError.message}`);
                 }
             }
+            this.setCredit(0);
             return null;
         }
     }

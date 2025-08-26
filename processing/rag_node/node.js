@@ -1,4 +1,4 @@
-import BaseNode from "../../core/BaseNode/node.js";
+import BaseNode from "../../core/BaseNode/dist/node.js";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
@@ -205,6 +205,15 @@ class rag_node extends BaseNode {
         }
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("RAG NODE | Starting execution");
@@ -395,7 +404,10 @@ class rag_node extends BaseNode {
             if (saved) {
                 webconsole.success(`RAG NODE | Successfully processed and saved ${chunks.length} document chunks to PostgreSQL`);
                 webconsole.success(`RAG NODE | PostgreSQL table name: ${tableName}`);
-                return tableName;
+                return {
+                    "Rag Database": tableName,
+                    "Credits": this.getCredit(),
+                };
             } else {
                 webconsole.error("RAG NODE | Failed to save documents to PostgreSQL");
                 return null;

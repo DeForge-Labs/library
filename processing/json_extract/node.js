@@ -54,6 +54,15 @@ class json_extract extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         
         webconsole.info("JSON EXTRACT | Executing node");
@@ -68,7 +77,10 @@ class json_extract extends BaseNode {
             const value = JSONdata[key];
             webconsole.success("JSON EXTRACT | Extracted data, emitting");
 
-            return JSON.stringify(value);
+            return {
+                "Value": JSON.stringify(value),
+                "Credits": this.getCredit(),
+            }
         }
         else {
             webconsole.error("JSON EXTRACT | Extracted failed, no such key");

@@ -32,6 +32,15 @@ class bool_var extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             if (contents.length === 0) {
@@ -40,9 +49,13 @@ class bool_var extends BaseNode {
             }
 
             webconsole.info("BOOLEAN INPUT | emitting output value");
-            return contents[0].value;
+            return {
+                "Boolean": contents[0].value,
+                "Credits": this.getCredit(),
+            };
         } catch (error) {
             webconsole.error("BOOLEAN INPUT | Some error occured: ", error);
+            this.setCredit(0);
             return null;
         }
     }

@@ -61,6 +61,15 @@ class speech_to_text extends BaseNode {
         super(config);
     }
 
+    /** 
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("SPEECH TO TEXT NODE | Started execution");
@@ -128,11 +137,13 @@ class speech_to_text extends BaseNode {
             const transcribedText = transcription.text;
             webconsole.success("SPEECH TO TEXT NODE | Successfully transcribed audio");
             return {
-                "Transcription": transcribedText
+                "Transcription": transcribedText,
+                "Credits": this.getCredit(),
             };
             
         } catch (error) {
             webconsole.error("SPEECH TO TEXT NODE | Some error occured: ", error);
+            this.setCredit(0);
             return null;
         }
     }

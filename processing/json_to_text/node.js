@@ -42,6 +42,15 @@ class json_to_text extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     const JSONFilter = inputs.filter((e) => e.name === "JSON");
     const JSONdata =
@@ -60,7 +69,10 @@ class json_to_text extends BaseNode {
 
       const text = JSON.stringify(JSONdata);
       webconsole.success("JSON TO TEXT NODE | Successfully converted JSON");
-      return text;
+      return {
+        "Text": text,
+        "Credits": this.getCredit(),
+      }
     } catch (error) {
       webconsole.error("JSON TO TEXT NODE | Some error occured: " + error);
       return null;

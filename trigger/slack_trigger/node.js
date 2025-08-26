@@ -52,6 +52,15 @@ class slack_trigger extends BaseNode {
         super(config);
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("SLACK TRIGGER | Started execution");
@@ -76,6 +85,7 @@ class slack_trigger extends BaseNode {
                 "Channel ID": channelID,
                 "User ID": userID,
                 "Is Bot Mentioned": isMentioned,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("SLACK TRIGGER | Some error occured: ", error);

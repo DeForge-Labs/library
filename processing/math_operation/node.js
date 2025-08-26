@@ -61,6 +61,15 @@ class math_operation extends BaseNode {
     super(config);
   }
 
+  /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("MATH OPERATION | Executing logic");
 
@@ -142,7 +151,10 @@ class math_operation extends BaseNode {
       }
 
       webconsole.success("MATH OPERATION | Successfully performed operation");
-      return result;
+      return {
+        "Result": result,
+        "Credits": this.getCredit(),
+      }
     } catch (error) {
       webconsole.error("MATH OPERATION | Some error occured: " + error);
       return null;

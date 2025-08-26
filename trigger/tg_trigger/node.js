@@ -95,6 +95,15 @@ class tg_trigger extends BaseNode {
         }
     }
 
+    /**
+     * @override
+     * @inheritdoc
+     * 
+     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
+     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
+     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
+     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+     */
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("TG NODE | Started execution");
@@ -126,6 +135,7 @@ class tg_trigger extends BaseNode {
                         "Username": userName,
                         "Is Command": isCommand,
                         "__terminate": true,
+                        "Credits": this.getCredit(),
                     };
                 }
 
@@ -137,6 +147,7 @@ class tg_trigger extends BaseNode {
                     "Username": userName,
                     "Is Command": isCommand,
                     "__terminate": true,
+                    "Credits": this.getCredit(),
                 };
             }
 
@@ -157,6 +168,7 @@ class tg_trigger extends BaseNode {
                 "Chat ID": chatID,
                 "Username": userName,
                 "Is Command": isCommand,
+                "Credits": this.getCredit(),
             };
         } catch (error) {
             webconsole.error("TG NODE | Some error occured: ", error);
