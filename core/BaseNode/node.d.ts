@@ -86,7 +86,7 @@ export interface IChatbot {
     /**
      * The message sent by the user
      */
-    message: string;
+    Message: string;
 }
 /**
  * Defines the structure of the serverData object
@@ -148,7 +148,7 @@ export interface IServerData {
      * @remarks
      * This object will only be include if the workflow includes a Chat Bot Trigger
      */
-    chatbotPayload?: IWidget;
+    chatbotPayload?: IChatbot;
     /**
      * The emailID of the user who received an email
      *
