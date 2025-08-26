@@ -1,4 +1,4 @@
-import BaseNode from "../../core/BaseNode/dist/node.js";
+import BaseNode from "../../core/BaseNode/node.js";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
