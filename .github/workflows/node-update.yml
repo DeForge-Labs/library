@@ -14,6 +14,14 @@ on:
                 options:
                     - 'true'
                     - 'false'
+            branch:
+                description: 'Target branch environment'
+                required: false
+                default: 'main'
+                type: choice
+                options:
+                    - 'main'
+                    - 'dev'
 
 
 jobs:
@@ -120,8 +128,14 @@ jobs:
                     console.log(`Updating the following nodes:`);
                     console.log(changedNodes);
 
+                    // Determine API URL based on branch selection
+                    const branch = '${{ github.event.inputs.branch }}' || 'main';
+                    const apiUrl = branch === 'dev' ? 'https://devapi.deforge.io/api/update-nodes' : 'https://api.deforge.io/api/update-nodes';
+                    
+                    console.log(`Using API URL: ${apiUrl} for branch: ${branch}`);
+
                     try {
-                        const response = await fetch('https://api.deforge.io/api/update-nodes', {
+                        const response = await fetch(apiUrl, {
                             method: 'POST',
                             headers: {
                             'Authorization': `Bearer ${{ secrets.UPDATE_NODES_KEY }}`,
