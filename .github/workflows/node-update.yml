@@ -168,5 +168,9 @@ jobs:
                 ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" bash -c "'
                     set -eo pipefail
 
-                    pm2 restart 21
+                    if [ \"${{ github.event.inputs.branch }}\" = \"main\" ]; then
+                        pm2 restart 21
+                    elif [ \"${{ github.event.inputs.branch }}\" = \"dev\" ]; then
+                        pm2 restart 34
+                    fi
                 '"
