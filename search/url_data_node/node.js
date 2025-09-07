@@ -18,7 +18,7 @@ const config = {
             type: "Flow",
         },
         {
-            desc: "URL to scrape",
+            desc: "URL to get data from",
             name: "URL",
             type: "Text",
         },
