@@ -77,7 +77,7 @@ class url_data_node extends BaseNode {
         const axiosConfig = {
             method: "get",
             maxBodyLength: Infinity,
-            url: `https://s.jina.ai/?${url}`,
+            url: `https://r.jina.ai/${url}`,
             headers: {
                 "Authorization": `Bearer ${process.env.JINA_API_KEY}`,
             },
