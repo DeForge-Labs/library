@@ -248,6 +248,7 @@ export default abstract class BaseNode {
     fields: Field[];
     difficulty: string;
     tags: string[];
+    stats: Record<string, any>;
     /**
      * Initialize a node
      * @param {NodeConfig} configJSON configuration of the node
@@ -280,6 +281,17 @@ export default abstract class BaseNode {
      * @param {number} value The new credit cost
      */
     setCredit(value: number): void;
+    /**
+     * Returns the stats of the node
+     * @returns The stats of the node
+     */
+    getStats(): Record<string, any>;
+    /**
+     * Sets the stats of the node
+     * @param key The key of the stat
+     * @param value The value of the stat
+     */
+    setStats(key: string, value: any): void;
     /**
      * Estimates the credit usage of the node
      *
