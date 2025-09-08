@@ -305,6 +305,7 @@ export default abstract class BaseNode {
     fields: Field[];
     difficulty: string;
     tags: string[];
+    stats: Record<string, any>;
 
     /**
      * Initialize a node
@@ -323,6 +324,8 @@ export default abstract class BaseNode {
         this.tags = configJSON.tags;
         this.fields = configJSON.fields;
         this.difficulty = configJSON.difficulty;
+
+        this.stats = {};
     }
 
     /**
@@ -379,6 +382,23 @@ export default abstract class BaseNode {
         if (typeof value === "number") {
             this.credit = value;
         }
+    }
+
+    /**
+     * Returns the stats of the node
+     * @returns The stats of the node
+     */
+    getStats(): Record<string, any> {
+        return this.stats;
+    }
+
+    /**
+     * Sets the stats of the node
+     * @param key The key of the stat
+     * @param value The value of the stat
+     */
+    setStats(key: string, value: any): void {
+        this.stats[key] = value;
     }
 
     /**
