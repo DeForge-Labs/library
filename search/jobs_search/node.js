@@ -244,6 +244,8 @@ class web_search_node extends BaseNode {
                     description: job.description,
                 }));
 
+                this.setStats("Number of Jobs", data.results.length);
+
                 const outputJSON = {
                     "type": "Jobs",
                     "jobList": jobList
