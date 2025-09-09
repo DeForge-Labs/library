@@ -49,6 +49,11 @@ const config = {
             type: "Text",
         },
         {
+            desc: "List of tools that the LLM can use",
+            name: "Tools",
+            type: "Tools[]",
+        },
+        {
             desc: "System prompt for the LLM",
             name: "System Prompt",
             type: "Text",
@@ -97,6 +102,12 @@ const config = {
             value: "Enter text here...",
         },
         {
+            desc: "List of tools that the LLM can use",
+            name: "Tools",
+            type: "Tools[]",
+            value: "",
+        },
+        {
             desc: "System prompt for the LLM",
             name: "System Prompt",
             type: "TextArea",
@@ -119,7 +130,7 @@ const config = {
         },
     ],
     difficulty: "medium",
-    tags: ["api", "llm", "chatbot", "gemini"],
+    tags: ["llm", "chatbot", "gemini"],
 }
 
 class google_chat_node extends BaseNode {
@@ -190,7 +201,7 @@ class google_chat_node extends BaseNode {
         const retriever = this.createRetriever(vectorStore, webconsole);
         
         return tool(
-            async ({ query }) => {
+            async ({ query }, toolConfig) => {
                 try {
                     const docs = await retriever.getRelevantDocuments(query);
                     const context = formatDocumentsAsString(docs);
@@ -245,7 +256,7 @@ class google_chat_node extends BaseNode {
         }
     }
 
-    createWorkflow(llm, systemPrompt, ragTool, webconsole) {
+    createWorkflow(llm, systemPrompt, tools, webconsole) {
 
         const callModel = async (state, config) => {
             try {
@@ -276,18 +287,20 @@ class google_chat_node extends BaseNode {
 
         let workflow;
         
-        if (ragTool) {
+        if (Array.isArray(tools) && tools.length > 0) {
+
+            llm = llm.bindTools(...tools);
+
             const ragNode = async (state) => {
-                const llmWithTools = llm.bindTools([ragTool]);
                 const response = await llmWithTools.invoke(state.messages);
                 return { messages: [response] };
             };
 
-            const tools = new ToolNode([ragTool]);
+            const toolsNode = new ToolNode([...tools]);
 
             workflow = new StateGraph(MessagesAnnotation)
                 .addNode("rag", ragNode)
-                .addNode("tools", tools)
+                .addNode("tools", toolsNode)
                 .addNode("model", callModel)
                 .addEdge(START, "rag")
                 .addConditionalEdges("rag", toolsCondition, {
@@ -429,6 +442,17 @@ class google_chat_node extends BaseNode {
             let systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
             systemPrompt = systemPrompt.slice(0, 4000);
 
+            const toolsFilter = inputs.find((e) => e.name === "Tools");
+            let tools = toolsFilter?.value || contents.find((e) => e.name === "Tools")?.value || [];
+            tools = tools.filter((e) => e !== null);
+
+            if (tools.length > 0) {
+                webconsole.info("GOOGLE NODE | Generating tool descriptions for system prompt");
+                const toolDescriptions = tools.map(tool => `- ${tool.name}: ${tool.description}`).join("\n");
+                const toolsPrompt = `\nYou have access to the following tools:\n${toolDescriptions}\nUse them to fetch relevant information when needed.\n`;
+                systemPrompt += toolsPrompt;
+            }
+
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
@@ -492,7 +516,9 @@ class google_chat_node extends BaseNode {
                 ragTool = this.createRagTool(vectorStore, webconsole);
             }
 
-            const app = this.createWorkflow(llm, systemPrompt, ragTool, webconsole);
+            const toolList = [ragTool, ...tools];
+
+            const app = this.createWorkflow(llm, systemPrompt, toolList, webconsole);
 
             const config = {
                 configurable: {
@@ -508,7 +534,7 @@ class google_chat_node extends BaseNode {
                 
                 if (pastMessages.length > 0) {
                     const trimmedMessages = await trimMessages(pastMessages, {
-                        maxTokens: 30000,
+                        maxTokens: 200000,
                         strategy: "last",
                         tokenCounter: llm,
                         includeSystem: true,
