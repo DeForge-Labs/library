@@ -53,6 +53,11 @@ const config = {
             type: "Text",
         },
         {
+            desc: "List of tools that the LLM can use",
+            name: "Tools",
+            type: "Tool[]",
+        },
+        {
             desc: "System prompt for the LLM",
             name: "System Prompt",
             type: "Text",
@@ -100,6 +105,12 @@ const config = {
             value: "Enter text here...",
         },
         {
+            desc: "List of tools that the LLM can use",
+            name: "Tools",
+            type: "Tool[]",
+            value: "",
+        },
+        {
             desc: "System prompt for the LLM",
             name: "System Prompt",
             type: "TextArea",
@@ -128,7 +139,7 @@ const config = {
         },
     ],
     difficulty: "hard",
-    tags: ["api", "llm", "chatbot"],
+    tags: ["llm", "chatbot"],
 }
 
 class custom_chat_node extends BaseNode {
@@ -199,7 +210,7 @@ class custom_chat_node extends BaseNode {
         const retriever = this.createRetriever(vectorStore, webconsole);
         
         return tool(
-            async ({ query }) => {
+            async ({ query }, toolConfig) => {
                 try {
                     const docs = await retriever.getRelevantDocuments(query);
                     const context = formatDocumentsAsString(docs);
@@ -254,29 +265,33 @@ class custom_chat_node extends BaseNode {
         }
     }
 
-    createWorkflow(llm, systemPrompt, ragTool, webconsole) {
+    createWorkflow(llm, systemPrompt, tools, webconsole) {
 
         const callModel = async (state, config) => {
             try {
                 let messages = state.messages;
-                if (!config.configurable.saveMemory) {
-                    messages = messages.slice(-2);
-                }
                 
-                const lastSystemMessage = messages.slice().reverse().find(msg => msg instanceof SystemMessage);
-                
-                if (!lastSystemMessage) {
-                    
-                    messages.unshift(new SystemMessage(systemPrompt));
-                    webconsole.info("CUSTOM NODE | Added system prompt (no previous system message found)");
-                } else if (lastSystemMessage.content !== systemPrompt) {
-                    
-                    messages.unshift(new SystemMessage(systemPrompt));
-                    webconsole.info("CUSTOM NODE | Added updated system prompt (content changed)");
-                } else {
-                    
-                    webconsole.info("CUSTOM NODE | Using existing system prompt (content unchanged)");
+                let creditsFromTools = 0;
+                const reversedMessages = [...messages].reverse();
+
+                const lastHumanMesageIndex = reversedMessages.findIndex(msg => msg.getType() === 'human');
+
+                if (lastHumanMesageIndex > 0) {
+                    const lastTurnMessages = reversedMessages.slice(0, lastHumanMesageIndex);
+
+                    const toolMessages = lastTurnMessages.filter((msg) => msg.getType() === "tool");
+
+                    for (const toolMsg of toolMessages) {
+                        if (toolMsg.artifact !== undefined && toolMsg.artifact !== null) {
+                            const artifactValue = Number(toolMsg.artifact);
+                            if (!isNaN(artifactValue) && artifactValue >= 0) {
+                                creditsFromTools += artifactValue;
+                            }
+                        }
+                    }
                 }
+
+                this.setCredit(creditsFromTools);
                 
                 const response = await llm.invoke(messages);
                 return { messages: response };
@@ -288,18 +303,21 @@ class custom_chat_node extends BaseNode {
 
         let workflow;
         
-        if (ragTool) {
+        if (Array.isArray(tools) && tools.length > 0) {
+
+            llm = llm.bindTools(tools);
+
             const ragNode = async (state) => {
-                const llmWithTools = llm.bindTools([ragTool]);
-                const response = await llmWithTools.invoke(state.messages);
+
+                const response = await llm.invoke(state.messages);
                 return { messages: [response] };
             };
 
-            const tools = new ToolNode([ragTool]);
+            const toolsNode = new ToolNode(tools);
 
             workflow = new StateGraph(MessagesAnnotation)
                 .addNode("rag", ragNode)
-                .addNode("tools", tools)
+                .addNode("tools", toolsNode)
                 .addNode("model", callModel)
                 .addEdge(START, "rag")
                 .addConditionalEdges("rag", toolsCondition, {
@@ -350,6 +368,19 @@ class custom_chat_node extends BaseNode {
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 
+            let tools = inputs.find((e) => e.name === "Tools")?.value || [];
+            if (tools && !Array.isArray(tools)) {
+                tools = [tools];
+            }
+            tools = tools.filter((e) => e !== null);
+
+            if (tools.length > 0) {
+                webconsole.info("GOOGLE NODE | Generating tool descriptions for system prompt");
+                const toolDescriptions = tools.map(tool => `- ${tool.name}: ${tool.description}`).join("\n");
+                const toolsPrompt = `\nYou have access to the following tools:\n${toolDescriptions}\nUse them to fetch relevant information when needed.\n`;
+                systemPrompt += toolsPrompt;
+            }
+
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
@@ -389,6 +420,7 @@ class custom_chat_node extends BaseNode {
                 `default_${serverData.workflowId}`;
 
             let ragTool = null;
+            let toolList = [];
             if (ragTableName && ragTableName.trim() !== "") {
                 webconsole.info("CUSTOM NODE | Setting up PostgreSQL RAG tool");
                 
@@ -399,9 +431,13 @@ class custom_chat_node extends BaseNode {
 
                 const vectorStore = await this.initializeVectorStore(embeddings, ragTableName, webconsole);
                 ragTool = this.createRagTool(vectorStore, webconsole);
+
+                toolList = [ragTool];
             }
 
-            const app = this.createWorkflow(llm, systemPrompt, ragTool, webconsole);
+            toolList = [...toolList, ...tools];
+
+            const app = this.createWorkflow(llm, systemPrompt, toolList, webconsole);
 
             const config = {
                 configurable: {
@@ -418,7 +454,7 @@ class custom_chat_node extends BaseNode {
                 if (pastMessages.length > 0) {
                     
                     const trimmedMessages = await trimMessages(pastMessages, {
-                        maxTokens: 30000,
+                        maxTokens: 200000,
                         strategy: "last",
                         tokenCounter: llm,
                         includeSystem: true,

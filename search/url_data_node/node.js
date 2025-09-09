@@ -1,6 +1,8 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import dotenv from "dotenv";
 import axios from "axios";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 dotenv.config();
 
@@ -29,6 +31,11 @@ const config = {
             name: "output",
             type: "Text",
         },
+        {
+            desc: "The tool version of this node, to be used by LLMs",
+            name: "Tool",
+            type: "Tool",
+        }
     ],
     fields: [
         {
@@ -59,6 +66,50 @@ class url_data_node extends BaseNode {
      */
     async run(inputs, contents, webconsole, serverData) {
 
+        webconsole.info("URL DATA NODE | Generating tool...");
+
+        const urlTool = tool(
+            async ({ url }, toolConfig) => {
+                webconsole.info("URL TOOL | Invoking tool");
+
+                const details = [];
+                for (const link of url) {
+                    const reqConfig = {
+                        method: 'get',
+                        maxBodyLength: Infinity,
+                        url: `https://r.jina.ai/${link}`,
+                        headers: {
+                            "Authorization": `Bearer ${process.env.JINA_API_KEY}`
+                        }
+                    };
+
+                    let res = "";
+                    const response = await axios.request(reqConfig);
+                    if (response.status === 200) {
+                        const PageContent = JSON.stringify(response.data);
+                        res = `URL content for ${link} in markdown: \n${PageContent.length > 10000 ? PageContent.slice(10000) : PageContent}`;
+                        this.setCredit(this.getCredit() + 10);
+                        
+                    }
+                    else {
+                        res = `Some error occured fetching data from ${link}`;
+                    }
+                    details.push(res);
+                }
+
+                return [
+                    details.join("\n"),
+                    this.getCredit(),
+                ];
+            },
+            {
+                name: "urlTool",
+                description: "Retrieve information from a given set of urls",
+                schema: z.object({ url: z.array(z.string()) }),
+                responseFormat: "content_and_artifact",
+            }
+        );
+
         webconsole.info("URL DATA NODE | Scraping data from URL...");
 
         const urlFilter = inputs.find((e) => e.name === "URL");
@@ -66,7 +117,11 @@ class url_data_node extends BaseNode {
 
         if (!url) {
             webconsole.error("URL DATA NODE | No URL found");
-            return null;
+            this.setCredit(0);
+            return {
+                "output": null,
+                "Tool": urlTool,
+            }
         }
 
         if (!process.env.JINA_API_KEY) {
@@ -96,17 +151,27 @@ class url_data_node extends BaseNode {
 
                 return {
                     "output": scrapeResultMD,
+                    "Tool": urlTool,
                     "Credits": this.getCredit(),
                 };
             }
             else {
                 webconsole.error("URL DATA NODE | Some error occured");
-                return null;
+                this.setCredit(0);
+                return {
+                    "output": null,
+                    "Tool": urlTool,
+                }
             }
 
         } catch (error) {
             webconsole.error("URL DATA NODE | Some error occured: ", error);
-            return null;
+            
+            this.setCredit(0);
+            return {
+                "output": null,
+                "Tool": urlTool,
+            }
         }
     }
 }

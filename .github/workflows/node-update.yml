@@ -170,7 +170,7 @@ jobs:
 
                     if [ \"${{ github.ref_name }}\" = \"main\" ]; then
                         pm2 restart 21
-                    elif [ \"${{ github.ref_name }}}\" = \"dev\" ]; then
+                    elif [ \"${{ github.ref_name }}\" = \"dev\" ]; then
                         pm2 restart 34
                     fi
                 '"
