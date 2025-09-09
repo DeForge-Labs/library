@@ -1,6 +1,6 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import axios from "axios";
-import { zonedTimeToUtc } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
 import { addMinutes } from "date-fns";
 
 const config = {
@@ -196,10 +196,9 @@ class cal_book extends BaseNode {
         .split(":")[1]
         .split(",")[0];
 
-      // Create a date object from parts, which represents the time in the user's specified timezone.
       const startDateInUserTz = new Date(
         date.year,
-        date.month - 1, // JS months are 0-indexed
+        date.month - 1,
         date.day,
         date.hour,
         date.minute,
@@ -207,10 +206,9 @@ class cal_book extends BaseNode {
         date.millisecond || 0
       );
 
-      // Convert that "local" time to a true UTC Date object using the provided timezone.
-      const startUtc = zonedTimeToUtc(startDateInUserTz, timezone);
+      // CORRECTED FUNCTION CALL
+      const startUtc = fromZonedTime(startDateInUserTz, timezone);
 
-      // Determine the duration in minutes
       let durationInMinutes;
       if (duration === "45mins") {
         durationInMinutes = 45;
@@ -220,10 +218,7 @@ class cal_book extends BaseNode {
         durationInMinutes = 30;
       }
 
-      // Calculate the end time by adding minutes to the correct start time
       const endUtc = addMinutes(startUtc, durationInMinutes);
-
-      // Convert to the ISO string format required by the API
       const startSlot = startUtc.toISOString();
       const endSlot = endUtc.toISOString();
 
