@@ -316,7 +316,6 @@ class cal_book extends BaseNode {
         routedTeamMemberIds: null,
         skipContactOwner: false,
         _isDryRun: false,
-        dub_id: null,
       };
 
       webconsole.info("CAL BOOK | Sending booking request...");
@@ -327,8 +326,6 @@ class cal_book extends BaseNode {
         {
           headers: {
             "Content-Type": "application/json",
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           },
         }
       );
