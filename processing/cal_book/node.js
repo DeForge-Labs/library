@@ -105,139 +105,264 @@ class cal_book extends BaseNode {
   }
 
   /**
+   * Helper function to create timezone-aware date
+   */
+  createTimezoneAwareDate(dateObj, timezone) {
+    // Create date in the specified timezone
+    const date = new Date(
+      dateObj.year,
+      dateObj.month - 1,
+      dateObj.day,
+      dateObj.hour,
+      dateObj.minute,
+      dateObj.second || 0,
+      dateObj.millisecond || 0
+    );
+
+    // Format with timezone offset
+    return new Intl.DateTimeFormat("sv-SE", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZoneName: "longOffset",
+    }).formatToParts(date);
+  }
+
+  /**
+   * Convert date to Cal.com format with timezone
+   */
+  formatDateForCalcom(dateObj, timezone) {
+    const date = new Date(
+      dateObj.year,
+      dateObj.month - 1,
+      dateObj.day,
+      dateObj.hour,
+      dateObj.minute,
+      dateObj.second || 0,
+      dateObj.millisecond || 0
+    );
+
+    // Get timezone offset
+    const tempDate = new Date(
+      date.toLocaleString("en-US", { timeZone: timezone })
+    );
+    const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+    const offset = (utcDate.getTime() - tempDate.getTime()) / (1000 * 60);
+
+    // Format offset as +HH:MM or -HH:MM
+    const offsetHours = Math.floor(Math.abs(offset) / 60);
+    const offsetMinutes = Math.abs(offset) % 60;
+    const offsetSign = offset <= 0 ? "+" : "-";
+    const offsetString = `${offsetSign}${offsetHours
+      .toString()
+      .padStart(2, "0")}:${offsetMinutes.toString().padStart(2, "0")}`;
+
+    // Create ISO string with timezone offset
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
+  }
+
+  /**
+   * Extract event data from Cal.com page
+   */
+  async extractEventData(meetingLink) {
+    try {
+      const response = await axios.get(meetingLink);
+      const htmlContent = response.data;
+
+      // Try to find eventData in script tags or inline JSON
+      const eventDataMatch = htmlContent.match(/eventData["\s]*:["\s]*{[^}]+}/);
+      if (eventDataMatch) {
+        const eventDataStr = eventDataMatch[0].replace(/eventData["\s]*:/, "");
+        const eventData = JSON.parse(eventDataStr);
+        return eventData.id;
+      }
+
+      // Alternative: Look for eventTypeId directly
+      const eventIdMatch = htmlContent.match(/"eventTypeId":(\d+)/);
+      if (eventIdMatch) {
+        return parseInt(eventIdMatch[1]);
+      }
+
+      // Fallback: Try your original method but more robust
+      const eventDataSection = htmlContent.split("eventData")[1];
+      if (eventDataSection) {
+        const idSection = eventDataSection.split('"id"')[1];
+        if (idSection) {
+          const idMatch = idSection.match(/:\s*(\d+)/);
+          if (idMatch) {
+            return parseInt(idMatch[1]);
+          }
+        }
+      }
+
+      throw new Error("Could not extract event ID from Cal.com page");
+    } catch (error) {
+      throw new Error(`Failed to extract event data: ${error.message}`);
+    }
+  }
+
+  /**
    * @override
    * @inheritdoc
-   *
-   * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
-   * @param {import("../../core/BaseNode/node.js").Contents[]} contents
-   * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole
-   * @param {import("../../core/BaseNode/node.js").IServerData} serverData
    */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("CAL BOOK | Begin execution");
 
+    // Extract inputs with validation
     const nameFilter = inputs.filter((e) => e.name === "Name");
     const name =
       nameFilter.length > 0
         ? nameFilter[0].value
-        : contents.filter((e) => e.name === "Name")[0].value || "";
+        : contents.filter((e) => e.name === "Name")[0]?.value || "";
 
     if (!name.trim()) {
       webconsole.error("CAL BOOK | No Name found");
-      return null;
+      return {
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": "Name is required",
+      };
     }
 
     const emailFilter = inputs.filter((e) => e.name === "Email");
     const email =
       emailFilter.length > 0
         ? emailFilter[0].value
-        : contents.filter((e) => e.name === "Email")[0].value || "";
+        : contents.filter((e) => e.name === "Email")[0]?.value || "";
 
     if (!email.trim()) {
       webconsole.error("CAL BOOK | No email provided");
-      return null;
+      return {
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": "Email is required",
+      };
     }
 
     const meetingLinkFilter = inputs.filter((e) => e.name === "Meeting Link");
     const meetingLink =
       meetingLinkFilter.length > 0
         ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0].value || "";
+        : contents.filter((e) => e.name === "Meeting Link")[0]?.value || "";
 
     if (!meetingLink.trim()) {
       webconsole.error("CAL BOOK | Meeting link not provided");
-      return null;
+      return {
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": "Meeting link is required",
+      };
     }
 
     const timezoneFilter = inputs.filter((e) => e.name === "timezone");
     const timezone =
       timezoneFilter.length > 0
         ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0].value || "";
+        : contents.filter((e) => e.name === "timezone")[0]?.value || "";
 
     if (!timezone.trim()) {
       webconsole.error("CAL BOOK | No timezone provided");
-      return null;
+      return {
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": "Timezone is required",
+      };
     }
 
     const dateFilter = inputs.filter((e) => e.name === "Date");
     const date =
       dateFilter.length > 0
         ? dateFilter[0].value
-        : contents.filter((e) => e.name === "Date")[0].value || "";
+        : contents.filter((e) => e.name === "Date")[0]?.value || "";
 
     if (!date) {
       webconsole.error("CAL BOOK | No date provided");
-      return null;
+      return {
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": "Date is required",
+      };
     }
 
     const durationFilter = inputs.filter((e) => e.name === "Duration");
     const duration =
       durationFilter.length > 0
         ? durationFilter[0].value
-        : contents.filter((e) => e.name === "Duration")[0].value || "30mins";
-
-    if (!duration.trim()) {
-      webconsole.error("CAL BOOK | Duration not selected");
-      return null;
-    }
+        : contents.filter((e) => e.name === "Duration")[0]?.value || "30mins";
 
     try {
-      const eventIdPayload = await axios.get(meetingLink);
+      // Extract user and event info from meeting link
+      const urlParts = meetingLink.split("/");
+      const userName = urlParts[3];
+      const eventTypeSlug = urlParts[4];
 
-      const userName = meetingLink.split("/")[3];
-      const eventTypeSlug = meetingLink.split("/")[4];
-
-      const eventID = eventIdPayload.data
-        .split("eventData")[1]
-        .split("id")[1]
-        .split(":")[1]
-        .split(",")[0];
-
-      const startSlot = new Date(
-        date.year,
-        date.month - 1, // JS months are 0-indexed
-        date.day,
-        date.hour,
-        date.minute,
-        date.second,
-        date.millisecond
-      ).toISOString();
-
-      let endSlot;
-
-      if (duration === "30mins") {
-        endSlot = new Date(
-          date.year,
-          date.month - 1, // JS months are 0-indexed
-          date.day,
-          date.hour,
-          date.minute + 30,
-          date.second,
-          date.millisecond
-        ).toISOString();
-      } else if (duration === "45mins") {
-        endSlot = new Date(
-          date.year,
-          date.month - 1, // JS months are 0-indexed
-          date.day,
-          date.hour,
-          date.minute + 45,
-          date.second,
-          date.millisecond
-        ).toISOString();
-      } else {
-        endSlot = new Date(
-          date.year,
-          date.month - 1, // JS months are 0-indexed
-          date.day,
-          date.hour,
-          date.minute + 60,
-          date.second,
-          date.millisecond
-        ).toISOString();
+      if (!userName || !eventTypeSlug) {
+        throw new Error("Invalid meeting link format");
       }
 
+      // Extract event ID from Cal.com page
+      const eventID = await this.extractEventData(meetingLink);
+
+      webconsole.info(`CAL BOOK | Extracted eventID: ${eventID}`);
+
+      // Calculate duration in minutes
+      let durationMinutes;
+      switch (duration) {
+        case "30mins":
+          durationMinutes = 30;
+          break;
+        case "45mins":
+          durationMinutes = 45;
+          break;
+        case "1hr":
+          durationMinutes = 60;
+          break;
+        default:
+          durationMinutes = 30;
+      }
+
+      // Create start and end times with proper timezone handling
+      const startSlot = this.formatDateForCalcom(date, timezone);
+
+      // Calculate end time
+      const endDate = {
+        ...date,
+        minute: date.minute + durationMinutes,
+      };
+
+      // Handle minute overflow
+      if (endDate.minute >= 60) {
+        endDate.hour += Math.floor(endDate.minute / 60);
+        endDate.minute = endDate.minute % 60;
+      }
+
+      // Handle hour overflow
+      if (endDate.hour >= 24) {
+        endDate.day += Math.floor(endDate.hour / 24);
+        endDate.hour = endDate.hour % 24;
+      }
+
+      const endSlot = this.formatDateForCalcomIntl(endDate, timezone);
+
+      webconsole.info(`CAL BOOK | Start: ${startSlot}, End: ${endSlot}`);
+
+      // Prepare payload matching Cal.com format
       const payload = {
         responses: {
           name: name,
@@ -251,7 +376,7 @@ class cal_book extends BaseNode {
         user: userName,
         start: startSlot,
         end: endSlot,
-        eventTypeId: Number(eventID),
+        eventTypeId: eventID,
         eventTypeSlug: eventTypeSlug,
         timeZone: timezone,
         language: "en",
@@ -260,15 +385,26 @@ class cal_book extends BaseNode {
         routedTeamMemberIds: null,
         skipContactOwner: false,
         _isDryRun: false,
+        dub_id: null, // Added this field from the official payload
       };
 
-      await axios.post("https://cal.com/api/book/event", payload, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      webconsole.info("CAL BOOK | Sending booking request...");
+
+      const response = await axios.post(
+        "https://cal.com/api/book/event",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          },
+        }
+      );
 
       webconsole.success("CAL BOOK | Booking successful");
+      webconsole.info(`CAL BOOK | Response: ${JSON.stringify(response.data)}`);
+
       return {
         Success: true,
         Credits: this.getCredit(),
@@ -276,12 +412,20 @@ class cal_book extends BaseNode {
         "Error payload": "",
       };
     } catch (error) {
-      webconsole.error("CAL BOOK | Error: " + error);
+      webconsole.error(`CAL BOOK | Error: ${error.message}`);
+
+      let errorMessage = error.message;
+      if (error.response) {
+        errorMessage = `HTTP ${error.response.status}: ${JSON.stringify(
+          error.response.data
+        )}`;
+      }
+
       return {
         Success: false,
         Credits: this.getCredit(),
         Error: true,
-        "Error payload": JSON.stringify(error),
+        "Error payload": errorMessage,
       };
     }
   }
