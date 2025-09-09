@@ -55,7 +55,7 @@ const config = {
       desc: "Error details",
       name: "Error payload",
       type: "Text",
-    }
+    },
   ],
   fields: [
     {
@@ -105,14 +105,14 @@ class cal_book extends BaseNode {
   }
 
   /**
-     * @override
-     * @inheritdoc
-     * 
-     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
-     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
-     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
-     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
-     */
+   * @override
+   * @inheritdoc
+   *
+   * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+   * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+   * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole
+   * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+   */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("CAL BOOK | Begin execution");
 
@@ -120,8 +120,7 @@ class cal_book extends BaseNode {
     const name =
       nameFilter.length > 0
         ? nameFilter[0].value
-        : contents.filter((e) => e.name === "Name")[0].value
-        || "";
+        : contents.filter((e) => e.name === "Name")[0].value || "";
 
     if (!name.trim()) {
       webconsole.error("CAL BOOK | No Name found");
@@ -132,8 +131,7 @@ class cal_book extends BaseNode {
     const email =
       emailFilter.length > 0
         ? emailFilter[0].value
-        : contents.filter((e) => e.name === "Email")[0].value
-        | "";
+        : contents.filter((e) => e.name === "Email")[0].value || "";
 
     if (!email.trim()) {
       webconsole.error("CAL BOOK | No email provided");
@@ -144,8 +142,7 @@ class cal_book extends BaseNode {
     const meetingLink =
       meetingLinkFilter.length > 0
         ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0].value
-        || "";
+        : contents.filter((e) => e.name === "Meeting Link")[0].value || "";
 
     if (!meetingLink.trim()) {
       webconsole.error("CAL BOOK | Meeting link not provided");
@@ -156,8 +153,7 @@ class cal_book extends BaseNode {
     const timezone =
       timezoneFilter.length > 0
         ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0].value
-        || "";
+        : contents.filter((e) => e.name === "timezone")[0].value || "";
 
     if (!timezone.trim()) {
       webconsole.error("CAL BOOK | No timezone provided");
@@ -179,8 +175,7 @@ class cal_book extends BaseNode {
     const duration =
       durationFilter.length > 0
         ? durationFilter[0].value
-        : contents.filter((e) => e.name === "Duration")[0].value
-        || "30mins";
+        : contents.filter((e) => e.name === "Duration")[0].value || "30mins";
 
     if (!duration.trim()) {
       webconsole.error("CAL BOOK | Duration not selected");
@@ -275,18 +270,17 @@ class cal_book extends BaseNode {
 
       webconsole.success("CAL BOOK | Booking successful");
       return {
-        "Success": true,
-        "Credits": this.getCredit(),
-        "Error": false,
+        Success: true,
+        Credits: this.getCredit(),
+        Error: false,
         "Error payload": "",
       };
-
     } catch (error) {
       webconsole.error("CAL BOOK | Error: " + error);
       return {
-        "Success": false,
-        "Credits": this.getCredit(),
-        "Error": true,
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
         "Error payload": JSON.stringify(error),
       };
     }
