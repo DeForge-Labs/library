@@ -173,46 +173,6 @@ class cal_book extends BaseNode {
   }
 
   /**
-   * Extract event data from Cal.com page
-   */
-  async extractEventData(meetingLink) {
-    try {
-      const response = await axios.get(meetingLink);
-      const htmlContent = response.data;
-
-      // Try to find eventData in script tags or inline JSON
-      const eventDataMatch = htmlContent.match(/eventData["\s]*:["\s]*{[^}]+}/);
-      if (eventDataMatch) {
-        const eventDataStr = eventDataMatch[0].replace(/eventData["\s]*:/, "");
-        const eventData = JSON.parse(eventDataStr);
-        return eventData.id;
-      }
-
-      // Alternative: Look for eventTypeId directly
-      const eventIdMatch = htmlContent.match(/"eventTypeId":(\d+)/);
-      if (eventIdMatch) {
-        return parseInt(eventIdMatch[1]);
-      }
-
-      // Fallback: Try your original method but more robust
-      const eventDataSection = htmlContent.split("eventData")[1];
-      if (eventDataSection) {
-        const idSection = eventDataSection.split('"id"')[1];
-        if (idSection) {
-          const idMatch = idSection.match(/:\s*(\d+)/);
-          if (idMatch) {
-            return parseInt(idMatch[1]);
-          }
-        }
-      }
-
-      throw new Error("Could not extract event ID from Cal.com page");
-    } catch (error) {
-      throw new Error(`Failed to extract event data: ${error.message}`);
-    }
-  }
-
-  /**
    * @override
    * @inheritdoc
    */
@@ -316,8 +276,15 @@ class cal_book extends BaseNode {
         throw new Error("Invalid meeting link format");
       }
 
-      // Extract event ID from Cal.com page
-      const eventID = await this.extractEventData(meetingLink);
+      // Get the Cal.com page data
+      const eventIdPayload = await axios.get(meetingLink);
+
+      // Extract event ID using your proven method
+      const eventID = eventIdPayload.data
+        .split("eventData")[1]
+        .split("id")[1]
+        .split(":")[1]
+        .split(",")[0];
 
       webconsole.info(`CAL BOOK | Extracted eventID: ${eventID}`);
 
@@ -376,7 +343,7 @@ class cal_book extends BaseNode {
         user: userName,
         start: startSlot,
         end: endSlot,
-        eventTypeId: eventID,
+        eventTypeId: Number(eventID),
         eventTypeSlug: eventTypeSlug,
         timeZone: timezone,
         language: "en",
@@ -385,7 +352,7 @@ class cal_book extends BaseNode {
         routedTeamMemberIds: null,
         skipContactOwner: false,
         _isDryRun: false,
-        dub_id: null, // Added this field from the official payload
+        dub_id: null,
       };
 
       webconsole.info("CAL BOOK | Sending booking request...");
