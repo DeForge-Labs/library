@@ -105,69 +105,33 @@ class cal_book extends BaseNode {
   }
 
   /**
-   * Helper function to create timezone-aware date
-   */
-  createTimezoneAwareDate(dateObj, timezone) {
-    // Create date in the specified timezone
-    const date = new Date(
-      dateObj.year,
-      dateObj.month - 1,
-      dateObj.day,
-      dateObj.hour,
-      dateObj.minute,
-      dateObj.second || 0,
-      dateObj.millisecond || 0
-    );
-
-    // Format with timezone offset
-    return new Intl.DateTimeFormat("sv-SE", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      timeZoneName: "longOffset",
-    }).formatToParts(date);
-  }
-
-  /**
    * Convert date to Cal.com format with timezone
    */
   formatDateForCalcom(dateObj, timezone) {
-    const date = new Date(
-      dateObj.year,
-      dateObj.month - 1,
-      dateObj.day,
-      dateObj.hour,
-      dateObj.minute,
-      dateObj.second || 0,
-      dateObj.millisecond || 0
-    );
+    // Create the date string directly without Date object
+    const year = dateObj.year;
+    const month = dateObj.month.toString().padStart(2, "0");
+    const day = dateObj.day.toString().padStart(2, "0");
+    const hours = dateObj.hour.toString().padStart(2, "0");
+    const minutes = dateObj.minute.toString().padStart(2, "0");
+    const seconds = (dateObj.second || 0).toString().padStart(2, "0");
 
-    // Get timezone offset
+    // Get timezone offset for the specified timezone
     const tempDate = new Date(
-      date.toLocaleString("en-US", { timeZone: timezone })
+      `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
     );
-    const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
-    const offset = (utcDate.getTime() - tempDate.getTime()) / (1000 * 60);
+    const offsetMinutes =
+      tempDate.getTimezoneOffset() -
+      new Date(
+        tempDate.toLocaleString("en-US", { timeZone: timezone })
+      ).getTimezoneOffset();
 
-    // Format offset as +HH:MM or -HH:MM
-    const offsetHours = Math.floor(Math.abs(offset) / 60);
-    const offsetMinutes = Math.abs(offset) % 60;
-    const offsetSign = offset <= 0 ? "+" : "-";
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetMins = Math.abs(offsetMinutes) % 60;
+    const offsetSign = offsetMinutes <= 0 ? "+" : "-";
     const offsetString = `${offsetSign}${offsetHours
       .toString()
-      .padStart(2, "0")}:${offsetMinutes.toString().padStart(2, "0")}`;
-
-    // Create ISO string with timezone offset
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const seconds = date.getSeconds().toString().padStart(2, "0");
+      .padStart(2, "0")}:${offsetMins.toString().padStart(2, "0")}`;
 
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
   }
@@ -325,7 +289,7 @@ class cal_book extends BaseNode {
         endDate.hour = endDate.hour % 24;
       }
 
-      const endSlot = this.formatDateForCalcomIntl(endDate, timezone);
+      const endSlot = this.formatDateForCalcom(endDate, timezone);
 
       webconsole.info(`CAL BOOK | Start: ${startSlot}, End: ${endSlot}`);
 
