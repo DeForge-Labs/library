@@ -72,8 +72,6 @@ class url_data_node extends BaseNode {
             async ({ url }, toolConfig) => {
                 webconsole.info("URL TOOL | Invoking tool");
 
-                const { LLMgetCredit, LLMsetCredit } = toolConfig.configurable;
-
                 const details = [];
                 for (const link of url) {
                     const reqConfig = {
@@ -90,7 +88,7 @@ class url_data_node extends BaseNode {
                     if (response.status === 200) {
                         const PageContent = JSON.stringify(response.data);
                         res = `URL content for ${link} in markdown: \n${PageContent.length > 10000 ? PageContent.slice(10000) : PageContent}`;
-                        LLMsetCredit(LLMgetCredit() + 10);
+                        this.setCredit(this.getCredit() + 10);
                         
                     }
                     else {
@@ -99,13 +97,16 @@ class url_data_node extends BaseNode {
                     details.push(res);
                 }
 
-                return details.join("\n");
+                return [
+                    details.join("\n"),
+                    this.getCredit(),
+                ];
             },
             {
                 name: "urlTool",
                 description: "Retrieve information from a given set of urls",
                 schema: z.object({ url: z.array(z.string()) }),
-                responseFormat: "content",
+                responseFormat: "content_and_artifact",
             }
         );
 

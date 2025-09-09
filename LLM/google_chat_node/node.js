@@ -261,21 +261,28 @@ class google_chat_node extends BaseNode {
         const callModel = async (state, config) => {
             try {
                 let messages = state.messages;
-                if (!config.configurable.saveMemory) {
-                    messages = messages.slice(-2);
+
+                let creditsFromTools = 0;
+                const reversedMessages = [...messages].reverse();
+
+                const lastHumanMesageIndex = reversedMessages.findIndex(msg => msg.getType() === 'human');
+
+                if (lastHumanMesageIndex > 0) {
+                    const lastTurnMessages = reversedMessages.slice(0, lastHumanMesageIndex);
+
+                    const toolMessages = lastTurnMessages.filter((msg) => msg.getType() === "tool");
+
+                    for (const toolMsg of toolMessages) {
+                        if (toolMsg.artifact !== undefined && toolMsg.artifact !== null) {
+                            const artifactValue = Number(toolMsg.artifact);
+                            if (!isNaN(artifactValue) && artifactValue >= 0) {
+                                creditsFromTools += artifactValue;
+                            }
+                        }
+                    }
                 }
-                
-                const lastSystemMessage = messages.slice().reverse().find(msg => msg instanceof SystemMessage);
-                
-                if (!lastSystemMessage) {
-                    messages.unshift(new SystemMessage(systemPrompt));
-                    webconsole.info("GOOGLE NODE | Added system prompt (no previous system message found)");
-                } else if (lastSystemMessage.content !== systemPrompt) {
-                    messages.unshift(new SystemMessage(systemPrompt));
-                    webconsole.info("GOOGLE NODE | Added updated system prompt (content changed)");
-                } else {
-                    webconsole.info("GOOGLE NODE | Using existing system prompt (content unchanged)");
-                }
+
+                this.setCredit(creditsFromTools);
                 
                 const response = await llm.invoke(messages);
                 return { messages: response };
@@ -289,14 +296,14 @@ class google_chat_node extends BaseNode {
         
         if (Array.isArray(tools) && tools.length > 0) {
 
-            llm = llm.bindTools(...tools);
+            llm = llm.bindTools(tools);
 
             const ragNode = async (state) => {
-                const response = await llmWithTools.invoke(state.messages);
+                const response = await llm.invoke(state.messages);
                 return { messages: [response] };
             };
 
-            const toolsNode = new ToolNode([...tools]);
+            const toolsNode = new ToolNode(tools);
 
             workflow = new StateGraph(MessagesAnnotation)
                 .addNode("rag", ragNode)
@@ -443,6 +450,9 @@ class google_chat_node extends BaseNode {
             systemPrompt = systemPrompt.slice(0, 4000);
 
             let tools = inputs.find((e) => e.name === "Tools")?.value || [];
+            if (tools && !Array.isArray(tools)) {
+                tools = [tools];
+            }
             tools = tools.filter((e) => e !== null);
 
             if (tools.length > 0) {
@@ -498,6 +508,7 @@ class google_chat_node extends BaseNode {
                 `default_${serverData.workflowId}`;
 
             let ragTool = null;
+            let toolList = [];
             if (ragTableName && ragTableName.trim() !== "") {
                 webconsole.info("GOOGLE NODE | Setting up PostgreSQL RAG tool");
                 
@@ -513,9 +524,11 @@ class google_chat_node extends BaseNode {
 
                 const vectorStore = await this.initializeVectorStore(embeddings, ragTableName, webconsole);
                 ragTool = this.createRagTool(vectorStore, webconsole);
+                
+                toolList = [ragTool];
             }
 
-            const toolList = [ragTool, ...tools];
+            toolList = [...toolList, ...tools];
 
             const app = this.createWorkflow(llm, systemPrompt, toolList, webconsole);
 
@@ -569,7 +582,7 @@ class google_chat_node extends BaseNode {
             const outputCreditUsage = Math.ceil(outputTokenUsage * (outputCreditRate / 1e6));
             const totalCreditUsage = inputCreditUsage + outputCreditUsage;
 
-            this.setCredit(totalCreditUsage);
+            this.setCredit(this.getCredit() + totalCreditUsage);
 
             if (saveMemory) {
                 try {
