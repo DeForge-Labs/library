@@ -1,5 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import axios from "axios";
+import { zonedTimeToUtc } from "date-fns-tz";
+import { addMinutes } from "date-fns";
 
 const config = {
   title: "Book Cal.com Meeting",
@@ -105,195 +107,126 @@ class cal_book extends BaseNode {
   }
 
   /**
-   * Convert date to Cal.com format with timezone
-   */
-  formatDateForCalcom(dateObj, timezone) {
-    // Create the date string directly without Date object
-    const year = dateObj.year;
-    const month = dateObj.month.toString().padStart(2, "0");
-    const day = dateObj.day.toString().padStart(2, "0");
-    const hours = dateObj.hour.toString().padStart(2, "0");
-    const minutes = dateObj.minute.toString().padStart(2, "0");
-    const seconds = (dateObj.second || 0).toString().padStart(2, "0");
-
-    // Get timezone offset for the specified timezone
-    const tempDate = new Date(
-      `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
-    );
-    const offsetMinutes =
-      tempDate.getTimezoneOffset() -
-      new Date(
-        tempDate.toLocaleString("en-US", { timeZone: timezone })
-      ).getTimezoneOffset();
-
-    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-    const offsetMins = Math.abs(offsetMinutes) % 60;
-    const offsetSign = offsetMinutes <= 0 ? "+" : "-";
-    const offsetString = `${offsetSign}${offsetHours
-      .toString()
-      .padStart(2, "0")}:${offsetMins.toString().padStart(2, "0")}`;
-
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
-  }
-
-  /**
    * @override
    * @inheritdoc
+   *
+   * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+   * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+   * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole
+   * @param {import("../../core/BaseNode/node.js").IServerData} serverData
    */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("CAL BOOK | Begin execution");
 
-    // Extract inputs with validation
     const nameFilter = inputs.filter((e) => e.name === "Name");
     const name =
       nameFilter.length > 0
         ? nameFilter[0].value
-        : contents.filter((e) => e.name === "Name")[0]?.value || "";
+        : contents.filter((e) => e.name === "Name")[0].value || "";
 
     if (!name.trim()) {
       webconsole.error("CAL BOOK | No Name found");
-      return {
-        Success: false,
-        Credits: this.getCredit(),
-        Error: true,
-        "Error payload": "Name is required",
-      };
+      return null;
     }
 
     const emailFilter = inputs.filter((e) => e.name === "Email");
     const email =
       emailFilter.length > 0
         ? emailFilter[0].value
-        : contents.filter((e) => e.name === "Email")[0]?.value || "";
+        : contents.filter((e) => e.name === "Email")[0].value || "";
 
     if (!email.trim()) {
       webconsole.error("CAL BOOK | No email provided");
-      return {
-        Success: false,
-        Credits: this.getCredit(),
-        Error: true,
-        "Error payload": "Email is required",
-      };
+      return null;
     }
 
     const meetingLinkFilter = inputs.filter((e) => e.name === "Meeting Link");
     const meetingLink =
       meetingLinkFilter.length > 0
         ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0]?.value || "";
+        : contents.filter((e) => e.name === "Meeting Link")[0].value || "";
 
     if (!meetingLink.trim()) {
       webconsole.error("CAL BOOK | Meeting link not provided");
-      return {
-        Success: false,
-        Credits: this.getCredit(),
-        Error: true,
-        "Error payload": "Meeting link is required",
-      };
+      return null;
     }
 
     const timezoneFilter = inputs.filter((e) => e.name === "timezone");
     const timezone =
       timezoneFilter.length > 0
         ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0]?.value || "";
+        : contents.filter((e) => e.name === "timezone")[0].value || "";
 
     if (!timezone.trim()) {
       webconsole.error("CAL BOOK | No timezone provided");
-      return {
-        Success: false,
-        Credits: this.getCredit(),
-        Error: true,
-        "Error payload": "Timezone is required",
-      };
+      return null;
     }
 
     const dateFilter = inputs.filter((e) => e.name === "Date");
     const date =
       dateFilter.length > 0
         ? dateFilter[0].value
-        : contents.filter((e) => e.name === "Date")[0]?.value || "";
+        : contents.filter((e) => e.name === "Date")[0].value || "";
 
     if (!date) {
       webconsole.error("CAL BOOK | No date provided");
-      return {
-        Success: false,
-        Credits: this.getCredit(),
-        Error: true,
-        "Error payload": "Date is required",
-      };
+      return null;
     }
 
     const durationFilter = inputs.filter((e) => e.name === "Duration");
     const duration =
       durationFilter.length > 0
         ? durationFilter[0].value
-        : contents.filter((e) => e.name === "Duration")[0]?.value || "30mins";
+        : contents.filter((e) => e.name === "Duration")[0].value || "30mins";
+
+    if (!duration.trim()) {
+      webconsole.error("CAL BOOK | Duration not selected");
+      return null;
+    }
 
     try {
-      // Extract user and event info from meeting link
-      const urlParts = meetingLink.split("/");
-      const userName = urlParts[3];
-      const eventTypeSlug = urlParts[4];
-
-      if (!userName || !eventTypeSlug) {
-        throw new Error("Invalid meeting link format");
-      }
-
-      // Get the Cal.com page data
       const eventIdPayload = await axios.get(meetingLink);
 
-      // Extract event ID using your proven method
+      const userName = meetingLink.split("/")[3];
+      const eventTypeSlug = meetingLink.split("/")[4];
+
       const eventID = eventIdPayload.data
         .split("eventData")[1]
         .split("id")[1]
         .split(":")[1]
         .split(",")[0];
 
-      webconsole.info(`CAL BOOK | Extracted eventID: ${eventID}`);
+      // Create a date object from parts, which represents the time in the user's specified timezone.
+      const startDateInUserTz = new Date(
+        date.year,
+        date.month - 1, // JS months are 0-indexed
+        date.day,
+        date.hour,
+        date.minute,
+        date.second || 0,
+        date.millisecond || 0
+      );
 
-      // Calculate duration in minutes
-      let durationMinutes;
-      switch (duration) {
-        case "30mins":
-          durationMinutes = 30;
-          break;
-        case "45mins":
-          durationMinutes = 45;
-          break;
-        case "1hr":
-          durationMinutes = 60;
-          break;
-        default:
-          durationMinutes = 30;
+      // Convert that "local" time to a true UTC Date object using the provided timezone.
+      const startUtc = zonedTimeToUtc(startDateInUserTz, timezone);
+
+      // Determine the duration in minutes
+      let durationInMinutes;
+      if (duration === "45mins") {
+        durationInMinutes = 45;
+      } else if (duration === "1hr") {
+        durationInMinutes = 60;
+      } else {
+        durationInMinutes = 30;
       }
 
-      // Create start and end times with proper timezone handling
-      const startSlot = this.formatDateForCalcom(date, timezone);
+      // Calculate the end time by adding minutes to the correct start time
+      const endUtc = addMinutes(startUtc, durationInMinutes);
 
-      // Calculate end time
-      const endDate = {
-        ...date,
-        minute: date.minute + durationMinutes,
-      };
+      // Convert to the ISO string format required by the API
+      const startSlot = startUtc.toISOString();
+      const endSlot = endUtc.toISOString();
 
-      // Handle minute overflow
-      if (endDate.minute >= 60) {
-        endDate.hour += Math.floor(endDate.minute / 60);
-        endDate.minute = endDate.minute % 60;
-      }
-
-      // Handle hour overflow
-      if (endDate.hour >= 24) {
-        endDate.day += Math.floor(endDate.hour / 24);
-        endDate.hour = endDate.hour % 24;
-      }
-
-      const endSlot = this.formatDateForCalcom(endDate, timezone);
-
-      webconsole.info(`CAL BOOK | Start: ${startSlot}, End: ${endSlot}`);
-
-      // Prepare payload matching Cal.com format
       const payload = {
         responses: {
           name: name,
@@ -318,21 +251,13 @@ class cal_book extends BaseNode {
         _isDryRun: false,
       };
 
-      webconsole.info("CAL BOOK | Sending booking request...");
-
-      const response = await axios.post(
-        "https://cal.com/api/book/event",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await axios.post("https://cal.com/api/book/event", payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       webconsole.success("CAL BOOK | Booking successful");
-      webconsole.info(`CAL BOOK | Response: ${JSON.stringify(response.data)}`);
-
       return {
         Success: true,
         Credits: this.getCredit(),
@@ -340,20 +265,17 @@ class cal_book extends BaseNode {
         "Error payload": "",
       };
     } catch (error) {
-      webconsole.error(`CAL BOOK | Error: ${error.message}`);
-
-      let errorMessage = error.message;
+      webconsole.error("CAL BOOK | Error: " + error);
       if (error.response) {
-        errorMessage = `HTTP ${error.response.status}: ${JSON.stringify(
-          error.response.data
-        )}`;
+        webconsole.error(
+          "CAL BOOK | API Error Data: " + JSON.stringify(error.response.data)
+        );
       }
-
       return {
         Success: false,
         Credits: this.getCredit(),
         Error: true,
-        "Error payload": errorMessage,
+        "Error payload": JSON.stringify(error.message),
       };
     }
   }
