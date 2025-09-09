@@ -51,7 +51,7 @@ const config = {
         {
             desc: "List of tools that the LLM can use",
             name: "Tools",
-            type: "Tools[]",
+            type: "Tool[]",
         },
         {
             desc: "System prompt for the LLM",
@@ -104,7 +104,7 @@ const config = {
         {
             desc: "List of tools that the LLM can use",
             name: "Tools",
-            type: "Tools[]",
+            type: "Tool[]",
             value: "",
         },
         {
