@@ -1,6 +1,8 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import dotenv from "dotenv";
 import axios from "axios";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 dotenv.config();
 
