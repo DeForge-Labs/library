@@ -442,8 +442,7 @@ class google_chat_node extends BaseNode {
             let systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
             systemPrompt = systemPrompt.slice(0, 4000);
 
-            const toolsFilter = inputs.find((e) => e.name === "Tools");
-            let tools = toolsFilter?.value || contents.find((e) => e.name === "Tools")?.value || [];
+            let tools = inputs.find((e) => e.name === "Tools")?.value || [];
             tools = tools.filter((e) => e !== null);
 
             if (tools.length > 0) {
