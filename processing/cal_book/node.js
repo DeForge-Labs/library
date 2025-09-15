@@ -1,5 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import axios from "axios";
+import { fromZonedTime } from "date-fns-tz";
+import { addMinutes } from "date-fns";
 
 const config = {
   title: "Book Cal.com Meeting",
@@ -55,7 +57,7 @@ const config = {
       desc: "Error details",
       name: "Error payload",
       type: "Text",
-    }
+    },
   ],
   fields: [
     {
@@ -105,14 +107,14 @@ class cal_book extends BaseNode {
   }
 
   /**
-     * @override
-     * @inheritdoc
-     * 
-     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
-     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
-     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
-     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
-     */
+   * @override
+   * @inheritdoc
+   *
+   * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
+   * @param {import("../../core/BaseNode/node.js").Contents[]} contents
+   * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole
+   * @param {import("../../core/BaseNode/node.js").IServerData} serverData
+   */
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("CAL BOOK | Begin execution");
 
@@ -120,8 +122,7 @@ class cal_book extends BaseNode {
     const name =
       nameFilter.length > 0
         ? nameFilter[0].value
-        : contents.filter((e) => e.name === "Name")[0].value
-        || "";
+        : contents.filter((e) => e.name === "Name")[0].value || "";
 
     if (!name.trim()) {
       webconsole.error("CAL BOOK | No Name found");
@@ -132,8 +133,7 @@ class cal_book extends BaseNode {
     const email =
       emailFilter.length > 0
         ? emailFilter[0].value
-        : contents.filter((e) => e.name === "Email")[0].value
-        | "";
+        : contents.filter((e) => e.name === "Email")[0].value || "";
 
     if (!email.trim()) {
       webconsole.error("CAL BOOK | No email provided");
@@ -144,8 +144,7 @@ class cal_book extends BaseNode {
     const meetingLink =
       meetingLinkFilter.length > 0
         ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0].value
-        || "";
+        : contents.filter((e) => e.name === "Meeting Link")[0].value || "";
 
     if (!meetingLink.trim()) {
       webconsole.error("CAL BOOK | Meeting link not provided");
@@ -156,8 +155,7 @@ class cal_book extends BaseNode {
     const timezone =
       timezoneFilter.length > 0
         ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0].value
-        || "";
+        : contents.filter((e) => e.name === "timezone")[0].value || "";
 
     if (!timezone.trim()) {
       webconsole.error("CAL BOOK | No timezone provided");
@@ -179,8 +177,7 @@ class cal_book extends BaseNode {
     const duration =
       durationFilter.length > 0
         ? durationFilter[0].value
-        : contents.filter((e) => e.name === "Duration")[0].value
-        || "30mins";
+        : contents.filter((e) => e.name === "Duration")[0].value || "30mins";
 
     if (!duration.trim()) {
       webconsole.error("CAL BOOK | Duration not selected");
@@ -199,49 +196,31 @@ class cal_book extends BaseNode {
         .split(":")[1]
         .split(",")[0];
 
-      const startSlot = new Date(
+      const startDateInUserTz = new Date(
         date.year,
-        date.month - 1, // JS months are 0-indexed
+        date.month - 1,
         date.day,
         date.hour,
         date.minute,
-        date.second,
-        date.millisecond
-      ).toISOString();
+        date.second || 0,
+        date.millisecond || 0
+      );
 
-      let endSlot;
+      // CORRECTED FUNCTION CALL
+      const startUtc = fromZonedTime(startDateInUserTz, timezone);
 
-      if (duration === "30mins") {
-        endSlot = new Date(
-          date.year,
-          date.month - 1, // JS months are 0-indexed
-          date.day,
-          date.hour,
-          date.minute + 30,
-          date.second,
-          date.millisecond
-        ).toISOString();
-      } else if (duration === "45mins") {
-        endSlot = new Date(
-          date.year,
-          date.month - 1, // JS months are 0-indexed
-          date.day,
-          date.hour,
-          date.minute + 45,
-          date.second,
-          date.millisecond
-        ).toISOString();
+      let durationInMinutes;
+      if (duration === "45mins") {
+        durationInMinutes = 45;
+      } else if (duration === "1hr") {
+        durationInMinutes = 60;
       } else {
-        endSlot = new Date(
-          date.year,
-          date.month - 1, // JS months are 0-indexed
-          date.day,
-          date.hour,
-          date.minute + 60,
-          date.second,
-          date.millisecond
-        ).toISOString();
+        durationInMinutes = 30;
       }
+
+      const endUtc = addMinutes(startUtc, durationInMinutes);
+      const startSlot = startUtc.toISOString();
+      const endSlot = endUtc.toISOString();
 
       const payload = {
         responses: {
@@ -275,19 +254,23 @@ class cal_book extends BaseNode {
 
       webconsole.success("CAL BOOK | Booking successful");
       return {
-        "Success": true,
-        "Credits": this.getCredit(),
-        "Error": false,
+        Success: true,
+        Credits: this.getCredit(),
+        Error: false,
         "Error payload": "",
       };
-
     } catch (error) {
       webconsole.error("CAL BOOK | Error: " + error);
+      if (error.response) {
+        webconsole.error(
+          "CAL BOOK | API Error Data: " + JSON.stringify(error.response.data)
+        );
+      }
       return {
-        "Success": false,
-        "Credits": this.getCredit(),
-        "Error": true,
-        "Error payload": JSON.stringify(error),
+        Success: false,
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": JSON.stringify(error.message),
       };
     }
   }

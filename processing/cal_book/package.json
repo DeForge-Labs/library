@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
-    "axios": "^1.9.0"
+    "axios": "^1.9.0",
+    "date-fns-tz": "^3.2.0"
   }
 }
