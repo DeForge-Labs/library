@@ -68,6 +68,11 @@ class url_data_node extends BaseNode {
 
         webconsole.info("URL DATA NODE | Generating tool...");
 
+        if (!process.env.JINA_API_KEY) {
+            webconsole.error("URL DATA NODE | Jina API key not provided");
+            return null;
+        }
+
         const urlTool = tool(
             async ({ url }, toolConfig) => {
                 webconsole.info("URL TOOL | Invoking tool");
@@ -84,17 +89,23 @@ class url_data_node extends BaseNode {
                     };
 
                     let res = "";
-                    const response = await axios.request(reqConfig);
-                    if (response.status === 200) {
-                        const PageContent = JSON.stringify(response.data);
-                        res = `URL content for ${link} in markdown: \n${PageContent.length > 10000 ? PageContent.slice(10000) : PageContent}`;
-                        this.setCredit(this.getCredit() + 10);
-                        
-                    }
-                    else {
+                    try {
+                        const response = await axios.request(reqConfig);
+                        if (response.status === 200) {
+                            const PageContent = JSON.stringify(response.data);
+                            res = `URL content for ${link} in markdown: \n${PageContent.length > 10000 ? PageContent.slice(10000) : PageContent}`;
+                            this.setCredit(this.getCredit() + 10);
+                            
+                        }
+                        else {
+                            res = `Some error occured fetching data from ${link}`;
+                        }
+                    } catch (error) {
+                        this.setCredit(this.getCredit() - 10);
                         res = `Some error occured fetching data from ${link}`;
+                    } finally {
+                        details.push(res);
                     }
-                    details.push(res);
                 }
 
                 return [
@@ -122,11 +133,6 @@ class url_data_node extends BaseNode {
                 "output": null,
                 "Tool": urlTool,
             }
-        }
-
-        if (!process.env.JINA_API_KEY) {
-            webconsole.error("URL DATA NODE | Jina API key not provided");
-            return null;
         }
 
         const axiosConfig = {
