@@ -14,7 +14,7 @@ const config = {
     type: "veo_node",
     icon: {},
     desc: "Generate AI videos using Google Veo",
-    credit: 1667,
+    credit: 2667,
     inputs: [
         {
             desc: "The flow of the workflow",
