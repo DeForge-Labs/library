@@ -16,22 +16,22 @@ const config = {
     },
     {
       name: "Body",
-      type: "Object",
+      type: "JSON",
       desc: "The JSON payload sent in the request body.",
     },
     {
       name: "Headers",
-      type: "Object",
+      type: "JSON",
       desc: "The HTTP headers from the incoming request.",
     },
     {
       name: "Query",
-      type: "Object",
+      type: "JSON",
       desc: "The URL query parameters from the request.",
     },
     {
       name: "Metadata",
-      type: "Object",
+      type: "JSON",
       desc: "Metadata about the request, like IP address and timestamp.",
     },
   ],
