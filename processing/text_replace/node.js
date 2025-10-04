@@ -44,9 +44,9 @@ const config = {
       value: "Enter text here...",
     },
     {
-      name: "Text to replace with",
+      name: "Text to replace",
       type: "Text",
-      desc: "The text to replace with.",
+      desc: "The text to replace.",
       value: "Enter text here...",
     },
     {
