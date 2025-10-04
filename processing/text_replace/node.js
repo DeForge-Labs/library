@@ -55,6 +55,12 @@ const config = {
       desc: "The text to replace with.",
       value: "Enter text here...",
     },
+    {
+      desc: "Replace all occurrences of the text",
+      name: "Replace All",
+      type: "CheckBox",
+      value: false,
+    },
   ],
   difficulty: "easy",
   tags: ["text", "replace", "processing"],
@@ -109,20 +115,38 @@ class text_replace extends BaseNode {
           : contents.filter((e) => e.name === "Text to replace with")[0]
               .value || "";
 
+      const replaceAllFilter = inputs.filter((e) => e.name === "Replace All");
+      const replaceAll =
+        replaceAllFilter.length > 0
+          ? replaceAllFilter[0].value
+          : contents.filter((e) => e.name === "Replace All")[0].value || false;
+
       if (!text || !textToReplace) {
         webconsole.error("TEXT REPLACE NODE | Text or Text to replace missing");
         return null;
       }
 
-      const replacedText = text.replace(
-        textToReplace,
-        textToReplaceWith ? textToReplaceWith : ""
-      );
-      webconsole.success("TEXT REPLACE NODE | Replaced text");
-      return {
-        Text: replacedText,
-        Credits: this.getCredit(),
-      };
+      if (replaceAll) {
+        const replacedText = text.replaceAll(
+          textToReplace,
+          textToReplaceWith ? textToReplaceWith : ""
+        );
+        webconsole.success("TEXT REPLACE NODE | Replaced text");
+        return {
+          Text: replacedText,
+          Credits: this.getCredit(),
+        };
+      } else {
+        const replacedText = text.replace(
+          textToReplace,
+          textToReplaceWith ? textToReplaceWith : ""
+        );
+        webconsole.success("TEXT REPLACE NODE | Replaced text");
+        return {
+          Text: replacedText,
+          Credits: this.getCredit(),
+        };
+      }
     } catch (error) {
       webconsole.error("TEXT REPLACE NODE | Some error occured: ", error);
       return null;
