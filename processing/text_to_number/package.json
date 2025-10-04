@@ -1,0 +1,20 @@
+{
+  "name": "text_to_number",
+  "version": "0.0.1",
+  "description": "Converts the given text to number",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme"
+}
