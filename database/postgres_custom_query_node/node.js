@@ -7,7 +7,7 @@ const config = {
   type: "postgres_custom_query_node",
   icon: {},
   desc: "Executes a custom SQL query with parameters. For advanced users.",
-  credit: 15,
+  credit: 5,
   inputs: [
     {
       desc: "The flow of the workflow",
