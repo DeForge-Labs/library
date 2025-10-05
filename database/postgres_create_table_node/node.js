@@ -153,9 +153,9 @@ class postgres_create_table_node extends BaseNode {
       let columns = [];
       if (Array.isArray(columnsRaw)) {
         columns = columnsRaw;
-      } else if (typeof columnsRaw === "string") {
+      } else if (typeof columnsRaw === "object") {
         try {
-          columns = JSON.parse(columnsRaw);
+          columns = [columnsRaw];
           if (!Array.isArray(columns)) {
             throw new Error("Parsed JSON is not an array.");
           }
@@ -174,17 +174,14 @@ class postgres_create_table_node extends BaseNode {
         return null;
       }
 
-      // Validate column structure
-      for (const col of columns) {
-        if (!col.name || !col.type) {
-          webconsole.error(
-            `Postgres Create Table Node | Each column must have 'name' and 'type' properties. Invalid column: ${JSON.stringify(
-              col
-            )}`
-          );
-          return null;
-        }
-      }
+      const columnFilter = [];
+
+      columns.forEach((col) => {
+        columnFilter.push({
+          name: Object.keys(col)[0],
+          type: Object.values(col)[0],
+        });
+      });
 
       client = new pg.Client({ connectionString });
       await client.connect();
@@ -194,11 +191,10 @@ class postgres_create_table_node extends BaseNode {
       const fullTableName = `${safeSchema}.${safeTable}`;
 
       // Build column definitions
-      const columnDefs = columns
+      const columnDefs = columnFilter
         .map((col) => {
           const safeName = client.escapeIdentifier(col.name);
-          const constraints = col.constraints ? ` ${col.constraints}` : "";
-          return `${safeName} ${col.type}${constraints}`;
+          return `${safeName} ${col.type}`;
         })
         .join(", ");
 
