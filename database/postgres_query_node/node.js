@@ -136,7 +136,7 @@ class postgres_query_node extends BaseNode {
       const table = getValue("Table");
       const columns = getValue("Columns", "*");
       const whereClause = getValue("WhereClause");
-      const whereValues = getValue("WhereValues", []);
+      const whereValuesRaw = getValue("WhereValues", []);
       const limit = getValue("Limit");
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
@@ -157,7 +157,7 @@ class postgres_query_node extends BaseNode {
       await client.connect();
       const safeTable = client.escapeIdentifier(table);
       const safeColumns =
-        columns === "*"
+        columns === "*" || columns === ""
           ? "*"
           : columns
               .split(",")
@@ -165,6 +165,20 @@ class postgres_query_node extends BaseNode {
               .join(", ");
 
       let queryText = `SELECT ${safeColumns} FROM ${safeTable}`;
+      let whereValues = [];
+      if (Array.isArray(whereValuesRaw)) {
+        whereValues = whereValuesRaw; // It's already an array, use it directly
+      } else if (typeof whereValuesRaw === "string") {
+        try {
+          whereValues = [whereValuesRaw];
+        } catch (e) {
+          webconsole.error(
+            `Postgres Query Node | Failed to parse WhereValues. Please ensure it's a valid JSON array string (e.g., [123, "text"]). Error: ${e.message}`
+          );
+          return null;
+        }
+      }
+
       let queryParams = [...whereValues];
 
       if (whereClause && whereClause.trim() !== "") {
