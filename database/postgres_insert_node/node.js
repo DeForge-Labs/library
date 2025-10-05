@@ -7,7 +7,7 @@ const config = {
   type: "postgres_insert_node",
   icon: {},
   desc: "Inserts one or more rows into a PostgreSQL table.",
-  credit: 10,
+  credit: 5,
   inputs: [
     {
       desc: "The flow of the workflow",
@@ -68,7 +68,7 @@ const config = {
       defaultValue: "postgres://user:password@localhost:5432/dbname",
     },
   ],
-  difficulty: "medium",
+  difficulty: "hard",
   tags: ["postgres", "database", "insert", "write"],
 };
 
@@ -97,7 +97,7 @@ class postgres_insert_node extends BaseNode {
 
       const table = getValue("Table");
       const dataRaw = getValue("Data");
-      const returning = getValue("Returning", "");
+      const returning = getValue("Returning", "*");
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
@@ -124,7 +124,7 @@ class postgres_insert_node extends BaseNode {
         webconsole.info(
           "Postgres Insert Node | Input data is empty. Nothing to insert."
         );
-        return { rows: [], rowCount: 0 };
+        return { rows: [], rowCount: 0, Credits: this.getCredit() };
       }
 
       client = new pg.Client({ connectionString });
@@ -155,7 +155,7 @@ class postgres_insert_node extends BaseNode {
 
       if (returning && returning.trim() !== "") {
         const safeReturning =
-          returning === "*"
+          returning === "*" || returning === ""
             ? "*"
             : returning
                 .split(",")
