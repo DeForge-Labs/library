@@ -68,6 +68,12 @@ const config = {
       desc: "The WHERE clause with placeholders ($1, $2, etc.)",
     },
     {
+      name: "WhereValues",
+      type: "Text[]",
+      value: "Enter values here...",
+      desc: "Array of values for the WHERE clause (e.g., [123, 'active'])",
+    },
+    {
       name: "Limit",
       type: "Number",
       value: 10,
