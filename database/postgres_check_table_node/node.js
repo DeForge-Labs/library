@@ -37,11 +37,6 @@ const config = {
       desc: "Array of column metadata (name, type, nullable, default)",
     },
     {
-      name: "rowCount",
-      type: "Number",
-      desc: "Approximate number of rows in the table",
-    },
-    {
       name: "tableSize",
       type: "Text",
       desc: "Human-readable size of the table",
@@ -120,7 +115,7 @@ class postgres_check_table_node extends BaseNode {
       webconsole.info("Postgres Check Table Node | Begin execution");
 
       const table = getValue("Table");
-      const schema = getValue("Schema", "public");
+      const schema = getValue("Schema", "public") || "public";
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
@@ -156,7 +151,6 @@ class postgres_check_table_node extends BaseNode {
         return {
           exists: false,
           columns: [],
-          rowCount: 0,
           tableSize: "0 bytes",
           indexes: [],
           Credits: this.getCredit(),
@@ -189,15 +183,6 @@ class postgres_check_table_node extends BaseNode {
         nullable: col.is_nullable === "YES",
         default: col.column_default,
       }));
-
-      // Get row count (approximate for large tables)
-      const rowCountQuery = `
-        SELECT n_live_tup as approximate_row_count
-        FROM pg_stat_user_tables
-        WHERE schemaname = $1 AND relname = $2;
-      `;
-      const rowCountResult = await client.query(rowCountQuery, [schema, table]);
-      const rowCount = rowCountResult.rows[0]?.approximate_row_count || 0;
 
       // Get table size
       const sizeQuery = `
@@ -239,13 +224,12 @@ class postgres_check_table_node extends BaseNode {
       const indexes = Object.values(indexesMap);
 
       webconsole.success(
-        `Table metadata retrieved: ${columns.length} columns, ~${rowCount} rows, ${tableSize}`
+        `Table metadata retrieved: ${columns.length} columns, ${tableSize}`
       );
 
       return {
         exists: true,
         columns: columns,
-        rowCount: rowCount,
         tableSize: tableSize,
         indexes: indexes,
         Credits: this.getCredit(),
