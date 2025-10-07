@@ -1,5 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import pg from "pg";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 const config = {
   title: "PostgreSQL - Check Table",
@@ -46,6 +48,11 @@ const config = {
       type: "JSON",
       desc: "Array of indexes on the table",
     },
+    {
+      desc: "The tool version of this node, to be used by LLMs",
+      name: "Tool",
+      type: "Tool",
+    },
   ],
   fields: [
     {
@@ -88,49 +95,13 @@ class postgres_check_table_node extends BaseNode {
   }
 
   /**
-   * @override
-   * @inheritDoc
-   * @param {import('../../core/BaseNode/node.js').Inputs[]} inputs
-   * @param {import('../../core/BaseNode/node.js').Contents[]} contents
-   * @param {import('../../core/BaseNode/node.js').IWebConsole} webconsole
-   * @param {import('../../core/BaseNode/node.js').IServerData} serverData
+   * Execute table check and metadata retrieval
+   * @private
    */
-  async run(inputs, contents, webconsole, serverData) {
-    // Helper function to prioritize dynamic inputs over static field values
-    const getValue = (name, defaultValue = null) => {
-      const input = inputs.find((i) => i.name === name);
-      if (input !== undefined && input.value !== undefined) {
-        return input.value;
-      }
-      const content = contents.find((c) => c.name === name);
-      if (content !== undefined && content.value !== undefined) {
-        return content.value;
-      }
-      return defaultValue;
-    };
-
+  async executeCheckTable(table, schema, connectionString, webconsole) {
     let client;
 
     try {
-      webconsole.info("Postgres Check Table Node | Begin execution");
-
-      const table = getValue("Table");
-      const schema = getValue("Schema", "public") || "public";
-      const connectionString = serverData.envList?.PG_CONNECTION_STRING;
-
-      if (!connectionString) {
-        webconsole.error(
-          "Postgres Check Table Node | Environment variable PG_CONNECTION_STRING is not set."
-        );
-        return null;
-      }
-      if (!table) {
-        webconsole.error(
-          "Postgres Check Table Node | 'Table' name is a required field."
-        );
-        return null;
-      }
-
       client = new pg.Client({ connectionString });
       await client.connect();
 
@@ -153,7 +124,6 @@ class postgres_check_table_node extends BaseNode {
           columns: [],
           tableSize: "0 bytes",
           indexes: [],
-          Credits: this.getCredit(),
         };
       }
 
@@ -232,16 +202,156 @@ class postgres_check_table_node extends BaseNode {
         columns: columns,
         tableSize: tableSize,
         indexes: indexes,
-        Credits: this.getCredit(),
       };
-    } catch (error) {
-      webconsole.error("Postgres Check Table Node | Error: " + error.message);
-      return null;
     } finally {
       if (client) {
         await client.end();
         webconsole.info("Connection to database closed.");
       }
+    }
+  }
+
+  /**
+   * @override
+   * @inheritDoc
+   * @param {import('../../core/BaseNode/node.js').Inputs[]} inputs
+   * @param {import('../../core/BaseNode/node.js').Contents[]} contents
+   * @param {import('../../core/BaseNode/node.js').IWebConsole} webconsole
+   * @param {import('../../core/BaseNode/node.js').IServerData} serverData
+   */
+  async run(inputs, contents, webconsole, serverData) {
+    // Helper function to prioritize dynamic inputs over static field values
+    const getValue = (name, defaultValue = null) => {
+      const input = inputs.find((i) => i.name === name);
+      if (input !== undefined && input.value !== undefined) {
+        return input.value;
+      }
+      const content = contents.find((c) => c.name === name);
+      if (content !== undefined && content.value !== undefined) {
+        return content.value;
+      }
+      return defaultValue;
+    };
+
+    try {
+      webconsole.info("Postgres Check Table Node | Generating tool...");
+
+      const connectionString = serverData.envList?.PG_CONNECTION_STRING;
+
+      if (!connectionString) {
+        webconsole.error(
+          "Postgres Check Table Node | Environment variable PG_CONNECTION_STRING is not set."
+        );
+        return {
+          exists: false,
+          columns: null,
+          tableSize: null,
+          indexes: null,
+          Tool: null,
+        };
+      }
+
+      // Create the tool
+      const postgresCheckTableTool = tool(
+        async ({ table, schema }, toolConfig) => {
+          webconsole.info("POSTGRES CHECK TABLE TOOL | Invoking tool");
+
+          try {
+            const result = await this.executeCheckTable(
+              table,
+              schema || "public",
+              connectionString,
+              webconsole
+            );
+
+            this.setCredit(this.getCredit() + 3);
+
+            return [
+              JSON.stringify({
+                exists: result.exists,
+                columns: result.columns,
+                tableSize: result.tableSize,
+                indexes: result.indexes,
+              }),
+              this.getCredit(),
+            ];
+          } catch (error) {
+            this.setCredit(this.getCredit() - 3);
+            webconsole.error(
+              `POSTGRES CHECK TABLE TOOL | Error: ${error.message}`
+            );
+            return [
+              JSON.stringify({
+                exists: false,
+                columns: [],
+                tableSize: "0 bytes",
+                indexes: [],
+                error: error.message,
+              }),
+              this.getCredit(),
+            ];
+          }
+        },
+        {
+          name: "postgresCheckTableTool",
+          description:
+            "Check if a PostgreSQL table exists and retrieve its metadata including columns (with types, nullable status, defaults), table size, and indexes. Returns detailed information about the table structure.",
+          schema: z.object({
+            table: z.string().describe("Name of the table to check"),
+            schema: z
+              .string()
+              .optional()
+              .describe("Schema name (optional, defaults to 'public')"),
+          }),
+          responseFormat: "content_and_artifact",
+        }
+      );
+
+      webconsole.info("Postgres Check Table Node | Begin execution");
+
+      const table = getValue("Table");
+      const schema = getValue("Schema", "public");
+
+      // If no table provided, return only the tool
+      if (!table) {
+        webconsole.info(
+          "Postgres Check Table Node | No table provided, returning tool only"
+        );
+        this.setCredit(0);
+        return {
+          exists: false,
+          columns: null,
+          tableSize: null,
+          indexes: null,
+          Tool: postgresCheckTableTool,
+        };
+      }
+
+      // Execute the check table operation directly
+      const result = await this.executeCheckTable(
+        table,
+        schema || "public",
+        connectionString,
+        webconsole
+      );
+
+      return {
+        exists: result.exists,
+        columns: result.columns,
+        tableSize: result.tableSize,
+        indexes: result.indexes,
+        Tool: postgresCheckTableTool,
+        Credits: this.getCredit(),
+      };
+    } catch (error) {
+      webconsole.error("Postgres Check Table Node | Error: " + error.message);
+      return {
+        exists: false,
+        columns: null,
+        tableSize: null,
+        indexes: null,
+        Tool: null,
+      };
     }
   }
 }
