@@ -220,20 +220,36 @@ class rag_node extends BaseNode {
             
             if (!process.env.OPENAI_API_KEY) {
                 webconsole.error("RAG NODE | OPENAI_API_KEY environment variable not set");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
             if (!process.env.POSTGRESS_URL) {
                 webconsole.error("RAG NODE | POSTGRESS_URL environment variable not set");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
             if (!process.env.FIRECRAWL_API_KEY) {
                 webconsole.error("RAG NODE | FIRECRAWL_API_KEY environment variable not set");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
 
             if (!serverData?.workflowId) {
                 webconsole.error("RAG NODE | No workflowId in serverData");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
             
             const workflowId = serverData.workflowId;
@@ -244,7 +260,11 @@ class rag_node extends BaseNode {
             const linkContent = contents.find((e) => e.name === "Link");
             if (!linkContent?.value) {
                 webconsole.error("RAG NODE | No link provided");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
 
             const dataURL = linkContent.value;
@@ -259,7 +279,10 @@ class rag_node extends BaseNode {
             const tableExists = await this.checkTableExists(tableName, webconsole);
             if (tableExists) {
                 webconsole.success(`RAG NODE | Table '${tableName}' already exists with data, skipping processing`);
-                return tableName;
+                return {
+                    "Rag Database": tableName,
+                    "Credits": this.getCredit(),
+                };
             }
 
             let markdownContent = "";
@@ -300,7 +323,11 @@ class rag_node extends BaseNode {
 
                 } catch (error) {
                     webconsole.error(`RAG NODE | Error processing file: ${error.message}`);
-                    return null;
+                    this.setCredit(0);
+                    return {
+                        "Rag Database": null,
+                        "Credits": this.getCredit(),
+                    };
                 }
 
             } else if (DataType === "Link to a webpage") {
@@ -357,16 +384,28 @@ class rag_node extends BaseNode {
 
                 } catch (error) {
                     webconsole.error(`RAG NODE | Error processing webpage: ${error.message}`);
-                    return null;
+                    this.setCredit(0);
+                    return {
+                        "Rag Database": null,
+                        "Credits": this.getCredit(),
+                    };
                 }
             } else {
                 webconsole.error("RAG NODE | Invalid data type");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
 
             if (!markdownContent || markdownContent.trim().length === 0) {
                 webconsole.error("RAG NODE | No content to process");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
 
             webconsole.info("RAG NODE | Creating documents and splitting into chunks");
@@ -393,7 +432,11 @@ class rag_node extends BaseNode {
             
             if (chunks.length === 0) {
                 webconsole.error("RAG NODE | No chunks created from document");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
 
             webconsole.info(`RAG NODE | Created ${chunks.length} chunks`);
@@ -410,13 +453,21 @@ class rag_node extends BaseNode {
                 };
             } else {
                 webconsole.error("RAG NODE | Failed to save documents to PostgreSQL");
-                return null;
+                this.setCredit(0);
+                return {
+                    "Rag Database": null,
+                    "Credits": this.getCredit(),
+                };
             }
 
         } catch (error) {
             webconsole.error(`RAG NODE | Error occurred: ${error.message}`);
             console.error("RAG NODE | Full error:", error);
-            return null;
+            this.setCredit(0);
+            return {
+                "Rag Database": null,
+                "Credits": this.getCredit(),
+            };
         }
     }
 
