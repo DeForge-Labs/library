@@ -119,7 +119,7 @@ class text_to_speech extends BaseNode {
         super(config);
     }
 
-    uploadTo0x0st = async (fileURL) => {
+    uploadTo0x0st = async (fileURL, webconsole) => {
         const url = 'https://0x0.st';
         const form = new FormData();
         const fileStream = fs.readFileSync(fileURL);
@@ -239,7 +239,7 @@ class text_to_speech extends BaseNode {
             const creditUsage = Math.ceil(durationInSeconds * (100 / 60));
             this.setCredit(creditUsage);
 
-            const audioLink = await this.uploadTo0x0st(`./runtime_files/${fileName}`);
+            const audioLink = await this.uploadTo0x0st(`./runtime_files/${fileName}`, webconsole);
             fs.unlinkSync(`./runtime_files/${fileName}`);
 
 
@@ -250,7 +250,7 @@ class text_to_speech extends BaseNode {
             };
             
         } catch (error) {
-            webconsole.error("SPEECH TO TEXT NODE | Some error occured: ", error);
+            webconsole.error("TEXT TO SPEECH NODE | Some error occured: ", error);
             this.setCredit(0);
             return null;
         }
