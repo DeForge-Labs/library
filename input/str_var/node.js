@@ -45,12 +45,12 @@ class str_var extends BaseNode {
         try {
             if (contents.length === 0) {
                 webconsole.error("USER INPUT | No input given");
-                return null;
+                return "";
             }
 
             if ([undefined, null].includes(typeof(contents[0].value))) {
                 webconsole.error("USER INPUT | Invalid input given");
-                return null;
+                return "";
             }
 
             webconsole.info("USER INPUT | emitting output");
@@ -61,7 +61,7 @@ class str_var extends BaseNode {
             
         } catch (error) {
             webconsole.error("USER INPUT | Some error occured: ", error);
-            return null;
+            return "";
         }
     }
 }
