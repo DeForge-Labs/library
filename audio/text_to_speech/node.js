@@ -7,6 +7,7 @@ import path from "path";
 import { v4 as uuid } from "uuid";
 import FormData from "form-data";
 import { parseFile } from 'music-metadata';
+import { fileTypeFromFile } from "file-type";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -119,31 +120,6 @@ class text_to_speech extends BaseNode {
         super(config);
     }
 
-    uploadTo0x0st = async (fileURL, webconsole) => {
-        const url = 'https://0x0.st';
-        const form = new FormData();
-        const fileStream = fs.readFileSync(fileURL);
-        form.append('file', fileStream, { filename: path.basename(fileURL) });
-
-        try {
-            const response = await axios.post(url, form, {
-                headers: {
-                    ...form.getHeaders(),
-                    'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
-                },
-            });
-
-            if (response.status === 200) {
-                const uploadedUrl = response.data.trim();
-                return uploadedUrl;
-            } else {
-                throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
-            }
-        } catch (error) {
-            webconsole.error(`TEXT TO SPEECH NODE | Error uploading audio to 0x0.st: ${error.message}`);
-        }
-    }
-
     /** 
      * @override
      * @inheritdoc
@@ -239,7 +215,21 @@ class text_to_speech extends BaseNode {
             const creditUsage = Math.ceil(durationInSeconds * (100 / 60));
             this.setCredit(creditUsage);
 
-            const audioLink = await this.uploadTo0x0st(`./runtime_files/${fileName}`, webconsole);
+            const fileMimeType = await fileTypeFromFile(`./runtime_files/${fileName}`);
+            if (!fileMimeType || !fileMimeType.mime.startsWith('audio/')) {
+                webconsole.error("TEXT TO SPEECH NODE | The generated file is not a valid audio file.");
+                fs.unlinkSync(`./runtime_files/${fileName}`);
+                return null;
+            }
+
+            const audioFileStream = fs.createReadStream(`./runtime_files/${fileName}`);
+
+            const audioLink = await serverData.s3Util.addFile(
+                bucket=undefined,
+                key=fileName,
+                body=audioFileStream,
+                contentType=fileMimeType.mime,
+            );
             fs.unlinkSync(`./runtime_files/${fileName}`);
 
 

@@ -4,7 +4,7 @@ import { exec } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 import axios from "axios";
-import FormData from "form-data";
+import { fileTypeFromFile } from "file-type";
 
 dotenv.config();
 
@@ -209,34 +209,6 @@ class lyria_node extends BaseNode {
             }
         }
 
-        const uploadTo0x0st = async (filePath) => {
-            const url = 'https://0x0.st';
-            const form = new FormData();
-            const fileStream = await fs.readFile(filePath);
-            form.append('file', fileStream, { filename: path.basename(filePath) });
-
-            webconsole.info(`LYRIA NODE | Uploading ${filePath} to 0x0.st...`);
-            try {
-                const response = await axios.post(url, form, {
-                    headers: {
-                        ...form.getHeaders(),
-                        'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
-                    },
-                });
-
-                if (response.status === 200) {
-                    const uploadedUrl = response.data.trim();
-                    webconsole.success(`LYRIA NODE | Audio uploaded successfully to: ${uploadedUrl}`);
-                    return uploadedUrl;
-                } else {
-                    throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
-                }
-            } catch (error) {
-                webconsole.error(`LYRIA NODE | Error uploading to 0x0.st: ${error.message}`);
-                throw error;
-            }
-        }
-
         let audioFilePath = null;
         try {
             const accessToken = await getAccessToken();
@@ -244,7 +216,21 @@ class lyria_node extends BaseNode {
             audioFilePath = await saveAudioFile(audioContent);
 
             if (audioFilePath) {
-                const uploadedUrl = await uploadTo0x0st(audioFilePath);
+                const audioFIleMime = await fileTypeFromFile(audioFilePath);
+                if (!audioFIleMime || !audioFIleMime.mime.startsWith('audio/')) {
+                    webconsole.error("LYRIA NODE | The generated file is not a valid audio file.");
+                    await fs.unlink(audioFilePath);
+                    return null;
+                }
+
+                const audioFileStream = fs.createReadStream(audioFilePath);
+
+                const uploadedUrl = await serverData.s3Util.addFile(
+                    bucket=undefined,
+                    key=path.basename(audioFilePath),
+                    body=audioFileStream,
+                    contentType=audioFIleMime.mime,
+                );
                 await fs.unlink(audioFilePath);
                 return { "Audio Link": uploadedUrl, "Credits": this.getCredit() };
             }

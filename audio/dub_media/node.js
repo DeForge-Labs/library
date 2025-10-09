@@ -91,31 +91,6 @@ class dub_media extends BaseNode {
         super(config);
     }
 
-    uploadTo0x0st = async (filePath) => {
-        const url = 'https://0x0.st';
-        const form = new FormData();
-        const fileStream = fs.readFileSync(filePath);
-        form.append('file', fileStream, { filename: path.basename(filePath) });
-
-        try {
-            const response = await axios.post(url, form, {
-                headers: {
-                    ...form.getHeaders(),
-                    'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
-                },
-            });
-
-            if (response.status === 200) {
-                const uploadedUrl = response.data.trim();
-                return uploadedUrl;
-            } else {
-                throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
-            }
-        } catch (error) {
-            webconsole.error(`TEXT TO SPEECH NODE | Error uploading audio to 0x0.st: ${error.message}`);
-        }
-    }
-
     /** 
      * @override
      * @inheritdoc
@@ -260,8 +235,15 @@ class dub_media extends BaseNode {
                     const newFilePath = `./runtime_files/${newFileName}`;
                     
                     fs.renameSync(`./runtime_files/${fileName}`, newFilePath);
+                    const dubFileStream = fs.createReadStream(newFilePath)
                     
-                    const dubLink = await this.uploadTo0x0st(newFilePath);
+                    const dubLink = await serverData.s3Util.addFile(
+                        bucket=undefined,
+                        key=newFileName,
+                        body=dubFileStream,
+                        contentType=dubFileType.mime,
+                    );
+
                     webconsole.success("DUB MEDIA NODE | Succefully uploaded to 0x0: ", dubLink);
                     fs.unlinkSync(newFilePath);
 

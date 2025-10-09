@@ -4,7 +4,7 @@ import { exec } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 import axios from "axios";
-import FormData from "form-data";
+import { fileTypeFromFile } from "file-type";
 
 dotenv.config();
 
@@ -306,34 +306,6 @@ class imagen_node extends BaseNode {
             }
         }
 
-        const uploadTo0x0st = async (filePath) => {
-            const url = 'https://0x0.st';
-            const form = new FormData();
-            const fileStream = await fs.readFile(filePath);
-            form.append('file', fileStream, { filename: path.basename(filePath) });
-
-            webconsole.info(`IMAGEN NODE | Uploading ${filePath} to 0x0.st...`);
-            try {
-                const response = await axios.post(url, form, {
-                    headers: {
-                        ...form.getHeaders(),
-                        'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
-                    },
-                });
-
-                if (response.status === 200) {
-                    const uploadedUrl = response.data.trim();
-                    webconsole.success(`IMAGEN NODE | Image uploaded successfully to: ${uploadedUrl}`);
-                    return uploadedUrl;
-                } else {
-                    throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
-                }
-            } catch (error) {
-                webconsole.error(`IMAGEN NODE | Error uploading to 0x0.st: ${error.message}`);
-                throw error;
-            }
-        }
-
         let imageFilePath = null;
         try {
             const accessToken = await getAccessToken();
@@ -341,7 +313,18 @@ class imagen_node extends BaseNode {
             imageFilePath = await saveImageFile(imageContent, imageFormat);
 
             if (imageFilePath) {
-                const uploadedUrl = await uploadTo0x0st(imageFilePath);
+                const imageFIleMime = await fileTypeFromFile(imageFilePath);
+                if (!imageFIleMime || !imageFIleMime.mime.startsWith('image/')) {
+                    webconsole.error("IMAGEN NODE | The generated file is not a valid image file.");
+                }
+
+                const imageFileStream = fs.createReadStream(imageFilePath);
+                const uploadedUrl = await serverData.s3Util.addFile(
+                    bucket=undefined,
+                    key=`${path.basename(imageFilePath)}`,
+                    body=imageFileStream,
+                    contentType=imageFIleMime.mime,
+                );
                 await fs.unlink(imageFilePath);
                 return { "Image Link": uploadedUrl, "Credits": this.getCredit() };
             }

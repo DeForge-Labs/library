@@ -1,6 +1,9 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import axios from "axios";
-import FormData from "form-data";
+import fs from "fs";
+import { Downloader } from "nodejs-file-downloader";
+import { fileTypeFromFile } from "file-type";
+import { v4 as uuidv4 } from "uuid";
 
 const config = {
     title: "Telegram Trigger",
@@ -71,30 +74,6 @@ class tg_trigger extends BaseNode {
         super(config);
     }
 
-    uploadTo0x0st = async (fileURL) => {
-        const url = 'https://0x0.st';
-        const form = new FormData();
-        form.append("url", fileURL);
-
-        try {
-            const response = await axios.post(url, form, {
-                headers: {
-                    ...form.getHeaders(),
-                    'User-Agent': 'Deforge/1.0 (contact@deforge.io)',
-                },
-            });
-
-            if (response.status === 200) {
-                const uploadedUrl = response.data.trim();
-                return uploadedUrl;
-            } else {
-                throw new Error(`0x0.st upload failed with status ${response.status}: ${response.data}`);
-            }
-        } catch (error) {
-            webconsole.error(`TG NODE | Error uploading voice to 0x0.st: ${error.message}`);
-        }
-    }
-
     /**
      * @override
      * @inheritdoc
@@ -156,7 +135,44 @@ class tg_trigger extends BaseNode {
                 const getFileURL = await axios.get(`https://api.telegram.org/bot${botToken}/getFile?file_id=${voice}`)
                 if (getFileURL.data.ok) {
                     const fileURLFromTG = getFileURL.data.result.file_path;
-                    voiceFileURL = await this.uploadTo0x0st(`https://api.telegram.org/file/bot${botToken}/${fileURLFromTG}`);
+                    const tgVoiceFileURL = `https://api.telegram.org/file/bot${botToken}/${fileURLFromTG}`;
+
+                    const tempDir = "./runtime_files";
+                    if (!fs.existsSync(tempDir)) {
+                        fs.mkdirSync(tempDir, { recursive: true });
+                    }
+
+                    const downloader = new Downloader({
+                        url: tgVoiceFileURL,
+                        directory: tempDir,
+                        onBeforeSave: (fileName) => {
+                            const file_ext = fileName.split(".").slice(-1)[0];
+                            return `${uuidv4()}.${file_ext}`;
+                        }
+                    });
+
+                    const { filePath } = await downloader.download();
+                    if (!filePath) {
+                        webconsole.error("TG NODE | Media download failed.");
+                        return null;
+                    }
+                                
+                    const fileType = await fileTypeFromFile(filePath);
+                    if (!fileType || (!fileType.mime.startsWith('audio/'))) {
+                        webconsole.error("TG NODE | The downloaded file is not a valid audio file.");
+                        fs.unlinkSync(filePath);
+                        return null;
+                    }
+
+                    // Get a readable stream of the downloaded voice file
+                    const readVoiceFile = fs.createReadStream(filePath);
+                    voiceFileURL = await serverData.s3Util.addFile(
+                        bucket=undefined,
+                        key=`${uuidv4()}.${fileType.ext}`,
+                        body=readVoiceFile,
+                        contentType=fileType.mime,
+                    );
+                    fs.unlinkSync(filePath);
                 }
             }
 
