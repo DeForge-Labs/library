@@ -216,7 +216,6 @@ class mongodb_insert_node extends BaseNode {
         };
       }
 
-      // Create the tool
       const mongodbInsertTool = tool(
         async ({ collection, documents, options }, toolConfig) => {
           webconsole.info("MONGODB INSERT TOOL | Invoking tool");
