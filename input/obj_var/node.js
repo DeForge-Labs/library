@@ -16,7 +16,7 @@ const config = {
     {
       desc: "The value of the object",
       name: "value",
-      type: "Text",
+      type: "Any",
     },
   ],
   outputs: [

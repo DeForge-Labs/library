@@ -1,7 +1,7 @@
 {
-  "name": "tg-trigger",
+  "name": "mongodb_create_collection_node",
   "version": "0.0.1",
-  "description": "Trigger frm Telegram",
+  "description": "Create a new collection in MongoDB",
   "main": "node.js",
   "type": "module",
   "scripts": {
@@ -18,10 +18,8 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
-    "axios": "^1.9.0",
-    "file-type": "^21.0.0",
-    "form-data": "^4.0.4",
-    "nodejs-file-downloader": "^4.13.0",
-    "uuid": "^13.0.0"
+    "@langchain/core": "^0.3.78",
+    "mongodb": "^6.20.0",
+    "zod": "^3.25.76"
   }
 }

@@ -108,6 +108,44 @@ export interface IRefreshUtil {
 };
 
 /**
+ * Defines the structure of the s3Util in serverData
+ */
+export interface IS3Util {
+
+    /**
+     * Method to upload a file to S3
+     * @param key The key under which to store the file
+     * @param body The file content
+     * @param contentType The MIME type of the file
+     * @param doExpire Whether the file should expire
+     * @param bucket The name of the S3 bucket
+     */
+    addFile(key: string, body: ReadableStream, contentType: string, doExpire: boolean, bucket: string): Promise<string | undefined>;
+
+    /**
+     * Method to retrieve a file from S3
+     * @param key The key of the file to retrieve
+     * @param bucket The name of the S3 bucket
+     * @returns The file content as a ReadableStream, or undefined if the file does not exist
+     */
+    getFile(key: string, bucket: string) : Promise<ReadableStream | undefined>;
+
+    /**
+     * Method to retrieve the URL of a file from S3
+     * @param key The key of the file to retrieve
+     * @param bucket The name of the S3 bucket
+     */
+    getFileURL(key: string, bucket: string) : Promise<string | null>;
+
+    /**
+     * Method to delete a file from S3
+     * @param key The key of the file to delete
+     * @param bucket The name of the S3 bucket
+     */
+    deleteFile(key: string, bucket: string) : void;
+}
+
+/**
  * Defines the structure of the widget payload
  */
 export interface IWidget {
@@ -164,6 +202,11 @@ export interface IServerData {
      * It is to be used to update tokens after refreshing them
      */
     refreshUtil: IRefreshUtil;
+
+    /**
+     * An utility object that allows you to perform operations on the server's S3 instance allowing you to store and manipulate files
+     */
+    s3Util: IS3Util;
 
     /**
      * The message object received from telegram
