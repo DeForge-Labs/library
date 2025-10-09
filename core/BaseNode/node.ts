@@ -114,35 +114,35 @@ export interface IS3Util {
 
     /**
      * Method to upload a file to S3
-     * @param bucket The name of the S3 bucket
      * @param key The key under which to store the file
      * @param body The file content
      * @param contentType The MIME type of the file
      * @param doExpire Whether the file should expire
+     * @param bucket The name of the S3 bucket
      */
-    addFile(bucket: string, key: string, body: ReadableStream, contentType: string, doExpire: boolean): Promise<string | undefined>;
+    addFile(key: string, body: ReadableStream, contentType: string, doExpire: boolean, bucket: string): Promise<string | undefined>;
 
     /**
      * Method to retrieve a file from S3
-     * @param bucket The name of the S3 bucket
      * @param key The key of the file to retrieve
+     * @param bucket The name of the S3 bucket
      * @returns The file content as a ReadableStream, or undefined if the file does not exist
      */
-    getFile(bucket: string, key: string) : Promise<ReadableStream | undefined>;
+    getFile(key: string, bucket: string) : Promise<ReadableStream | undefined>;
 
     /**
      * Method to retrieve the URL of a file from S3
-     * @param bucket The name of the S3 bucket
      * @param key The key of the file to retrieve
+     * @param bucket The name of the S3 bucket
      */
-    getFileURL(bucket: string, key: string) : Promise<string | null>;
+    getFileURL(key: string, bucket: string) : Promise<string | null>;
 
     /**
      * Method to delete a file from S3
-     * @param bucket The name of the S3 bucket
      * @param key The key of the file to delete
+     * @param bucket The name of the S3 bucket
      */
-    deleteFile(bucket: string, key: string) : void;
+    deleteFile(key: string, bucket: string) : void;
 }
 
 /**

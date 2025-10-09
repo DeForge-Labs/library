@@ -320,10 +320,9 @@ class imagen_node extends BaseNode {
 
                 const imageFileStream = fs.createReadStream(imageFilePath);
                 const uploadedUrl = await serverData.s3Util.addFile(
-                    bucket=undefined,
-                    key=`${path.basename(imageFilePath)}`,
-                    body=imageFileStream,
-                    contentType=imageFIleMime.mime,
+                    `${path.basename(imageFilePath)}`,
+                    imageFileStream,
+                    imageFIleMime.mime,
                 );
                 await fs.unlink(imageFilePath);
                 return { "Image Link": uploadedUrl, "Credits": this.getCredit() };

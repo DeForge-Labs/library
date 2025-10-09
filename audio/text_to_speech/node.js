@@ -225,10 +225,9 @@ class text_to_speech extends BaseNode {
             const audioFileStream = fs.createReadStream(`./runtime_files/${fileName}`);
 
             const audioLink = await serverData.s3Util.addFile(
-                bucket=undefined,
-                key=fileName,
-                body=audioFileStream,
-                contentType=fileMimeType.mime,
+                fileName,
+                audioFileStream,
+                fileMimeType.mime,
             );
             fs.unlinkSync(`./runtime_files/${fileName}`);
 

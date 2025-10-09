@@ -350,10 +350,9 @@ class veo_node extends BaseNode {
                 const videoFileStream = fs.createReadStream(videoFilePath);
 
                 const uploadedUrl = await serverData.s3Util.addFile(
-                    bucket=undefined,
-                    key=path.basename(videoFilePath),
-                    body=videoFileStream,
-                    contentType=videoFileMime.mime,
+                    path.basename(videoFilePath),
+                    videoFileStream,
+                    videoFileMime.mime,
                 );
                 await fs.unlink(videoFilePath);
                 return { "Video Link": uploadedUrl, "Credits": this.getCredit() };

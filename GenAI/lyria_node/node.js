@@ -226,10 +226,9 @@ class lyria_node extends BaseNode {
                 const audioFileStream = fs.createReadStream(audioFilePath);
 
                 const uploadedUrl = await serverData.s3Util.addFile(
-                    bucket=undefined,
-                    key=path.basename(audioFilePath),
-                    body=audioFileStream,
-                    contentType=audioFIleMime.mime,
+                    path.basename(audioFilePath),
+                    audioFileStream,
+                    audioFIleMime.mime,
                 );
                 await fs.unlink(audioFilePath);
                 return { "Audio Link": uploadedUrl, "Credits": this.getCredit() };

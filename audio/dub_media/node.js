@@ -238,10 +238,9 @@ class dub_media extends BaseNode {
                     const dubFileStream = fs.createReadStream(newFilePath)
                     
                     const dubLink = await serverData.s3Util.addFile(
-                        bucket=undefined,
-                        key=newFileName,
-                        body=dubFileStream,
-                        contentType=dubFileType.mime,
+                        newFileName,
+                        dubFileStream,
+                        dubFileType.mime,
                     );
 
                     webconsole.success("DUB MEDIA NODE | Succefully uploaded to 0x0: ", dubLink);

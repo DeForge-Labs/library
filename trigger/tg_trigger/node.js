@@ -167,10 +167,9 @@ class tg_trigger extends BaseNode {
                     // Get a readable stream of the downloaded voice file
                     const readVoiceFile = fs.createReadStream(filePath);
                     voiceFileURL = await serverData.s3Util.addFile(
-                        bucket=undefined,
-                        key=`${uuidv4()}.${fileType.ext}`,
-                        body=readVoiceFile,
-                        contentType=fileType.mime,
+                        `${uuidv4()}.${fileType.ext}`,
+                        readVoiceFile,
+                        fileType.mime,
                     );
                     fs.unlinkSync(filePath);
                 }
