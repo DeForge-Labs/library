@@ -17,7 +17,17 @@ const config = {
             desc: "Company Name shown in the widget header",
             name: "Company Name",
             type: "Text",
-        }
+        },
+        {
+            desc: "Company or Chatbot description shown in the widget header",
+            name: "Description",
+            type: "Text",
+        },
+        {
+            desc: "Company Logo shown in the widget header (SVG)",
+            name: "Logo",
+            type: "Text",
+        },
     ],
     outputs: [
         {
@@ -28,16 +38,6 @@ const config = {
         {
             desc: "Message recieved by the bot",
             name: "Message",
-            type: "Text",
-        },
-        {
-            desc: "Company or Chatbot description shown in the widget header",
-            name: "Description",
-            type: "Text",
-        },
-        {
-            desc: "Company Logo shown in the widget header (SVG)",
-            name: "Logo",
             type: "Text",
         },
     ],
