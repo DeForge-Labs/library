@@ -1,6 +1,6 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { PostgresChatMessageHistory } from "@langchain/community/stores/message/postgres";
 import { formatDocumentsAsString } from "langchain/util/document";
@@ -90,7 +90,7 @@ const config = {
             options: [
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
-                "gemini-2.5-flash-lite-preview-06-17",
+                "gemini-2.5-flash-lite",
                 "gemini-2.0-flash",
                 "gemini-2.0-flash-lite",
             ],
@@ -258,6 +258,10 @@ class google_chat_node extends BaseNode {
 
     createWorkflow(llm, systemPrompt, tools, webconsole) {
 
+        if (Array.isArray(tools) && tools.length > 0) {
+            llm = llm.bindTools(tools);
+        }
+
         const callModel = async (state, config) => {
             try {
                 let messages = state.messages;
@@ -296,8 +300,6 @@ class google_chat_node extends BaseNode {
         
         if (Array.isArray(tools) && tools.length > 0) {
 
-            llm = llm.bindTools(tools);
-
             const ragNode = async (state) => {
                 const response = await llm.invoke(state.messages);
                 return { messages: [response] };
@@ -315,7 +317,10 @@ class google_chat_node extends BaseNode {
                     tools: "tools",
                 })
                 .addEdge("tools", "model")
-                .addEdge("model", END);
+                .addConditionalEdges("model", toolsCondition, {
+                    [END]: END,
+                    tools: "tools",
+                });
         } else {
             workflow = new StateGraph(MessagesAnnotation)
                 .addNode("model", callModel)
@@ -467,6 +472,13 @@ class google_chat_node extends BaseNode {
             temperature = Number(temperature);
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "gemini-2.0-flash";
+            const modelMap = {
+                "gemini-2.5-pro": "google/gemini-2.5-pro",
+                "gemini-2.5-flash": "google/gemini-2.5-flash",
+                "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
+                "gemini-2.0-flash": "google/gemini-2.0-flash-001",
+                "gemini-2.0-flash-lite": "google/gemini-2.0-flash-lite-001",
+            }
 
             
             function estimateTokens(text) {
@@ -496,10 +508,17 @@ class google_chat_node extends BaseNode {
                 throw new Error("POSTGRESS_URL environment variable not set");
             }
 
-            const llm = new ChatGoogleGenerativeAI({
-                model: model,
+            const llm = new ChatOpenAI({
+                model: modelMap[model],
                 temperature: temperature,
-                apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+                configuration: {
+                    baseURL: "https://openrouter.ai/api/v1",
+                    defaultHeaders: {
+                        'HTTP-Referer': 'https://deforge.io',
+                        'X-Title': 'Deforge',
+                    },
+                    apiKey: process.env.OPENROUTER_API_KEY,
+                },
             });
 
             // Create session ID for memory

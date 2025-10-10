@@ -256,6 +256,10 @@ class claude_chat_node extends BaseNode {
 
     createWorkflow(llm, systemPrompt, tools, webconsole) {
 
+        if (Array.isArray(tools) && tools.length > 0) {
+            llm = llm.bindTools(tools);
+        }
+
         const callModel = async (state, config) => {
             try {
                 let messages = state.messages;
@@ -294,8 +298,6 @@ class claude_chat_node extends BaseNode {
         
         if (Array.isArray(tools) && tools.length > 0) {
 
-            llm = llm.bindTools(tools);
-
             const ragNode = async (state) => {
                 const response = await llm.invoke(state.messages);
                 return { messages: [response] };
@@ -313,7 +315,10 @@ class claude_chat_node extends BaseNode {
                     tools: "tools",
                 })
                 .addEdge("tools", "model")
-                .addEdge("model", END);
+                .addConditionalEdges("model", toolsCondition, {
+                    [END]: END,
+                    tools: "tools",
+                });
         } else {
             workflow = new StateGraph(MessagesAnnotation)
                 .addNode("model", callModel)
