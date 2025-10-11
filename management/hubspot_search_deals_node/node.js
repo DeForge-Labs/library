@@ -85,14 +85,14 @@ const config = {
       desc: "Array of sort objects [{propertyName, direction}]",
     },
     {
-      desc: "HubSpot API Key or Private App Access Token",
-      name: "HUBSPOT_API_KEY",
+      desc: "HubSpot Legacy App API Key",
+      name: "HUBSPOT_LEGACY_API_KEY",
       type: "env",
       defaultValue: "your-hubspot-api-key",
     },
   ],
   difficulty: "medium",
-  tags: ["hubspot", "crm", "deal", "search", "filter", "sales"],
+  tags: ["hubspot", "crm", "deal", "search", "filter", "management"],
 };
 
 class hubspot_search_deals_node extends BaseNode {
@@ -176,10 +176,12 @@ class hubspot_search_deals_node extends BaseNode {
     try {
       webconsole.info("HubSpot Search Deals Node | Generating tool...");
 
-      const apiKey = serverData.envList?.HUBSPOT_API_KEY;
+      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
 
       if (!apiKey) {
-        webconsole.error("HubSpot Search Deals Node | HUBSPOT_API_KEY not set");
+        webconsole.error(
+          "HubSpot Search Deals Node | HUBSPOT_LEGACY_API_KEY not set"
+        );
         return {
           success: false,
           deals: null,

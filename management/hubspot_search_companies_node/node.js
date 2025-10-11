@@ -74,14 +74,14 @@ const config = {
       desc: "Maximum number of results (default: 10, max: 100)",
     },
     {
-      desc: "HubSpot API Key or Private App Access Token",
-      name: "HUBSPOT_API_KEY",
+      desc: "HubSpot Legacy App API Key",
+      name: "HUBSPOT_LEGACY_API_KEY",
       type: "env",
       defaultValue: "your-hubspot-api-key",
     },
   ],
   difficulty: "medium",
-  tags: ["hubspot", "crm", "company", "search", "filter"],
+  tags: ["hubspot", "crm", "company", "search", "management"],
 };
 
 class hubspot_search_companies_node extends BaseNode {
@@ -157,11 +157,11 @@ class hubspot_search_companies_node extends BaseNode {
     try {
       webconsole.info("HubSpot Search Companies Node | Generating tool...");
 
-      const apiKey = serverData.envList?.HUBSPOT_API_KEY;
+      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
 
       if (!apiKey) {
         webconsole.error(
-          "HubSpot Search Companies Node | HUBSPOT_API_KEY not set"
+          "HubSpot Search Companies Node | HUBSPOT_LEGACY_API_KEY not set"
         );
         return {
           success: false,

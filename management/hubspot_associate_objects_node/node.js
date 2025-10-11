@@ -91,14 +91,14 @@ const config = {
       desc: "Association type ID (optional, uses default if not provided)",
     },
     {
-      desc: "HubSpot API Key or Private App Access Token",
-      name: "HUBSPOT_API_KEY",
+      desc: "HubSpot Legacy App API Key",
+      name: "HUBSPOT_LEGACY_API_KEY",
       type: "env",
       defaultValue: "your-hubspot-api-key",
     },
   ],
   difficulty: "medium",
-  tags: ["hubspot", "crm", "associate", "relationship"],
+  tags: ["hubspot", "crm", "associate", "management"],
 };
 
 class hubspot_associate_objects_node extends BaseNode {
@@ -168,11 +168,11 @@ class hubspot_associate_objects_node extends BaseNode {
     try {
       webconsole.info("HubSpot Associate Objects Node | Generating tool...");
 
-      const apiKey = serverData.envList?.HUBSPOT_API_KEY;
+      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
 
       if (!apiKey) {
         webconsole.error(
-          "HubSpot Associate Objects Node | HUBSPOT_API_KEY not set"
+          "HubSpot Associate Objects Node | HUBSPOT_LEGACY_API_KEY not set"
         );
         return {
           success: false,

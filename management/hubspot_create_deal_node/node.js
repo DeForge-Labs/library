@@ -107,14 +107,14 @@ const config = {
       desc: "Additional deal properties as key-value pairs",
     },
     {
-      desc: "HubSpot API Key or Private App Access Token",
-      name: "HUBSPOT_API_KEY",
+      desc: "HubSpot Legacy App API Key",
+      name: "HUBSPOT_LEGACY_API_KEY",
       type: "env",
       defaultValue: "your-hubspot-api-key",
     },
   ],
   difficulty: "medium",
-  tags: ["hubspot", "crm", "deal", "create", "sales"],
+  tags: ["hubspot", "crm", "deal", "create", "management"],
 };
 
 class hubspot_create_deal_node extends BaseNode {
@@ -199,10 +199,12 @@ class hubspot_create_deal_node extends BaseNode {
     try {
       webconsole.info("HubSpot Create Deal Node | Generating tool...");
 
-      const apiKey = serverData.envList?.HUBSPOT_API_KEY;
+      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
 
       if (!apiKey) {
-        webconsole.error("HubSpot Create Deal Node | HUBSPOT_API_KEY not set");
+        webconsole.error(
+          "HubSpot Create Deal Node | HUBSPOT_LEGACY_API_KEY not set"
+        );
         return {
           success: false,
           dealId: null,

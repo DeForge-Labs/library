@@ -69,14 +69,14 @@ const config = {
       desc: "Properties to update as key-value pairs",
     },
     {
-      desc: "HubSpot API Key or Private App Access Token",
-      name: "HUBSPOT_API_KEY",
+      desc: "HubSpot Legacy App API Key",
+      name: "HUBSPOT_LEGACY_API_KEY",
       type: "env",
       defaultValue: "your-hubspot-api-key",
     },
   ],
   difficulty: "medium",
-  tags: ["hubspot", "crm", "contact", "update"],
+  tags: ["hubspot", "crm", "contact", "update", "management"],
 };
 
 class hubspot_update_contact_node extends BaseNode {
@@ -140,11 +140,11 @@ class hubspot_update_contact_node extends BaseNode {
     try {
       webconsole.info("HubSpot Update Contact Node | Generating tool...");
 
-      const apiKey = serverData.envList?.HUBSPOT_API_KEY;
+      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
 
       if (!apiKey) {
         webconsole.error(
-          "HubSpot Update Contact Node | HUBSPOT_API_KEY not set"
+          "HubSpot Update Contact Node | HUBSPOT_LEGACY_API_KEY not set"
         );
         return {
           success: false,

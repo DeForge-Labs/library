@@ -58,14 +58,14 @@ const config = {
       desc: "HubSpot contact ID (alternative to email)",
     },
     {
-      desc: "HubSpot API Key or Private App Access Token",
-      name: "HUBSPOT_API_KEY",
+      desc: "HubSpot Legacy App API Key",
+      name: "HUBSPOT_LEGACY_API_KEY",
       type: "env",
       defaultValue: "your-hubspot-api-key",
     },
   ],
   difficulty: "easy",
-  tags: ["hubspot", "crm", "contact", "get", "retrieve"],
+  tags: ["hubspot", "crm", "contact", "get", "management"],
 };
 
 class hubspot_get_contact_node extends BaseNode {
@@ -136,10 +136,12 @@ class hubspot_get_contact_node extends BaseNode {
     try {
       webconsole.info("HubSpot Get Contact Node | Generating tool...");
 
-      const apiKey = serverData.envList?.HUBSPOT_API_KEY;
+      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
 
       if (!apiKey) {
-        webconsole.error("HubSpot Get Contact Node | HUBSPOT_API_KEY not set");
+        webconsole.error(
+          "HubSpot Get Contact Node | HUBSPOT_LEGACY_API_KEY not set"
+        );
         return {
           success: false,
           contact: null,
