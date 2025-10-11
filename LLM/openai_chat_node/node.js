@@ -5,6 +5,7 @@ import { PostgresChatMessageHistory } from "@langchain/community/stores/message/
 import { formatDocumentsAsString } from "langchain/util/document";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { Downloader } from "nodejs-file-downloader";
 import {
     AIMessage,
     HumanMessage,
@@ -23,6 +24,7 @@ import {
     toolsCondition,
 } from "@langchain/langgraph/prebuilt";
 import pkg from 'pg';
+import fs from "fs";
 import dotenv from 'dotenv';
 
 const { Pool } = pkg;
@@ -46,6 +48,11 @@ const config = {
             desc: "Chat text to send",
             name: "Query",
             type: "Text",
+        },
+        {
+            desc: "List of files to send to LLM (Direct links to files, Images only, max 5 files, 25 MB each)",
+            name: "Files",
+            type: "Text[]",
         },
         {
             desc: "List of tools that the LLM can use",
@@ -104,6 +111,12 @@ const config = {
             name: "Query",
             type: "TextArea",
             value: "Enter text here...",
+        },
+        {
+            desc: "List of files to send to LLM (Direct links to files, Images only, max 5 files, 25 MB each)",
+            name: "Files",
+            type: "Text[]",
+            value: "",
         },
         {
             desc: "List of tools that the LLM can use",
@@ -449,6 +462,11 @@ class openai_chat_node extends BaseNode {
                 systemPrompt += toolsPrompt;
             }
 
+            let files = inputs.find((e) => e.name === "Files")?.value || [];
+            if (files && !Array.isArray(files)) {
+                files = [files];
+            }
+
             const temperatureFilter = inputs.filter((e) => e.name === "Temperature");
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
@@ -553,7 +571,77 @@ class openai_chat_node extends BaseNode {
                 }
             }
 
-            const inputMessages = [new HumanMessage(query)];
+            const fileObjs = [];
+            // Files parsing
+            for (const fileLink of files) {
+                try {
+
+                    const tempDir = "./runtime_files";
+                    if (!fs.existsSync(tempDir)) {
+                        fs.mkdirSync(tempDir, { recursive: true });
+                    }
+
+                    let skipFile = false;
+
+                    const downloader = new Downloader({
+                        url: fileLink,
+                        directory: tempDir,
+                        onResponse: (response) => {
+                            // Check header for size, content type
+                            const contentLength = response.headers['content-length'];
+                            const contentType = response.headers['content-type'];
+
+                            // If file size is larger than 25 MB, return false
+                            if (contentLength && parseInt(contentLength) > 25 * 1024 * 1024) {
+                                webconsole.error(`OPENAI NODE | File at ${fileLink} exceeds the 25 MB size limit. Skipping this file.`);
+                                skipFile = true;
+                                return false;
+                            }
+
+                            // If file type is not image, return false
+                            if (contentType && !contentType.startsWith('image/')) {
+                                webconsole.error(`OPENAI NODE | File at ${fileLink} is not an image (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
+                                skipFile = true;
+                                return false;
+                            }
+
+                            if (contentType && contentType.startsWith('image/')) {
+                                return false;
+                            }
+
+                        }
+                    });
+
+                    const tempRes = await downloader.download();
+                    if (!skipFile) {
+                        fileObjs.push({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": fileLink
+                            }
+                        });
+                    }
+
+                } catch (error) {
+                    
+                }
+            }
+
+            const inputMessages = [];
+            if (fileObjs.length > 0) {
+                inputMessages.push(new HumanMessage({
+                    content: [
+                        {
+                            type: "text",
+                            "text": query,
+                        },
+                        ...fileObjs
+                    ]
+                }));
+            }
+            else {
+                inputMessages.push(new HumanMessage(query));
+            }
 
             if (pastMessages.length === 0) {
                 inputMessages.unshift(new SystemMessage(systemPrompt));
