@@ -629,6 +629,7 @@ class openai_chat_node extends BaseNode {
 
             const inputMessages = [];
             if (fileObjs.length > 0) {
+                webconsole.info(`OPENAI NODE | Attaching ${fileObjs.length} files to the prompt`);
                 inputMessages.push(new HumanMessage({
                     content: [
                         {
