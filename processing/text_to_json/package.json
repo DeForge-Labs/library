@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
-    "@toolsycc/json-repair": "^0.1.22"
+    "@toolsycc/json-repair": "^0.1.22",
+    "@langchain/core": "^0.3.78",
+    "zod": "^3.25.76"
   }
 }

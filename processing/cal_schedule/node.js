@@ -1,5 +1,7 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import axios from "axios";
+import { tool } from "@langchain/core/tools"; // 1. Import tool
+import { z } from "zod"; // 2. Import zod
 
 const config = {
   title: "Get Cal.com Schedule",
@@ -40,7 +42,12 @@ const config = {
       desc: "Error details",
       name: "Error payload",
       type: "Text",
-    }
+    },
+    {
+      desc: "The tool version of this node, to be used by LLMs", // 2. Add Tool output
+      name: "Tool",
+      type: "Tool",
+    },
   ],
   fields: [
     {
@@ -66,72 +73,188 @@ class cal_schedule extends BaseNode {
   }
 
   /**
-     * @override
-     * @inheritdoc
-     * 
-     * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs 
-     * @param {import("../../core/BaseNode/node.js").Contents[]} contents 
-     * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole 
-     * @param {import("../../core/BaseNode/node.js").IServerData} serverData
-     */
-  async run(inputs, contents, webconsole, serverData) {
-    webconsole.info("CAL SCHEDULE | Begin execution");
+   * Helper function to get value from inputs or contents
+   */
+  getValue(inputs, contents, name, defaultValue = null) {
+    const input = inputs.find((i) => i.name === name);
+    if (input?.value !== undefined) return input.value;
+    const content = contents.find((c) => c.name === name);
+    if (content?.value !== undefined) return content.value;
+    return defaultValue;
+  }
 
-    const meetingLinkFilter = inputs.filter((e) => e.name === "Meeting Link");
-    const meetingLink =
-      meetingLinkFilter.length > 0
-        ? meetingLinkFilter[0].value
-        : contents.filter((e) => e.name === "Meeting Link")[0].value
-        || "";
-
+  /**
+   * 3. Core function to handle Cal.com schedule fetching logic
+   */
+  async executeGetSchedule(meetingLink, timezone, webconsole) {
     if (!meetingLink.trim()) {
-      webconsole.error("CAL BOOK | Meeting link not provided");
-      return null;
+      throw new Error("Meeting link not provided");
     }
 
-    const timezoneFilter = inputs.filter((e) => e.name === "timezone");
-    const timezone =
-      timezoneFilter.length > 0
-        ? timezoneFilter[0].value
-        : contents.filter((e) => e.name === "timezone")[0].value
-        || "";
-
     if (!timezone.trim()) {
-      webconsole.error("CAL BOOK | No timezone provided");
-      return null;
+      throw new Error("Timezone not provided");
     }
 
     try {
-      const userName = meetingLink.split("/")[3];
-      const eventTypeSlug = meetingLink.split("/")[4];
+      const parts = meetingLink.split("/");
+      if (parts.length < 5) {
+        throw new Error("Invalid Cal.com meeting link format.");
+      }
+
+      const userName = parts[3];
+      const eventTypeSlug = parts[4];
 
       const datetime = new Date(Date.now()).toISOString();
 
+      // Fetch schedule for the next 30 days
       const nextMonthtime = new Date(
         Date.now() + 30 * 24 * 60 * 60 * 1000
       ).toISOString();
 
-      const response = await axios.get(
-        `https://cal.com/api/trpc/slots/getSchedule?input={"json":{"isTeamEvent":false,"usernameList":["${userName}"],"eventTypeSlug":"${eventTypeSlug}","startTime":"${datetime}","endTime":"${nextMonthtime}","timeZone":"${timezone}","duration":null,"rescheduleUid":null,"orgSlug":null,"teamMemberEmail":null,"routedTeamMemberIds":null,"skipContactOwner":false,"_shouldServeCache":null,"routingFormResponseId":null,"email":null,"_isDryRun":false},"meta":{"values":{"duration":["undefined"],"orgSlug":["undefined"],"teamMemberEmail":["undefined"],"_shouldServeCache":["undefined"],"routingFormResponseId":["undefined"]}}}`
+      webconsole.info(
+        `CAL SCHEDULE | Fetching slots for ${userName}/${eventTypeSlug} in ${timezone} from ${datetime} to ${nextMonthtime}`
       );
 
-      webconsole.success(
-        "CAL SCHEDULE | Response: \n" + JSON.stringify(response.data)
-      );
-      return {
-        "Slots": response.data,
-        "Credits": this.getCredit(),
-        "Error": false,
-        "Error payload": "",
+      // Constructing the complex tRPC query URL
+      const inputJson = {
+        isTeamEvent: false,
+        usernameList: [userName],
+        eventTypeSlug: eventTypeSlug,
+        startTime: datetime,
+        endTime: nextMonthtime,
+        timeZone: timezone,
+        duration: null,
+        rescheduleUid: null,
+        orgSlug: null,
+        teamMemberEmail: null,
+        routedTeamMemberIds: null,
+        skipContactOwner: false,
+        _shouldServeCache: null,
+        routingFormResponseId: null,
+        email: null,
+        _isDryRun: false,
       };
 
+      const metaValues = {
+        duration: ["undefined"],
+        orgSlug: ["undefined"],
+        teamMemberEmail: ["undefined"],
+        _shouldServeCache: ["undefined"],
+        routingFormResponseId: ["undefined"],
+      };
+
+      const inputParam = encodeURIComponent(
+        JSON.stringify({ json: inputJson, meta: { values: metaValues } })
+      );
+
+      const apiUrl = `https://cal.com/api/trpc/slots/getSchedule?input=${inputParam}`;
+
+      const response = await axios.get(apiUrl);
+
+      webconsole.success("CAL SCHEDULE | Schedule fetched successfully");
+      return response.data;
     } catch (error) {
-      webconsole.error("CAL SCHEDULE | Error: " + error);
+      const errorMsg = error.response?.data?.error?.message || error.message;
+      webconsole.error("CAL SCHEDULE | Error during fetch: " + errorMsg);
+      throw new Error(`Failed to get Cal.com schedule: ${errorMsg}`);
+    }
+  }
+
+  async run(inputs, contents, webconsole, serverData) {
+    webconsole.info("CAL SCHEDULE | Begin execution");
+
+    const meetingLink = this.getValue(inputs, contents, "Meeting Link", "");
+    const timezone = this.getValue(inputs, contents, "timezone", "");
+
+    // 4. Create the Tool
+    const calGetScheduleTool = tool(
+      async ({ meetingLink: toolLink, timezone: toolTimezone }, toolConfig) => {
+        webconsole.info("CAL GET SCHEDULE TOOL | Invoking tool");
+
+        try {
+          const slots = await this.executeGetSchedule(
+            toolLink,
+            toolTimezone,
+            webconsole
+          );
+
+          // Return the actual slots data from the tRPC response
+          // The structure is typically { result: { data: { json: { slots: [...] } } } }
+          const outputSlots = slots?.result?.data?.json?.slots || [];
+
+          return [JSON.stringify(outputSlots), this.getCredit()];
+        } catch (error) {
+          webconsole.error(`CAL GET SCHEDULE TOOL | Error: ${error.message}`);
+          return [
+            JSON.stringify({
+              error: error.message,
+              slots: [],
+            }),
+            this.getCredit(),
+          ];
+        }
+      },
+      {
+        name: "calGetSchedule",
+        description:
+          "Retrieve available booking slots for a Cal.com public meeting link for the next 30 days. Requires the public meeting URL and the desired IANA timezone.",
+        schema: z.object({
+          meetingLink: z
+            .string()
+            .url()
+            .describe(
+              "The full Cal.com public link for the event type (e.g., https://cal.com/user/event-type)"
+            ),
+          timezone: z
+            .string()
+            .describe(
+              "The IANA timezone to fetch the slots in (e.g., Europe/London, America/New_York)"
+            ),
+        }),
+        responseFormat: "content_and_artifact",
+      }
+    );
+
+    // 5. Check for required fields for direct execution
+    if (!meetingLink || !timezone) {
+      webconsole.info(
+        "CAL SCHEDULE | Missing required fields for direct execution, returning tool only"
+      );
+      this.setCredit(0);
       return {
-        "Slots": {},
-        "Credits": this.getCredit(),
-        "Error": true,
-        "Error payload": JSON.stringify(error),
+        Slots: null,
+        Error: false,
+        "Error payload": "",
+        Tool: calGetScheduleTool,
+      };
+    }
+
+    // 6. Execute the schedule fetching logic
+    try {
+      const responseData = await this.executeGetSchedule(
+        meetingLink,
+        timezone,
+        webconsole
+      );
+
+      // Extract the slots from the complex tRPC response structure for the node output
+      const outputSlots = responseData?.result?.data?.json?.slots || {};
+
+      return {
+        Slots: outputSlots,
+        Credits: this.getCredit(),
+        Error: false,
+        "Error payload": "",
+        Tool: calGetScheduleTool,
+      };
+    } catch (error) {
+      webconsole.error("CAL SCHEDULE | Error: " + error.message);
+      return {
+        Slots: {},
+        Credits: this.getCredit(),
+        Error: true,
+        "Error payload": error.message,
+        Tool: calGetScheduleTool,
       };
     }
   }
