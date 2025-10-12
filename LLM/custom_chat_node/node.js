@@ -372,6 +372,11 @@ class custom_chat_node extends BaseNode {
                 webconsole.error("CUSTOM NODE | No query provided");
             }
 
+            let files = inputs.find((e) => e.name === "Files")?.value || [];
+            if (files && !Array.isArray(files)) {
+                files = [files];
+            }
+
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 

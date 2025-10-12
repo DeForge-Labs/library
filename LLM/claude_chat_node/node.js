@@ -432,6 +432,11 @@ class claude_chat_node extends BaseNode {
             }
             query = query.slice(0, 20000);
 
+            let files = inputs.find((e) => e.name === "Files")?.value || [];
+            if (files && !Array.isArray(files)) {
+                files = [files];
+            }
+
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             let systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
             systemPrompt = systemPrompt.slice(0, 4000);
