@@ -50,7 +50,7 @@ const config = {
             type: "Text",
         },
         {
-            desc: "List of files to send to LLM (Direct links to files, Images only, max 5 files, 25 MB each)",
+            desc: "List of files to send to LLM (Direct links to files, Images and PDFs only, max 5 files, 25 MB each)",
             name: "Files",
             type: "Text[]",
         },
@@ -518,6 +518,10 @@ class openai_chat_node extends BaseNode {
                 },
             });
 
+            const tokenCounterLLM = new ChatOpenAI({
+                model: model
+            });
+
             // Create session ID for memory
             const sessionId = serverData.chatId ? 
                 `${serverData.chatId}_${serverData.workflowId}` : 
@@ -560,7 +564,7 @@ class openai_chat_node extends BaseNode {
                     const trimmedMessages = await trimMessages(pastMessages, {
                         maxTokens: 200000,
                         strategy: "last",
-                        tokenCounter: llm,
+                        tokenCounter: tokenCounterLLM,
                         includeSystem: true,
                         startOn: "human",
                     });
@@ -572,8 +576,14 @@ class openai_chat_node extends BaseNode {
             }
 
             const fileObjs = [];
+            let fileCount = 0;
             // Files parsing
             for (const fileLink of files) {
+                fileCount += 1;
+                if (fileCount > 5) {
+                    webconsole.warn("OPENAI NODE | Maximum of 5 files are allowed, skipping remaining files");
+                    break;
+                }
                 try {
 
                     const tempDir = "./runtime_files";
@@ -582,6 +592,8 @@ class openai_chat_node extends BaseNode {
                     }
 
                     let skipFile = false;
+                    let pdfFile = false;
+                    let pdfFileName = "document.pdf";
 
                     const downloader = new Downloader({
                         url: fileLink,
@@ -599,31 +611,50 @@ class openai_chat_node extends BaseNode {
                             }
 
                             // If file type is not image, return false
-                            if (contentType && !contentType.startsWith('image/')) {
-                                webconsole.error(`OPENAI NODE | File at ${fileLink} is not an image (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
+                            if (contentType && !contentType.startsWith('image/') && !contentType.startsWith('application/pdf')) {
+                                webconsole.error(`OPENAI NODE | File at ${fileLink} is not an image or PDF (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
                                 skipFile = true;
                                 return false;
                             }
 
-                            if (contentType && contentType.startsWith('image/')) {
-                                return false;
+                            if (contentType && contentType.startsWith('application/pdf')) {
+                                pdfFile = true;
+                                contentDisposition = response.headers['content-disposition'];
+                                if (contentDisposition) {
+                                    const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                                    if (fileNameMatch && fileNameMatch[1]) {
+                                        pdfFileName = fileNameMatch[1];
+                                    }
+                                }
                             }
+
+                            return false;
 
                         }
                     });
 
                     const tempRes = await downloader.download();
                     if (!skipFile) {
-                        fileObjs.push({
-                            "type": "image_url",
-                            "image_url": {
-                                "url": fileLink
-                            }
-                        });
+                        if (pdfFile) {
+                            fileObjs.push({
+                                type: "file",
+                                "file": {
+                                    "filename": pdfFileName,
+                                    "file_data": fileLink,
+                                }
+                            });
+                        } else {
+                            fileObjs.push({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": fileLink
+                                }
+                            });
+                        }
                     }
 
                 } catch (error) {
-                    
+                    webconsole.error("OPENAI NODE | Some problem occured parsing file, skipping: ", error);                    
                 }
             }
 

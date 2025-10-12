@@ -1,10 +1,12 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import { OpenAIEmbeddings, ChatOpenAI } from "@langchain/openai";
+import { ChatAnthropic } from "@langchain/anthropic";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { PostgresChatMessageHistory } from "@langchain/community/stores/message/postgres";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { Downloader } from "nodejs-file-downloader";
 import {
     AIMessage,
     HumanMessage,
@@ -23,6 +25,7 @@ import {
     toolsCondition,
 } from "@langchain/langgraph/prebuilt";
 import pkg from 'pg';
+import fs from "fs";
 import dotenv from 'dotenv';
 
 const { Pool } = pkg;
@@ -46,6 +49,11 @@ const config = {
             desc: "Chat text to send",
             name: "Query",
             type: "Text",
+        },
+        {
+            desc: "List of files to send to LLM (Direct links to files, Images and PDFs only, max 5 files, 25 MB each)",
+            name: "Files",
+            type: "Text[]",
         },
         {
             desc: "List of tools that the LLM can use",
@@ -87,6 +95,8 @@ const config = {
             type: "select",
             value: "claude-3-7-sonnet-latest",
             options: [
+                "claude-sonnet-4-5",
+                "claude-opus-4-1",
                 "claude-opus-4-0",
                 "claude-sonnet-4-0",
                 "claude-3-7-sonnet-latest",
@@ -98,6 +108,12 @@ const config = {
             name: "Query",
             type: "TextArea",
             value: "Enter text here...",
+        },
+        {
+            desc: "List of files to send to LLM (Direct links to files, Images only, max 5 files, 25 MB each)",
+            name: "Files",
+            type: "Text[]",
+            value: "",
         },
         {
             desc: "List of tools that the LLM can use",
@@ -354,6 +370,8 @@ class claude_chat_node extends BaseNode {
             }
 
             const modelPricingInput = {
+                "claude-sonnet-4-5": 2000,
+                "claude-opus-4-1": 10000,
                 "claude-opus-4-0": 10000,
                 "claude-sonnet-4-0": 2000,
                 "claude-3-7-sonnet-latest": 2000,
@@ -387,6 +405,8 @@ class claude_chat_node extends BaseNode {
 
             // Input pricing per million tokens in deforge credits
             const modelPricingInput = {
+                "claude-sonnet-4-5": 2000,
+                "claude-opus-4-1": 10000,
                 "claude-opus-4-0": 10000,
                 "claude-sonnet-4-0": 2000,
                 "claude-3-7-sonnet-latest": 2000,
@@ -395,6 +415,8 @@ class claude_chat_node extends BaseNode {
 
             // Output pricing per million tokens in deforge credits
             const modelPricingOutput = {
+                "claude-sonnet-4-5": 10000,
+                "claude-opus-4-1": 50000,
                 "claude-opus-4-0": 50000,
                 "claude-sonnet-4-0": 10000,
                 "claude-3-7-sonnet-latest": 10000,
@@ -433,6 +455,8 @@ class claude_chat_node extends BaseNode {
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "claude-3-7-sonnet-latest";
             const modelMap = {
+                "claude-sonnet-4-5": "anthropic/claude-sonnet-4.5",
+                "claude-opus-4-1": "anthropic/claude-opus-4.1",
                 "claude-opus-4-0": "anthropic/claude-opus-4",
                 "claude-sonnet-4-0": "anthropic/claude-sonnet-4",
                 "claude-3-7-sonnet-latest": "anthropic/claude-3.7-sonnet",
@@ -461,6 +485,10 @@ class claude_chat_node extends BaseNode {
                     },
                     apiKey: process.env.OPENROUTER_API_KEY,
                 },
+            });
+
+            const tokenCounterLLM = new ChatAnthropic({
+                model: model
             });
 
             // Create session ID for memory
@@ -509,7 +537,7 @@ class claude_chat_node extends BaseNode {
                     const trimmedMessages = await trimMessages(pastMessages, {
                         maxTokens: 200000,
                         strategy: "last",
-                        tokenCounter: llm,
+                        tokenCounter: tokenCounterLLM,
                         includeSystem: true,
                         startOn: "human",
                     });
@@ -520,7 +548,105 @@ class claude_chat_node extends BaseNode {
                 }
             }
 
-            const inputMessages = [new HumanMessage(query)];
+            const fileObjs = [];
+            let fileCount = 0;
+            // Files parsing
+            for (const fileLink of files) {
+                fileCount += 1;
+                if (fileCount > 5) {
+                    webconsole.warn("OPENAI NODE | Maximum of 5 files are allowed, skipping remaining files");
+                    break;
+                }
+                try {
+            
+                const tempDir = "./runtime_files";
+                if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                }
+            
+                let skipFile = false;
+                let pdfFile = false;
+                let pdfFileName = "document.pdf";
+            
+                const downloader = new Downloader({
+                    url: fileLink,
+                    directory: tempDir,
+                    onResponse: (response) => {
+                        // Check header for size, content type
+                        const contentLength = response.headers['content-length'];
+                        const contentType = response.headers['content-type'];
+            
+                        // If file size is larger than 25 MB, return false
+                        if (contentLength && parseInt(contentLength) > 25 * 1024 * 1024) {
+                            webconsole.error(`OPENAI NODE | File at ${fileLink} exceeds the 25 MB size limit. Skipping this file.`);
+                            skipFile = true;
+                            return false;
+                        }
+            
+                        // If file type is not image, return false
+                        if (contentType && !contentType.startsWith('image/') && !contentType.startsWith('application/pdf')) {
+                            webconsole.error(`OPENAI NODE | File at ${fileLink} is not an image or PDF (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
+                            skipFile = true;
+                            return false;
+                        }
+            
+                        if (contentType && contentType.startsWith('application/pdf')) {
+                            pdfFile = true;
+                            contentDisposition = response.headers['content-disposition'];
+                            if (contentDisposition) {
+                                const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                                if (fileNameMatch && fileNameMatch[1]) {
+                                    pdfFileName = fileNameMatch[1];
+                                }
+                            }
+                        }
+            
+                        return false;
+            
+                        }
+                });
+            
+                const tempRes = await downloader.download();
+                if (!skipFile) {
+                    if (pdfFile) {
+                        fileObjs.push({
+                            type: "file",
+                            "file": {
+                                "filename": pdfFileName,
+                                "file_data": fileLink,
+                            }
+                        });
+                    } else {
+                        fileObjs.push({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": fileLink
+                            }
+                        });
+                    }
+                }
+            
+                } catch (error) {
+                    webconsole.error("OPENAI NODE | Some problem occured parsing file, skipping: ", error);                    
+                }
+            }
+            
+            const inputMessages = [];
+            if (fileObjs.length > 0) {
+                webconsole.info(`OPENAI NODE | Attaching ${fileObjs.length} files to the prompt`);
+                inputMessages.push(new HumanMessage({
+                    content: [
+                        {
+                            type: "text",
+                            "text": query,
+                        },
+                        ...fileObjs
+                    ]
+                }));
+            }
+            else {
+                inputMessages.push(new HumanMessage(query));
+            }
 
             if (pastMessages.length === 0) {
                 inputMessages.unshift(new SystemMessage(systemPrompt));
