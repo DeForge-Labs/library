@@ -678,7 +678,7 @@ class google_chat_node extends BaseNode {
                         });
                     } else if (audioFile) {
                         const audioPath = tempRes.filePath;
-                        const audioData = fs.readFile(audioPath);
+                        const audioData = fs.readFileSync(audioPath);
                         const audioBase64 = audioData.toString('base64');
                         fileObjs.push({
                             type: "input_audio",
