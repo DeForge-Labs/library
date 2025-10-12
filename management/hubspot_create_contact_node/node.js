@@ -126,6 +126,92 @@ class hubspot_create_contact_node extends BaseNode {
     return this.getCredit();
   }
 
+  /**
+   * Check if HubSpot access token is expired
+   */
+  isAccessTokenExpired(hubspotTokens) {
+    if (!hubspotTokens || !hubspotTokens.expires_at) {
+      return true;
+    }
+
+    const now = Date.now();
+    const expiresAt = hubspotTokens.expires_at;
+
+    // Consider expired if less than 5 minutes remaining
+    return expiresAt - now < 300000;
+  }
+
+  /**
+   * Refresh HubSpot access token
+   */
+  async refreshHubSpotToken(refreshToken, webconsole) {
+    try {
+      webconsole.info("HubSpot Create Contact | Refreshing access token...");
+
+      const response = await axios.post(
+        "https://api.hubapi.com/oauth/v1/token",
+        new URLSearchParams({
+          grant_type: "refresh_token",
+          client_id: process.env.HUBSPOT_CLIENT_ID,
+          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+          refresh_token: refreshToken,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const tokens = response.data;
+      webconsole.success(
+        "HubSpot Create Contact | Token refreshed successfully"
+      );
+
+      return {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_in: tokens.expires_in,
+        token_type: tokens.token_type,
+        expires_at: Date.now() + tokens.expires_in * 1000,
+      };
+    } catch (error) {
+      webconsole.error(
+        `HubSpot Create Contact | Token refresh failed: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+      throw new Error("Failed to refresh HubSpot access token");
+    }
+  }
+
+  /**
+   * Get valid HubSpot access token with auto-refresh and persistence
+   */
+  async getValidAccessToken(hubspotTokens, refreshTokenHandler, webconsole) {
+    if (!hubspotTokens) {
+      throw new Error("HubSpot account not connected");
+    }
+
+    // Check if token is expired or about to expire
+    if (this.isAccessTokenExpired(hubspotTokens)) {
+      webconsole.info(
+        "HubSpot Create Contact | Access token expired or expiring soon, refreshing..."
+      );
+
+      const newTokens = await this.refreshHubSpotToken(
+        hubspotTokens.refresh_token
+      );
+
+      // Save refreshed tokens to database using refreshTokenHandler
+      await refreshTokenHandler.handleHubSpotToken(newTokens);
+
+      return newTokens.access_token;
+    }
+
+    return hubspotTokens.access_token;
+  }
+
   async executeCreateContact(
     email,
     firstName,
@@ -133,7 +219,7 @@ class hubspot_create_contact_node extends BaseNode {
     phone,
     company,
     additionalProps,
-    apiKey,
+    accessToken,
     webconsole
   ) {
     try {
@@ -163,7 +249,7 @@ class hubspot_create_contact_node extends BaseNode {
         { properties },
         {
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
         }
@@ -194,13 +280,14 @@ class hubspot_create_contact_node extends BaseNode {
     };
 
     try {
-      webconsole.info("HubSpot Create Contact Node | Generating tool...");
+      webconsole.info("HubSpot Create Contact Node | Starting execution...");
 
-      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
+      // Get HubSpot OAuth tokens from socialList
+      const tokens = serverData.socialList;
 
-      if (!apiKey) {
+      if (!tokens || !Object.keys(tokens).includes("hubspot")) {
         webconsole.error(
-          "HubSpot Create Contact Node | HUBSPOT_LEGACY_API_KEY not set"
+          "HubSpot Create Contact Node | Please connect your HubSpot account"
         );
         return {
           success: false,
@@ -210,6 +297,43 @@ class hubspot_create_contact_node extends BaseNode {
         };
       }
 
+      const hubspotTokens = tokens["hubspot"];
+
+      if (!hubspotTokens || !hubspotTokens.access_token) {
+        webconsole.error(
+          "HubSpot Create Contact Node | Invalid HubSpot tokens, please reconnect your account"
+        );
+        return {
+          success: false,
+          contactId: null,
+          contact: null,
+          Tool: null,
+        };
+      }
+
+      // Get refresh token handler from serverData
+      const refreshTokenHandler = serverData.refreshUtil;
+
+      if (!refreshTokenHandler) {
+        webconsole.error(
+          "HubSpot Create Contact Node | Refresh token handler not available"
+        );
+        return {
+          success: false,
+          contactId: null,
+          contact: null,
+          Tool: null,
+        };
+      }
+
+      // Get valid access token (with auto-refresh if needed)
+      const accessToken = await this.getValidAccessToken(
+        hubspotTokens,
+        refreshTokenHandler,
+        webconsole
+      );
+
+      // Create the tool
       const hubspotCreateContactTool = tool(
         async (
           { email, firstName, lastName, phone, company, additionalProperties },
@@ -218,6 +342,13 @@ class hubspot_create_contact_node extends BaseNode {
           webconsole.info("HUBSPOT CREATE CONTACT TOOL | Invoking tool");
 
           try {
+            // Get fresh token for tool execution
+            const toolAccessToken = await this.getValidAccessToken(
+              hubspotTokens,
+              refreshTokenHandler,
+              webconsole
+            );
+
             const result = await this.executeCreateContact(
               email,
               firstName,
@@ -225,7 +356,7 @@ class hubspot_create_contact_node extends BaseNode {
               phone,
               company,
               additionalProperties,
-              apiKey,
+              toolAccessToken,
               webconsole
             );
 
@@ -267,6 +398,7 @@ class hubspot_create_contact_node extends BaseNode {
         }
       );
 
+      // Get input values
       const email = getValue("Email");
       const firstName = getValue("FirstName");
       const lastName = getValue("LastName");
@@ -287,6 +419,7 @@ class hubspot_create_contact_node extends BaseNode {
         };
       }
 
+      // Execute the contact creation
       const result = await this.executeCreateContact(
         email,
         firstName,
@@ -294,7 +427,7 @@ class hubspot_create_contact_node extends BaseNode {
         phone,
         company,
         additionalProps,
-        apiKey,
+        accessToken,
         webconsole
       );
 
