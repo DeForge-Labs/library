@@ -487,9 +487,9 @@ class claude_chat_node extends BaseNode {
                 },
             });
 
-            const tokenCounterLLM = new ChatAnthropic({
-                model: model
-            });
+            // const tokenCounterLLM = new ChatAnthropic({
+            //     model: model
+            // });
 
             // Create session ID for memory
             const sessionId = serverData.chatId ? 
@@ -537,7 +537,7 @@ class claude_chat_node extends BaseNode {
                     const trimmedMessages = await trimMessages(pastMessages, {
                         maxTokens: 200000,
                         strategy: "last",
-                        tokenCounter: tokenCounterLLM,
+                        tokenCounter: llm,
                         includeSystem: true,
                         startOn: "human",
                     });
