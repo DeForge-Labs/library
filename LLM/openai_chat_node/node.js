@@ -619,7 +619,7 @@ class openai_chat_node extends BaseNode {
 
                             if (contentType && contentType.startsWith('application/pdf')) {
                                 pdfFile = true;
-                                contentDisposition = response.headers['content-disposition'];
+                                const contentDisposition = response.headers['content-disposition'];
                                 if (contentDisposition) {
                                     const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
                                     if (fileNameMatch && fileNameMatch[1]) {
