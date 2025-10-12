@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/DeForge-Labs/library/issues"
   },
-  "homepage": "https://github.com/DeForge-Labs/library#readme"
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "@langchain/core": "^0.3.78",
+    "zod": "^3.25.76"
+  }
 }
