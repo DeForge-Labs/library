@@ -85,10 +85,10 @@ const config = {
       desc: "Array of sort objects [{propertyName, direction}]",
     },
     {
-      desc: "HubSpot Legacy App API Key",
-      name: "HUBSPOT_LEGACY_API_KEY",
-      type: "env",
-      defaultValue: "your-hubspot-api-key",
+      desc: "Connect to your HubSpot account",
+      name: "HubSpot",
+      type: "social",
+      defaultValue: "",
     },
   ],
   difficulty: "medium",
@@ -104,11 +104,113 @@ class hubspot_search_deals_node extends BaseNode {
     return this.getCredit();
   }
 
-  async executeSearchDeals(query, filters, limit, sorts, apiKey, webconsole) {
+  /**
+   * Check if HubSpot access token is expired
+   */
+  isAccessTokenExpired(hubspotTokens) {
+    if (!hubspotTokens || !hubspotTokens.expires_at) {
+      return true;
+    }
+
+    const now = Date.now();
+    const expiresAt = hubspotTokens.expires_at;
+
+    // Consider expired if less than 5 minutes remaining (300000ms)
+    return expiresAt - now < 300000;
+  }
+
+  /**
+   * Refresh HubSpot access token
+   */
+  async refreshHubSpotToken(refreshToken, webconsole) {
+    try {
+      webconsole.info("HubSpot Search Deals | Refreshing access token...");
+
+      const response = await axios.post(
+        "https://api.hubapi.com/oauth/v1/token",
+        new URLSearchParams({
+          grant_type: "refresh_token",
+          client_id: process.env.HUBSPOT_CLIENT_ID,
+          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+          refresh_token: refreshToken,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const tokens = response.data;
+      webconsole.success("HubSpot Search Deals | Token refreshed successfully");
+
+      return {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_in: tokens.expires_in,
+        token_type: tokens.token_type,
+        expires_at: Date.now() + tokens.expires_in * 1000,
+      };
+    } catch (error) {
+      webconsole.error(
+        `HubSpot Search Deals | Token refresh failed: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+      throw new Error("Failed to refresh HubSpot access token");
+    }
+  }
+
+  /**
+   * Get valid HubSpot access token with auto-refresh and persistence
+   */
+  async getValidAccessToken(hubspotTokens, refreshTokenHandler, webconsole) {
+    if (!hubspotTokens) {
+      throw new Error("HubSpot account not connected");
+    }
+
+    // Check if token is expired or about to expire
+    if (this.isAccessTokenExpired(hubspotTokens)) {
+      webconsole.info(
+        "HubSpot Search Deals | Access token expired or expiring soon, refreshing..."
+      );
+
+      const newTokens = await this.refreshHubSpotToken(
+        hubspotTokens.refresh_token,
+        webconsole
+      );
+
+      // Save refreshed tokens to database using refreshTokenHandler
+      await refreshTokenHandler.handleHubSpotToken(newTokens);
+
+      return newTokens.access_token;
+    }
+
+    return hubspotTokens.access_token;
+  }
+
+  async executeSearchDeals(
+    query,
+    filters,
+    limit,
+    sorts,
+    accessToken,
+    webconsole
+  ) {
+    // Changed apiKey to accessToken
     try {
       const searchPayload = {
         limit: Math.min(limit || 10, 100),
       };
+
+      // Add properties to return (recommended for search endpoints)
+      searchPayload.properties = [
+        "dealname",
+        "amount",
+        "dealstage",
+        "pipeline",
+        "closedate",
+      ];
 
       // Add query if provided
       if (query && query.trim() !== "") {
@@ -145,7 +247,7 @@ class hubspot_search_deals_node extends BaseNode {
         searchPayload,
         {
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${accessToken}`, // Use accessToken
             "Content-Type": "application/json",
           },
         }
@@ -174,13 +276,14 @@ class hubspot_search_deals_node extends BaseNode {
     };
 
     try {
-      webconsole.info("HubSpot Search Deals Node | Generating tool...");
+      webconsole.info("HubSpot Search Deals Node | Starting execution...");
 
-      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
+      // OAuth 2.0 Logic Start
+      const tokens = serverData.socialList;
 
-      if (!apiKey) {
+      if (!tokens || !Object.keys(tokens).includes("hubspot")) {
         webconsole.error(
-          "HubSpot Search Deals Node | HUBSPOT_LEGACY_API_KEY not set"
+          "HubSpot Search Deals Node | Please connect your HubSpot account"
         );
         return {
           success: false,
@@ -190,17 +293,60 @@ class hubspot_search_deals_node extends BaseNode {
         };
       }
 
+      const hubspotTokens = tokens["hubspot"];
+
+      if (!hubspotTokens || !hubspotTokens.access_token) {
+        webconsole.error(
+          "HubSpot Search Deals Node | Invalid HubSpot tokens, please reconnect your account"
+        );
+        return {
+          success: false,
+          deals: null,
+          total: 0,
+          Tool: null,
+        };
+      }
+
+      const refreshTokenHandler = serverData.refreshUtil;
+
+      if (!refreshTokenHandler) {
+        webconsole.error(
+          "HubSpot Search Deals Node | Refresh token handler not available"
+        );
+        return {
+          success: false,
+          deals: null,
+          total: 0,
+          Tool: null,
+        };
+      }
+
+      // Get valid access token (with auto-refresh if needed)
+      const accessToken = await this.getValidAccessToken(
+        hubspotTokens,
+        refreshTokenHandler,
+        webconsole
+      );
+      // OAuth 2.0 Logic End
+
       const hubspotSearchDealsTool = tool(
         async ({ query, filters, limit, sorts }, toolConfig) => {
           webconsole.info("HUBSPOT SEARCH DEALS TOOL | Invoking tool");
 
           try {
+            // Get fresh token for tool execution
+            const toolAccessToken = await this.getValidAccessToken(
+              hubspotTokens,
+              refreshTokenHandler,
+              webconsole
+            );
+
             const result = await this.executeSearchDeals(
               query,
               filters,
               limit,
               sorts,
-              apiKey,
+              toolAccessToken, // Pass accessToken
               webconsole
             );
 
@@ -264,13 +410,13 @@ class hubspot_search_deals_node extends BaseNode {
       const limit = getValue("Limit", 10);
       const sorts = getValue("Sorts");
 
-      // Always execute with provided parameters (or defaults)
+      // Execute with provided parameters (or defaults)
       const result = await this.executeSearchDeals(
         query,
         filters,
         limit,
         sorts,
-        apiKey,
+        accessToken, // Pass accessToken
         webconsole
       );
 

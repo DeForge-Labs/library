@@ -58,10 +58,10 @@ const config = {
       desc: "HubSpot contact ID (alternative to email)",
     },
     {
-      desc: "HubSpot Legacy App API Key",
-      name: "HUBSPOT_LEGACY_API_KEY",
-      type: "env",
-      defaultValue: "your-hubspot-api-key",
+      desc: "Connect to your HubSpot account",
+      name: "HubSpot",
+      type: "social",
+      defaultValue: "",
     },
   ],
   difficulty: "easy",
@@ -77,27 +77,119 @@ class hubspot_get_contact_node extends BaseNode {
     return this.getCredit();
   }
 
-  async executeGetContact(email, contactId, apiKey, webconsole) {
+  /**
+   * Check if HubSpot access token is expired
+   */
+  isAccessTokenExpired(hubspotTokens) {
+    if (!hubspotTokens || !hubspotTokens.expires_at) {
+      return true;
+    }
+
+    const now = Date.now();
+    const expiresAt = hubspotTokens.expires_at;
+
+    // Consider expired if less than 5 minutes remaining (300000ms)
+    return expiresAt - now < 300000;
+  }
+
+  /**
+   * Refresh HubSpot access token
+   */
+  async refreshHubSpotToken(refreshToken, webconsole) {
+    try {
+      webconsole.info("HubSpot Get Contact | Refreshing access token...");
+
+      const response = await axios.post(
+        "https://api.hubapi.com/oauth/v1/token",
+        new URLSearchParams({
+          grant_type: "refresh_token",
+          client_id: process.env.HUBSPOT_CLIENT_ID,
+          client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+          refresh_token: refreshToken,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const tokens = response.data;
+      webconsole.success("HubSpot Get Contact | Token refreshed successfully");
+
+      return {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_in: tokens.expires_in,
+        token_type: tokens.token_type,
+        expires_at: Date.now() + tokens.expires_in * 1000,
+      };
+    } catch (error) {
+      webconsole.error(
+        `HubSpot Get Contact | Token refresh failed: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+      throw new Error("Failed to refresh HubSpot access token");
+    }
+  }
+
+  /**
+   * Get valid HubSpot access token with auto-refresh and persistence
+   */
+  async getValidAccessToken(hubspotTokens, refreshTokenHandler, webconsole) {
+    if (!hubspotTokens) {
+      throw new Error("HubSpot account not connected");
+    }
+
+    // Check if token is expired or about to expire
+    if (this.isAccessTokenExpired(hubspotTokens)) {
+      webconsole.info(
+        "HubSpot Get Contact | Access token expired or expiring soon, refreshing..."
+      );
+
+      const newTokens = await this.refreshHubSpotToken(
+        hubspotTokens.refresh_token,
+        webconsole
+      );
+
+      // Save refreshed tokens to database using refreshTokenHandler
+      await refreshTokenHandler.handleHubSpotToken(newTokens);
+
+      return newTokens.access_token;
+    }
+
+    return hubspotTokens.access_token;
+  }
+
+  async executeGetContact(email, contactId, accessToken, webconsole) {
+    // Changed apiKey to accessToken
     try {
       let response;
+
+      // The V3 CRM API for contacts can fetch by ID or by email using the 'idProperty' query parameter
+      const propertiesQuery =
+        "properties=email,firstname,lastname,phone,company,createdate,lastmodifieddate";
 
       if (contactId) {
         webconsole.info(`Retrieving HubSpot contact by ID: ${contactId}`);
         response = await axios.get(
-          `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
+          `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}?${propertiesQuery}`,
           {
             headers: {
-              Authorization: `Bearer ${apiKey}`,
+              Authorization: `Bearer ${accessToken}`, // Use accessToken
             },
           }
         );
       } else if (email) {
         webconsole.info(`Retrieving HubSpot contact by email: ${email}`);
         response = await axios.get(
-          `https://api.hubapi.com/crm/v3/objects/contacts/${email}?idProperty=email`,
+          `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(
+            email
+          )}?idProperty=email&${propertiesQuery}`,
           {
             headers: {
-              Authorization: `Bearer ${apiKey}`,
+              Authorization: `Bearer ${accessToken}`, // Use accessToken
             },
           }
         );
@@ -120,6 +212,14 @@ class hubspot_get_contact_node extends BaseNode {
         };
       }
       const errorMsg = error.response?.data?.message || error.message;
+      // Handle the case where the contact object is not found (404)
+      if (error.response?.status === 404) {
+        webconsole.info(`Contact not found: ${email || contactId}`);
+        return {
+          success: false,
+          contact: null,
+        };
+      }
       throw new Error(`Failed to get contact: ${errorMsg}`);
     }
   }
@@ -134,13 +234,14 @@ class hubspot_get_contact_node extends BaseNode {
     };
 
     try {
-      webconsole.info("HubSpot Get Contact Node | Generating tool...");
+      webconsole.info("HubSpot Get Contact Node | Starting execution...");
 
-      const apiKey = serverData.envList?.HUBSPOT_LEGACY_API_KEY;
+      // OAuth 2.0 Logic Start
+      const tokens = serverData.socialList;
 
-      if (!apiKey) {
+      if (!tokens || !Object.keys(tokens).includes("hubspot")) {
         webconsole.error(
-          "HubSpot Get Contact Node | HUBSPOT_LEGACY_API_KEY not set"
+          "HubSpot Get Contact Node | Please connect your HubSpot account"
         );
         return {
           success: false,
@@ -149,15 +250,56 @@ class hubspot_get_contact_node extends BaseNode {
         };
       }
 
+      const hubspotTokens = tokens["hubspot"];
+
+      if (!hubspotTokens || !hubspotTokens.access_token) {
+        webconsole.error(
+          "HubSpot Get Contact Node | Invalid HubSpot tokens, please reconnect your account"
+        );
+        return {
+          success: false,
+          contact: null,
+          Tool: null,
+        };
+      }
+
+      const refreshTokenHandler = serverData.refreshUtil;
+
+      if (!refreshTokenHandler) {
+        webconsole.error(
+          "HubSpot Get Contact Node | Refresh token handler not available"
+        );
+        return {
+          success: false,
+          contact: null,
+          Tool: null,
+        };
+      }
+
+      // Get valid access token (with auto-refresh if needed)
+      const accessToken = await this.getValidAccessToken(
+        hubspotTokens,
+        refreshTokenHandler,
+        webconsole
+      );
+      // OAuth 2.0 Logic End
+
       const hubspotGetContactTool = tool(
         async ({ email, contactId }, toolConfig) => {
           webconsole.info("HUBSPOT GET CONTACT TOOL | Invoking tool");
 
           try {
+            // Get fresh token for tool execution
+            const toolAccessToken = await this.getValidAccessToken(
+              hubspotTokens,
+              refreshTokenHandler,
+              webconsole
+            );
+
             const result = await this.executeGetContact(
               email,
               contactId,
-              apiKey,
+              toolAccessToken, // Pass accessToken
               webconsole
             );
 
@@ -212,7 +354,7 @@ class hubspot_get_contact_node extends BaseNode {
       const result = await this.executeGetContact(
         email,
         contactId,
-        apiKey,
+        accessToken, // Pass accessToken
         webconsole
       );
 
