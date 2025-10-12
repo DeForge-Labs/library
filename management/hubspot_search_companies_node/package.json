@@ -1,7 +1,7 @@
 {
-  "name": "google-chat-node",
+  "name": "hubspot-search-companies",
   "version": "0.0.1",
-  "description": "Node to call LLM chat completion",
+  "description": "Search for companies in hubspot",
   "main": "node.js",
   "type": "module",
   "scripts": {
@@ -18,15 +18,8 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
-    "@langchain/community": "^0.3.47",
-    "@langchain/core": "^0.3.60",
-    "@langchain/google-genai": "^0.2.9",
-    "@langchain/langgraph": "^0.3.5",
-    "@langchain/openai": "^0.5.14",
-    "dotenv": "^16.5.0",
-    "langchain": "^0.3.29",
-    "nodejs-file-downloader": "^4.13.0",
-    "pg": "^8.16.3",
-    "zod": "^3.25.67"
+    "@langchain/core": "^0.3.78",
+    "axios": "^1.12.2",
+    "zod": "^3.25.76"
   }
 }

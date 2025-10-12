@@ -30,6 +30,11 @@ const config = {
       name: "Value",
       type: "Text",
     },
+    {
+      desc: "Raw value of the key",
+      name: "Raw Value",
+      type: "Any",
+    },
   ],
   fields: [
     {
@@ -85,6 +90,7 @@ class json_extract extends BaseNode {
       return {
         Value:
           typeof value === "object" ? JSON.stringify(value) : String(value),
+        "Raw Value": value,
         Credits: this.getCredit(),
       };
     } else {

@@ -5,6 +5,7 @@ import { PostgresChatMessageHistory } from "@langchain/community/stores/message/
 import { formatDocumentsAsString } from "langchain/util/document";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { Downloader } from "nodejs-file-downloader";
 import {
     AIMessage,
     HumanMessage,
@@ -23,6 +24,7 @@ import {
     toolsCondition,
 } from "@langchain/langgraph/prebuilt";
 import pkg from 'pg';
+import fs from "fs";
 import dotenv from 'dotenv';
 
 const { Pool } = pkg;
@@ -370,6 +372,11 @@ class custom_chat_node extends BaseNode {
                 webconsole.error("CUSTOM NODE | No query provided");
             }
 
+            let files = inputs.find((e) => e.name === "Files")?.value || [];
+            if (files && !Array.isArray(files)) {
+                files = [files];
+            }
+
             const systemPromptFilter = inputs.filter((e) => e.name === "System Prompt");
             const systemPrompt = systemPromptFilter.length > 0 ? systemPromptFilter[0].value : contents.filter((e) => e.name === "System Prompt")[0].value || "You are a helpful assistant";
 
@@ -472,7 +479,126 @@ class custom_chat_node extends BaseNode {
                 }
             }
 
-            const inputMessages = [new HumanMessage(query)];
+            const fileObjs = [];
+            let fileCount = 0;
+            // Files parsing
+            for (const fileLink of files) {
+                fileCount += 1;
+                if (fileCount > 5) {
+                    webconsole.warn("OPENAI NODE | Maximum of 5 files are allowed, skipping remaining files");
+                    break;
+                }
+                try {
+                                    
+                const tempDir = "./runtime_files";
+                if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                }
+                                    
+                let skipFile = false;
+                let pdfFile = false;
+                let pdfFileName = "document.pdf";
+                let audioFile = false;
+                let audioType = "";
+                                    
+                const downloader = new Downloader({
+                    url: fileLink,
+                    directory: tempDir,
+                    onResponse: (response) => {
+                        // Check header for size, content type
+                        const contentLength = response.headers['content-length'];
+                        const contentType = response.headers['content-type'];
+                                    
+                        // If file size is larger than 25 MB, return false
+                        if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
+                            webconsole.error(`OPENAI NODE | File at ${fileLink} exceeds the 25 MB size limit. Skipping this file.`);
+                            skipFile = true;
+                            return false;
+                        }
+                                    
+                        // If file type is not image, return false
+                        if (contentType && !contentType.startsWith('image/') && !contentType.startsWith('application/pdf') && !contentType.startsWith('audio/')) {
+                            webconsole.error(`OPENAI NODE | File at ${fileLink} is not an image or PDF (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
+                            skipFile = true;
+                            return false;
+                        }
+                                    
+                        if (contentType && contentType.startsWith('application/pdf')) {
+                            pdfFile = true;
+                            const contentDisposition = response.headers['content-disposition'];
+                            if (contentDisposition) {
+                                const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                                if (fileNameMatch && fileNameMatch[1]) {
+                                    pdfFileName = fileNameMatch[1];
+                                }
+                            }
+                        }
+            
+                        if (contentType && contentType.startsWith('audio/')) {
+                            audioFile = true;
+                            audioType = contentType.substring(6);
+                            return true;
+                        }
+                                    
+                        return false;
+                                    
+                        }
+                });
+                                    
+                const tempRes = await downloader.download();
+                if (!skipFile) {
+                    if (pdfFile) {
+                        fileObjs.push({
+                            type: "file",
+                            "file": {
+                                "filename": pdfFileName,
+                                "file_data": fileLink,
+                            }
+                        });
+                    } else if (audioFile) {
+                        const audioPath = tempRes.filePath;
+                        const audioData = fs.readFile(audioPath);
+                        const audioBase64 = audioData.toString('base64');
+                        fileObjs.push({
+                            type: "input_audio",
+                            "input_audio": {
+                                "data": audioBase64,
+                                "format": audioType,
+                            }
+                        });
+            
+                        fs.unlinkSync(audioPath);
+                    } else {
+                        fileObjs.push({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": fileLink
+                            }
+                        });
+                    }
+                }
+                                    
+                } catch (error) {
+                    webconsole.error("OPENAI NODE | Some problem occured parsing file, skipping: ", error);                    
+                }
+            }
+                                    
+            const inputMessages = [];
+            if (fileObjs.length > 0) {
+                webconsole.info(`OPENAI NODE | Attaching ${fileObjs.length} files to the prompt`);
+                inputMessages.push(new HumanMessage({
+                    content: [
+                        {
+                            type: "text",
+                            "text": query,
+                        },
+                        ...fileObjs
+                    ]
+                }));
+            }
+            else {
+                inputMessages.push(new HumanMessage(query));
+            }
 
             if (pastMessages.length === 0) {
                 inputMessages.unshift(new SystemMessage(systemPrompt));
