@@ -150,6 +150,7 @@ class postgres_custom_query_node extends BaseNode {
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "Postgres Custom Query | Environment variable PG_CONNECTION_STRING is not set."
         );
@@ -257,6 +258,7 @@ class postgres_custom_query_node extends BaseNode {
         try {
           queryParams = [paramsRaw];
         } catch (e) {
+          this.setCredit(0);
           webconsole.error(
             `Postgres Custom Query | Failed to parse Parameters. Error: ${e.message}`
           );
@@ -283,6 +285,7 @@ class postgres_custom_query_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("Postgres Custom Query | Error: " + error.message);
       return {
         rows: null,

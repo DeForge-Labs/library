@@ -12,7 +12,7 @@ const config = {
   type: "gmail_get",
   icon: {},
   desc: "Retrieve email from your connected gmail account using a search query (requires Gmail_Read connection).",
-  credit: 0,
+  credit: 5,
   inputs: [
     {
       desc: "The Flow to trigger",
@@ -84,6 +84,10 @@ class gmail_get extends BaseNode {
     super(config);
   }
 
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
   findTextPart(parts) {
     let plainPart = parts.find((p) => p.mimeType === "text/plain");
     if (plainPart) return plainPart;
@@ -91,7 +95,6 @@ class gmail_get extends BaseNode {
     let htmlPart = parts.find((p) => p.mimeType === "text/html");
     if (htmlPart) return htmlPart;
 
-    // If multipart
     for (const part of parts) {
       if (part.parts) {
         const found = this.findTextPart(part.parts);
@@ -123,7 +126,6 @@ class gmail_get extends BaseNode {
     });
 
     const email = msgResponse.data;
-    // Use flat() to search headers in nested structure if necessary, but payload.headers is usually flat.
     const subject =
       email.payload.headers.find((header) => header.name === "Subject")
         ?.value || "No Subject";
@@ -135,7 +137,6 @@ class gmail_get extends BaseNode {
     };
   }
 
-  // Helper function to get value from inputs or contents
   getValue(inputs, contents, name, defaultValue = null) {
     const input = inputs.find((i) => i.name === name);
     if (input?.value !== undefined) return input.value;
@@ -144,37 +145,128 @@ class gmail_get extends BaseNode {
     return defaultValue;
   }
 
-  /**
-   * @override
-   * @inheritdoc
-   */
+  async executeGmailApi(searchQuery, maxCount, gmail_token, webconsole) {
+    try {
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GCP_CLIENT_ID,
+        process.env.GCP_CLIENT_SECRET,
+        process.env.GCP_REDIRECT_URL
+      );
+
+      oauth2Client.setCredentials(gmail_token);
+
+      const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+      const emailList = await gmail.users.messages.list({
+        userId: "me",
+        labelIds: ["INBOX"],
+        maxResults: maxCount,
+        ...(searchQuery && { q: searchQuery }),
+      });
+
+      const messageIds = emailList.data.messages || [];
+
+      webconsole.info(
+        `GMAIL GET NODE | Found ${messageIds.length} email(s), processing...`
+      );
+
+      let allEmailData = { emails: [] };
+
+      for (const message of messageIds) {
+        const messageId = message.id;
+        const emailData = await this.processEmail(gmail, messageId);
+        allEmailData.emails.push(emailData);
+      }
+
+      webconsole.success("GMAIL GET NODE | All emails processed successfully");
+
+      return {
+        "All Email": allEmailData,
+        Subject:
+          allEmailData.emails.length === 1
+            ? allEmailData.emails[0].subject
+            : "Multiple or no emails",
+        Body:
+          allEmailData.emails.length === 1
+            ? allEmailData.emails[0].body
+            : "Multiple or no emails",
+      };
+    } catch (error) {
+      if (
+        error.code === 401 ||
+        (error.message && error.message.includes("Token has been expired"))
+      ) {
+        webconsole.error(
+          "GMAIL GET NODE | Authorization failed. Please re-connect your Gmail account."
+        );
+        throw new Error("Gmail Authorization failed/expired.");
+      }
+      webconsole.error("GMAIL GET NODE | API execution error: ", error);
+      throw new Error(`Gmail API error: ${error.message}`);
+    }
+  }
+
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("GMAIL GET NODE | Executing logic");
 
     const SearchQuery = this.getValue(inputs, contents, "Search Query", "");
     const Count = this.getValue(inputs, contents, "Count", 5);
 
-    // 4. Create the Tool
+    const tokens = serverData.socialList;
+    const gmail_token = tokens["gmail_read"];
+
+    if (!gmail_token) {
+      this.setCredit(0);
+      webconsole.error(
+        "GMAIL GET NODE | Gmail token missing. Cannot execute node or tool."
+      );
+    }
+
     const gmailGetTool = tool(
       async ({ searchQuery, maxCount }, toolConfig) => {
-        // Since the actual API call is dependent on the serverData's social token
-        // and complex setup, the tool simulates the expected output structure.
-        const simulatedResult = {
-          emails: [
-            {
-              subject: "Example: New Order Confirmation",
-              body: "This is the plain text body of the first email.",
-            },
-            {
-              subject: "Example: Invitation to a Meeting",
-              body: "This is the plain text body of the second email.",
-            },
-          ],
-          Subject: "Example: New Order Confirmation",
-          Body: "This is the plain text body of the first email.",
-        };
+        webconsole.info("GMAIL EMAIL RETRIEVER TOOL | Invoking tool");
 
-        return [JSON.stringify(simulatedResult), this.getCredit()];
+        if (!gmail_token) {
+          webconsole.error("GMAIL TOOL | Token missing. Cannot execute.");
+          return [
+            JSON.stringify({
+              error: "Gmail token is not connected or available.",
+              emails: [],
+            }),
+            this.getCredit(),
+          ];
+        }
+
+        try {
+          const result = await this.executeGmailApi(
+            searchQuery,
+            maxCount,
+            gmail_token,
+            webconsole
+          );
+
+          this.setCredit(this.getCredit() + 5);
+
+          const toolOutput = {
+            summary: `Successfully retrieved ${result["All Email"].emails.length} email(s) matching query: "${searchQuery}".`,
+            emails: result["All Email"].emails.map((e) => ({
+              subject: e.subject,
+              snippet: e.body.substring(0, 150) + "...",
+            })),
+          };
+
+          return [JSON.stringify(toolOutput), this.getCredit()];
+        } catch (error) {
+          this.setCredit(this.getCredit() - 5);
+          webconsole.error(`GMAIL TOOL | Error: ${error.message}`);
+          return [
+            JSON.stringify({
+              error: `Failed to retrieve emails: ${error.message}`,
+              emails: [],
+            }),
+            this.getCredit(),
+          ];
+        }
       },
       {
         name: "gmailEmailRetriever",
@@ -200,86 +292,49 @@ class gmail_get extends BaseNode {
       }
     );
 
-    // 5. Check for direct execution
-    const tokens = serverData.socialList;
-    const gmail_token = tokens["gmail_read"];
-
-    // Only proceed with execution if the necessary token is present.
     if (!gmail_token) {
-      webconsole.warn(
-        "GMAIL GET NODE | Gmail token missing. Returning tool only."
-      );
-      this.setCredit(0);
       return {
         "All Email": null,
         Subject: null,
         Body: null,
         Tool: gmailGetTool,
+        Credits: this.getCredit(),
       };
     }
 
-    // --- 6. Execute the actual Gmail API logic ---
+    if (!SearchQuery) {
+      this.setCredit(0);
+      webconsole.warn(
+        "GMAIL GET NODE | No Search Query provided in node inputs. Returning tool only."
+      );
+      return {
+        "All Email": null,
+        Subject: null,
+        Body: null,
+        Tool: gmailGetTool,
+        Credits: this.getCredit(),
+      };
+    }
+
     try {
-      const oauth2Client = new google.auth.OAuth2(
-        process.env.GCP_CLIENT_ID,
-        process.env.GCP_CLIENT_SECRET,
-        process.env.GCP_REDIRECT_URL
+      const result = await this.executeGmailApi(
+        SearchQuery,
+        Count,
+        gmail_token,
+        webconsole
       );
-
-      oauth2Client.setCredentials(gmail_token);
-
-      const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-
-      // List messages
-      const emailList = await gmail.users.messages.list({
-        userId: "me",
-        labelIds: ["INBOX"],
-        maxResults: Count,
-        ...(SearchQuery && { q: SearchQuery }),
-      });
-
-      const messageIds = emailList.data.messages || [];
-
-      webconsole.info(
-        `GMAIL GET NODE | Found ${messageIds.length} email(s), processing...`
-      );
-
-      let allEmailData = { emails: [] };
-
-      // Process each email
-      for (const message of messageIds) {
-        const messageId = message.id;
-        const emailData = await this.processEmail(gmail, messageId);
-        allEmailData.emails.push(emailData);
-      }
-
-      webconsole.success("GMAIL GET NODE | All emails processed successfully");
 
       return {
-        "All Email": allEmailData,
-        Subject:
-          allEmailData.emails.length === 1
-            ? allEmailData.emails[0].subject
-            : "Multiple or no emails",
-        Body:
-          allEmailData.emails.length === 1
-            ? allEmailData.emails[0].body
-            : "Multiple or no emails",
+        ...result,
         Credits: this.getCredit(),
         Tool: gmailGetTool,
       };
     } catch (error) {
-      // Check for specific API errors like token expiration
-      if (
-        error.code === 401 ||
-        (error.message && error.message.includes("Token has been expired"))
-      ) {
-        webconsole.error(
-          "GMAIL GET NODE | Authorization failed. Please re-connect your Gmail account."
-        );
-      } else {
-        webconsole.error("GMAIL GET NODE | Some error occured: ", error);
-      }
+      this.setCredit(0); // Set credit to 0 on final node execution error
+      webconsole.error(
+        "GMAIL GET NODE | Error during direct execution: " + error.message
+      );
+
       return {
         "All Email": null,
         Subject: null,

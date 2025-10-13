@@ -285,6 +285,7 @@ class send_email_node extends BaseNode {
 
       // Validate SMTP configuration
       if (!smtpConfig.host || !smtpConfig.user || !smtpConfig.password) {
+        this.setCredit(0);
         webconsole.error(
           "Send Email Node | SMTP configuration incomplete. Please set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD environment variables."
         );
@@ -410,6 +411,7 @@ class send_email_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("Send Email Node | Error: " + error.message);
       return {
         success: false,

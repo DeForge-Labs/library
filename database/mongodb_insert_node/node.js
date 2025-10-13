@@ -177,6 +177,7 @@ class mongodb_insert_node extends BaseNode {
         };
       }
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(`MongoDB Insert Error: ${error.message}`);
       throw error;
     } finally {
@@ -206,6 +207,7 @@ class mongodb_insert_node extends BaseNode {
       const connectionString = serverData.envList?.MONGODB_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "MongoDB Insert Node | Environment variable MONGODB_CONNECTION_STRING is not set."
         );
@@ -314,6 +316,7 @@ class mongodb_insert_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("MongoDB Insert Node | Error: " + error.message);
       return {
         insertedIds: null,

@@ -230,6 +230,7 @@ class postgres_create_table_node extends BaseNode {
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "Postgres Create Table Node | Environment variable PG_CONNECTION_STRING is not set."
         );
@@ -346,6 +347,7 @@ class postgres_create_table_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       const errorMessage = `Failed to create table: ${error.message}`;
       webconsole.error("Postgres Create Table Node | " + errorMessage);
       return {

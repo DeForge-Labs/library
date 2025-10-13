@@ -74,17 +74,14 @@ class text_to_json extends BaseNode {
       throw new Error("Input data is not a string.");
     }
 
+    const data = repairJson(Textdata);
+
     // Use a regex to extract content that looks like a JSON object, ignoring surrounding text/newlines.
     // The original regex is good: /^\s*({.*})/ms
     const regex = /^\s*({.*})/ms;
-    const match = Textdata.match(regex);
+    const match = data.match(regex);
 
     if (match) {
-      // repairJson handles parsing and fixing common JSON errors (missing quotes, trailing commas, etc.)
-      const data = repairJson(match[1], {
-        returnObject: true, // Request the parsed object directly
-      });
-
       if (data === null || data === undefined) {
         throw new Error(
           "JSON repair was successful but returned null/undefined."
@@ -94,7 +91,7 @@ class text_to_json extends BaseNode {
       webconsole.success(
         "TEXT TO JSON NODE | Successfully converted and repaired text to JSON"
       );
-      return data;
+      return JSON.parse(data);
     }
 
     // Fallback: If no match, try repairing the whole string, as some LLMs output only the JSON.

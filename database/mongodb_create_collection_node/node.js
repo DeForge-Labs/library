@@ -193,6 +193,7 @@ class mongodb_create_collection_node extends BaseNode {
         message: successMessage,
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(`MongoDB Create Collection Error: ${error.message}`);
       throw error;
     } finally {
@@ -226,6 +227,7 @@ class mongodb_create_collection_node extends BaseNode {
       const connectionString = serverData.envList?.MONGODB_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "MongoDB Create Collection Node | Environment variable MONGODB_CONNECTION_STRING is not set."
         );
@@ -346,6 +348,7 @@ class mongodb_create_collection_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       const errorMessage = `Failed to create collection: ${error.message}`;
       webconsole.error("MongoDB Create Collection Node | " + errorMessage);
       return {

@@ -1,8 +1,8 @@
 import BaseNode from "../../core/BaseNode/node.js";
 import dotenv from "dotenv";
 import { Client, auth } from "twitter-api-sdk";
-import { tool } from "@langchain/core/tools"; // Import tool
-import { z } from "zod"; // Import zod
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
 dotenv.config();
 
@@ -32,7 +32,7 @@ const config = {
       type: "Text",
     },
     {
-      desc: "The tool version of this node, to be used by LLMs", // Add Tool output
+      desc: "The tool version of this node, to be used by LLMs",
       name: "Tool",
       type: "Tool",
     },
@@ -60,7 +60,10 @@ class tweet_post extends BaseNode {
     super(config);
   }
 
-  // Helper function to get value from inputs or contents
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
   getValue(inputs, contents, name, defaultValue = null) {
     const input = inputs.find((i) => i.name === name);
     if (input?.value !== undefined) return input.value;
@@ -72,7 +75,6 @@ class tweet_post extends BaseNode {
   calculateTweetLength(text) {
     const URL_LENGTH = 23;
     const URL_REGEX = /(https?:\/\/[^\s]+)/g;
-    // This regex targets CJK characters which Twitter weights as 2 characters
     const WEIGHTED_CHARS_REGEX =
       /[\u1100-\u11FF\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF01-\uFFEE]/;
 
@@ -85,7 +87,6 @@ class tweet_post extends BaseNode {
     const urlLength = urls.length * URL_LENGTH;
 
     let weightedTextLength = 0;
-    // Iterate over grapheme clusters (characters)
     for (const char of Array.from(textWithoutUrls)) {
       if (char.match(WEIGHTED_CHARS_REGEX)) {
         weightedTextLength += 2;
@@ -103,8 +104,6 @@ class tweet_post extends BaseNode {
     let textAsGraphemes = Array.from(text);
     let currentText = text;
 
-    // Note: The original implementation calls an external `calculateTweetLength`
-    // without `this.`, so I'm assuming it should be `this.calculateTweetLength`.
     while (this.calculateTweetLength(currentText) > MAX_CHARS) {
       textAsGraphemes.pop();
       currentText = textAsGraphemes.join("");
@@ -112,33 +111,140 @@ class tweet_post extends BaseNode {
     return currentText;
   }
 
-  /**
-   * @override
-   * @inheritdoc
-   * * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
-   * @param {import("../../core/BaseNode/node.js").Contents[]} contents
-   * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole
-   * @param {import("../../core/BaseNode/node.js").IServerData} serverData
-   */
+  async executeTweetPost(
+    PostContent,
+    x_token,
+    refreshTokenHandler,
+    webconsole
+  ) {
+    // Trim the post content if it exceeds the limit
+    const MAX_CHARS = 280;
+    let Post = PostContent;
+
+    const tweetLength = this.calculateTweetLength(Post);
+    if (tweetLength > MAX_CHARS) {
+      webconsole.warn(
+        `TWEET POST NODE | Post length (${tweetLength}) exceeds max chars (${MAX_CHARS}). Trimming...`
+      );
+      Post = this.trimTweet(Post);
+    }
+
+    // Initialize Auth Client with Token and Credentials
+    const authClient = new auth.OAuth2User({
+      client_id: process.env.X_CLIENT_ID,
+      client_secret: process.env.X_CLIENT_SECRET,
+      callback: "https://api.deforge.io/api/workflow/connectSocialCallback",
+      scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
+      token: x_token,
+    });
+
+    // Token Refresh Logic
+    if (authClient.isAccessTokenExpired()) {
+      webconsole.info("TWEET POST NODE | Refreshing token");
+      const { token } = await authClient.refreshAccessToken();
+      authClient.token = token;
+
+      // Persist the new token using the handler
+      await refreshTokenHandler.handleTwitterToken(token);
+    }
+
+    const client = new Client(authClient);
+
+    // Get user info to construct the final tweet link
+    const userLookupData = await client.users.findMyUser({
+      "user.fields": ["username"],
+    });
+
+    if (userLookupData.errors && userLookupData.errors.length > 0) {
+      throw new Error(
+        `Error occured while extracting username: ${JSON.stringify(
+          userLookupData.errors
+        )}`
+      );
+    }
+
+    const userXID = userLookupData.data?.username || "";
+    if (!userXID) {
+      throw new Error("No username found for connected account.");
+    }
+
+    webconsole.info(`TWEET POST NODE | Posting tweet as @${userXID}`);
+
+    // Post the tweet
+    const postRes = await client.tweets.createTweet({
+      text: Post.replace(/\\n/g, "\n"), // Replace escaped newlines
+    });
+
+    if (postRes.errors?.length > 0) {
+      throw new Error(
+        `Error occured posting the tweet: ${JSON.stringify(postRes.errors)}`
+      );
+    }
+
+    const tweetID = postRes.data?.id || "";
+    if (!tweetID) {
+      throw new Error("No tweet id received from Twitter API.");
+    }
+
+    const tweetLink = `https://x.com/${userXID}/status/${tweetID}`;
+    webconsole.success(`TWEET POST NODE | Successfully tweeted: ${tweetLink}`);
+
+    return { "Tweet Link": tweetLink };
+  }
+
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("TWEET POST NODE | Starting execution");
 
-    // 4. Create the Tool
+    const executionCredit = this.getCredit();
+    let Post = this.getValue(inputs, contents, "Post", "");
+
+    const tokens = serverData.socialList;
+    const x_token = tokens["twitter"];
+    const refreshTokenHandler = serverData.refreshUtil;
+
+    // Check for tokens only once at the beginning
+    if (!x_token || !Object.keys(tokens).includes("twitter")) {
+      this.setCredit(0);
+      webconsole.error(
+        "TWEET POST NODE | Twitter token missing. Please connect your account."
+      );
+    }
+
     const tweetPostTool = tool(
       async ({ textContent }, toolConfig) => {
         webconsole.info("TWEET POST TOOL | Invoking tool");
 
-        // Simulate success as the actual API call is handled by the main run logic
-        const result = {
-          status: "Awaiting execution",
-          action: `Attempting to post tweet with content: "${textContent.substring(
-            0,
-            50
-          )}..."`,
-          link: "https://x.com/USER_XID/status/TWEET_ID_PENDING_EXECUTION",
-        };
+        if (!x_token) {
+          webconsole.error("TWEET POST TOOL | Token missing. Cannot execute.");
+          return [
+            JSON.stringify({
+              "Tweet Link": null,
+              error: "Twitter token is not connected or available.",
+            }),
+            this.getCredit(),
+          ];
+        }
 
-        return [JSON.stringify(result), this.getCredit()];
+        try {
+          const result = await this.executeTweetPost(
+            textContent,
+            x_token,
+            refreshTokenHandler,
+            webconsole
+          );
+
+          this.setCredit(this.getCredit() + executionCredit);
+          return [JSON.stringify(result), this.getCredit()];
+        } catch (error) {
+          this.setCredit(this.getCredit() - executionCredit);
+          webconsole.error(
+            `TWEET POST TOOL | An error occurred: ${error.message}`
+          );
+          return [
+            JSON.stringify({ "Tweet Link": null, error: error.message }),
+            this.getCredit(),
+          ];
+        }
       },
       {
         name: "twitterPostCreator",
@@ -154,129 +260,47 @@ class tweet_post extends BaseNode {
       }
     );
 
-    let Post = this.getValue(inputs, contents, "Post", "");
+    // If token is missing, return immediately with tool
+    if (!x_token) {
+      return {
+        "Tweet Link": null,
+        Tool: tweetPostTool,
+        Credits: this.getCredit(),
+      };
+    }
 
     if (!Post) {
       webconsole.warn(
         "TWEET POST NODE | Empty post body. Returning tool only."
       );
       this.setCredit(0);
-      return { "Tweet Link": null, Tool: tweetPostTool };
+      return {
+        "Tweet Link": null,
+        Tool: tweetPostTool,
+        Credits: this.getCredit(),
+      };
     }
 
     try {
-      // Trim the post content if it exceeds the limit
-      const MAX_CHARS = 280;
-      const tweetLength = this.calculateTweetLength(Post);
-      if (tweetLength > MAX_CHARS) {
-        webconsole.warn(
-          `TWEET POST NODE | Post length (${tweetLength}) exceeds max chars (${MAX_CHARS}). Trimming...`
-        );
-        Post = this.trimTweet(Post);
-      }
-
-      const tokens = serverData.socialList;
-      if (!Object.keys(tokens).includes("twitter")) {
-        webconsole.error(
-          "TWEET POST NODE | Please connect your twitter account. Returning tool only."
-        );
-        this.setCredit(0);
-        return { "Tweet Link": null, Tool: tweetPostTool };
-      }
-
-      const x_token = tokens["twitter"];
-      if (!x_token) {
-        webconsole.error(
-          "TWEET POST NODE | Twitter token missing. Please reconnect your account. Returning tool only."
-        );
-        this.setCredit(0);
-        return { "Tweet Link": null, Tool: tweetPostTool };
-      }
-
-      const refreshTokenHandler = serverData.refreshUtil;
-
-      // Initialize Auth Client with Token and Credentials
-      const authClient = new auth.OAuth2User({
-        client_id: process.env.X_CLIENT_ID,
-        client_secret: process.env.X_CLIENT_SECRET,
-        callback: "https://api.deforge.io/api/workflow/connectSocialCallback",
-        scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
-        token: x_token,
-      });
-
-      // Token Refresh Logic
-      if (authClient.isAccessTokenExpired()) {
-        webconsole.info("TWEET POST NODE | Refreshing token");
-        const { token } = await authClient.refreshAccessToken();
-        authClient.token = token;
-
-        // Persist the new token using the handler
-        await refreshTokenHandler.handleTwitterToken(token);
-      }
-
-      const client = new Client(authClient);
-
-      // Get user info to construct the final tweet link
-      const userLookupData = await client.users.findMyUser({
-        "user.fields": ["username"],
-      });
-
-      if (userLookupData.errors && userLookupData.errors.length > 0) {
-        throw new Error(
-          `Error occured while extracting username: \n${JSON.stringify(
-            userLookupData.errors
-          )}`
-        );
-      }
-
-      const userXID = userLookupData.data?.username || "";
-      if (!userXID) {
-        webconsole.error(
-          "TWEET POST NODE | No username found for connected account"
-        );
-        return { "Tweet Link": null, Tool: tweetPostTool };
-      }
-
-      webconsole.info(`TWEET POST NODE | Posting tweet as @${userXID}`);
-
-      // Post the tweet
-      const postRes = await client.tweets.createTweet({
-        text: Post.replace(/\\n/g, "\n"), // Replace escaped newlines
-      });
-
-      if (postRes.errors?.length > 0) {
-        webconsole.error(
-          "TWEET POST NODE | Some error occured posting the tweet: ",
-          JSON.stringify(postRes.errors)
-        );
-        return { "Tweet Link": null, Tool: tweetPostTool };
-      }
-
-      const tweetID = postRes.data?.id || "";
-      if (!tweetID) {
-        webconsole.error(
-          "TWEET POST NODE | No error or tweet id received from twitter API"
-        );
-        return { "Tweet Link": null, Tool: tweetPostTool };
-      }
-
-      const tweetLink = `https://x.com/${userXID}/status/${tweetID}`;
-      webconsole.success(
-        `TWEET POST NODE | Successfully tweeted: ${tweetLink}`
+      const result = await this.executeTweetPost(
+        Post,
+        x_token,
+        refreshTokenHandler,
+        webconsole
       );
 
-      this.setCredit(this.getCredit() + config.credit); // Add credit after successful execution
-
       return {
-        "Tweet Link": tweetLink,
+        ...result,
         Credits: this.getCredit(),
         Tool: tweetPostTool,
       };
     } catch (error) {
       webconsole.error(
-        `TWEET POST NODE | An error occurred: ${error.message || error}`
+        `TWEET POST NODE | An error occurred during direct execution: ${
+          error.message || error
+        }`
       );
-      this.setCredit(this.getCredit() - config.credit); // Subtract credit on failure
+      this.setCredit(0);
       return {
         "Tweet Link": null,
         Credits: this.getCredit(),
