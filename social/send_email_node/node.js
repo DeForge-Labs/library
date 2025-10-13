@@ -102,7 +102,7 @@ const config = {
     },
     {
       name: "HTML",
-      type: "Checkbox",
+      type: "CheckBox",
       value: false,
       desc: "Whether the body is HTML (default: false for plain text)",
     },
