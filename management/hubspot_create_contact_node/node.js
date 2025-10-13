@@ -200,7 +200,8 @@ class hubspot_create_contact_node extends BaseNode {
       );
 
       const newTokens = await this.refreshHubSpotToken(
-        hubspotTokens.refresh_token
+        hubspotTokens.refresh_token,
+        webconsole
       );
 
       // Save refreshed tokens to database using refreshTokenHandler
@@ -286,6 +287,7 @@ class hubspot_create_contact_node extends BaseNode {
       const tokens = serverData.socialList;
 
       if (!tokens || !Object.keys(tokens).includes("hubspot")) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Create Contact Node | Please connect your HubSpot account"
         );
@@ -300,6 +302,7 @@ class hubspot_create_contact_node extends BaseNode {
       const hubspotTokens = tokens["hubspot"];
 
       if (!hubspotTokens || !hubspotTokens.access_token) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Create Contact Node | Invalid HubSpot tokens, please reconnect your account"
         );
@@ -315,6 +318,7 @@ class hubspot_create_contact_node extends BaseNode {
       const refreshTokenHandler = serverData.refreshUtil;
 
       if (!refreshTokenHandler) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Create Contact Node | Refresh token handler not available"
         );
@@ -437,6 +441,7 @@ class hubspot_create_contact_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("HubSpot Create Contact Node | Error: " + error.message);
       return {
         success: false,

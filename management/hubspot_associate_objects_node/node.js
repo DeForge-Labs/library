@@ -160,6 +160,7 @@ class hubspot_associate_objects_node extends BaseNode {
         expires_at: Date.now() + tokens.expires_in * 1000,
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(
         `HubSpot Associate Objects | Token refresh failed: ${
           error.response?.data?.message || error.message
@@ -261,6 +262,7 @@ class hubspot_associate_objects_node extends BaseNode {
       const tokens = serverData.socialList;
 
       if (!tokens || !Object.keys(tokens).includes("hubspot")) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Associate Objects Node | Please connect your HubSpot account"
         );
@@ -274,6 +276,7 @@ class hubspot_associate_objects_node extends BaseNode {
       const hubspotTokens = tokens["hubspot"];
 
       if (!hubspotTokens || !hubspotTokens.access_token) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Associate Objects Node | Invalid HubSpot tokens, please reconnect your account"
         );
@@ -287,6 +290,7 @@ class hubspot_associate_objects_node extends BaseNode {
       const refreshTokenHandler = serverData.refreshUtil;
 
       if (!refreshTokenHandler) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Associate Objects Node | Refresh token handler not available"
         );
@@ -416,6 +420,7 @@ class hubspot_associate_objects_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(
         "HubSpot Associate Objects Node | Error: " + error.message
       );

@@ -239,6 +239,7 @@ class postgres_check_table_node extends BaseNode {
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "Postgres Check Table Node | Environment variable PG_CONNECTION_STRING is not set."
         );
@@ -344,6 +345,7 @@ class postgres_check_table_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("Postgres Check Table Node | Error: " + error.message);
       return {
         exists: false,

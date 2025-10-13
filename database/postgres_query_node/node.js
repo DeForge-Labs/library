@@ -217,6 +217,7 @@ class postgres_query_node extends BaseNode {
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "Postgres Query Node | Environment variable PG_CONNECTION_STRING is not set."
         );
@@ -327,6 +328,7 @@ class postgres_query_node extends BaseNode {
         try {
           whereValues = [whereValuesRaw];
         } catch (e) {
+          this.setCredit(0);
           webconsole.error(
             `Postgres Query Node | Failed to parse WhereValues. Error: ${e.message}`
           );
@@ -356,6 +358,7 @@ class postgres_query_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("Postgres Query Node | Error: " + error.message);
       return {
         rows: null,

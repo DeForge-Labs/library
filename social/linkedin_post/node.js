@@ -17,7 +17,7 @@ const config = {
   type: "linkedin_post",
   icon: {},
   desc: "Make a post on LinkedIn with optional text, image, or video (requires LinkedIn connection).",
-  credit: 0,
+  credit: 5,
   inputs: [
     {
       desc: "Text content to post",
@@ -89,7 +89,10 @@ class linkedin_post extends BaseNode {
     super(config);
   }
 
-  // Helper function to get value from inputs or contents
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
   getValue(inputs, contents, name, defaultValue = null) {
     const input = inputs.find((i) => i.name === name);
     if (input?.value !== undefined) return input.value;
@@ -97,8 +100,6 @@ class linkedin_post extends BaseNode {
     if (content?.value !== undefined) return content.value;
     return defaultValue;
   }
-
-  // --- Media Upload Helpers (Keep as is) ---
 
   async downloadFile(url, webconsole) {
     const tempDir = "./runtime_files";
@@ -175,7 +176,7 @@ class linkedin_post extends BaseNode {
         `LINKEDIN POST NODE | Image upload failed: ${errorMessage}`
       );
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      return null;
+      throw new Error(`Image upload failed: ${errorMessage}`);
     }
   }
 
@@ -254,18 +255,101 @@ class linkedin_post extends BaseNode {
         `LINKEDIN POST NODE | Video upload failed: ${errorMessage}`
       );
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      return null;
+      throw new Error(`Video upload failed: ${errorMessage}`);
     }
   }
 
-  /**
-   * @override
-   * @inheritdoc
-   * * @param {import("../../core/BaseNode/node.js").Inputs[]} inputs
-   * @param {import("../../core/BaseNode/node.js").Contents[]} contents
-   * @param {import("../../core/BaseNode/node.js").IWebConsole} webconsole
-   * @param {import("../../core/BaseNode/node.js").IServerData} serverData
-   */
+  async executePost(
+    Content,
+    ImageLink,
+    VideoLink,
+    Visibility,
+    linkedin_token,
+    webconsole
+  ) {
+    if (ImageLink && VideoLink) {
+      throw new Error("Cannot post both an image and a video simultaneously.");
+    }
+
+    const access_token = linkedin_token.access_token;
+    const restClientLinkedin = new RestliClient();
+
+    webconsole.info("LINKEDIN POST NODE | Getting connected user information");
+    const meResponse = await restClientLinkedin.get({
+      resourcePath: "/userinfo",
+      accessToken: access_token,
+    });
+    const author = `urn:li:person:${meResponse.data.sub}`;
+
+    let postContent = {};
+    let postBodyText = Content || "";
+    let mediaUrn = null;
+
+    if (ImageLink) {
+      mediaUrn = await this.uploadImage(
+        restClientLinkedin,
+        access_token,
+        author,
+        ImageLink,
+        webconsole
+      );
+      if (!mediaUrn) {
+        throw new Error("Image upload failed.");
+      }
+      postContent = {
+        content: {
+          media: {
+            id: mediaUrn,
+          },
+        },
+      };
+    } else if (VideoLink) {
+      mediaUrn = await this.uploadVideo(
+        restClientLinkedin,
+        access_token,
+        author,
+        VideoLink,
+        webconsole
+      );
+      if (!mediaUrn) {
+        throw new Error("Video upload failed.");
+      }
+      postContent = {
+        content: {
+          media: {
+            title: Content.substring(0, 100) || "Uploaded Media",
+            id: mediaUrn,
+          },
+        },
+      };
+    }
+
+    const postEntity = {
+      author: author,
+      lifecycleState: "PUBLISHED",
+      visibility: Visibility,
+      commentary: postBodyText,
+      distribution: {
+        feedDistribution: "MAIN_FEED",
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
+      ...postContent,
+    };
+
+    const postsCreateResponse = await restClientLinkedin.create({
+      resourcePath: "/posts",
+      entity: postEntity,
+      accessToken: access_token,
+      versionString: "202504",
+    });
+
+    const postId = postsCreateResponse.createdEntityId;
+    const postLink = `https://www.linkedin.com/feed/update/${postId}/`;
+
+    return { "Post Link": postLink };
+  }
+
   async run(inputs, contents, webconsole, serverData) {
     webconsole.info("LINKEDIN POST NODE | Starting execution");
 
@@ -273,24 +357,57 @@ class linkedin_post extends BaseNode {
     const VideoLink = this.getValue(inputs, contents, "Video Link", "");
     const ImageLink = this.getValue(inputs, contents, "Image Link", "");
     const Visibility = this.getValue(inputs, contents, "Visibility", "PUBLIC");
+    const executionCredit = this.getCredit();
 
-    // 4. Create the Tool
+    const tokens = serverData.socialList;
+    const linkedin_token = tokens["linkedin"];
+
+    if (!linkedin_token || !linkedin_token.access_token) {
+      this.setCredit(0);
+      webconsole.error(
+        "LINKEDIN POST NODE | LinkedIn token missing. Please connect your account. Returning tool only."
+      );
+    }
+
     const linkedInPostTool = tool(
       async ({ content, imageUrl, videoUrl, visibility }, toolConfig) => {
-        // The tool is used by the agent to structure the request.
-        // We return a simulated success message describing what would happen.
-        const mediaType = imageUrl ? "Image" : videoUrl ? "Video" : "Text-only";
-        const result = {
-          status: "Awaiting execution",
-          action: `Attempting to post to LinkedIn with content: "${content.substring(
-            0,
-            50
-          )}..." and media: ${mediaType}`,
-          postLink:
-            "https://www.linkedin.com/feed/update/POST_ID_PENDING_EXECUTION/",
-        };
+        webconsole.info("LINKEDIN POST CREATOR TOOL | Invoking tool");
 
-        return [JSON.stringify(result), this.getCredit()];
+        if (!linkedin_token || !linkedin_token.access_token) {
+          webconsole.error("LINKEDIN TOOL | Token missing. Cannot execute.");
+          return [
+            JSON.stringify({
+              "Post Link": null,
+              error: "LinkedIn token is not connected or available.",
+            }),
+            this.getCredit(),
+          ];
+        }
+
+        try {
+          const result = await this.executePost(
+            content,
+            imageUrl,
+            videoUrl,
+            visibility,
+            linkedin_token,
+            webconsole
+          );
+
+          this.setCredit(this.getCredit() + executionCredit);
+
+          return [JSON.stringify(result), this.getCredit()];
+        } catch (error) {
+          this.setCredit(this.getCredit() - executionCredit);
+          webconsole.error(`LINKEDIN POST TOOL | Error: ${error.message}`);
+          return [
+            JSON.stringify({
+              "Post Link": null,
+              error: error.message,
+            }),
+            this.getCredit(),
+          ];
+        }
       },
       {
         name: "linkedinPostCreator",
@@ -331,7 +448,16 @@ class linkedin_post extends BaseNode {
       }
     );
 
-    // 5. Check for direct execution
+    // If token is missing, return immediately with tool
+    if (!linkedin_token || !linkedin_token.access_token) {
+      return {
+        "Post Link": null,
+        Tool: linkedInPostTool,
+        Credits: this.getCredit(),
+      };
+    }
+
+    // Check for direct execution
     if (!Content && !ImageLink && !VideoLink) {
       webconsole.info(
         "LINKEDIN POST NODE | No content provided. Returning tool only."
@@ -340,119 +466,33 @@ class linkedin_post extends BaseNode {
       return {
         "Post Link": null,
         Tool: linkedInPostTool,
+        Credits: this.getCredit(),
       };
     }
 
-    const tokens = serverData.socialList;
-    const linkedin_token = tokens["linkedin"];
-
-    if (!linkedin_token || !linkedin_token.access_token) {
-      webconsole.error(
-        "LINKEDIN POST NODE | LinkedIn token missing. Please connect your account. Returning tool only."
-      );
-      this.setCredit(0);
-      return {
-        "Post Link": null,
-        Tool: linkedInPostTool,
-      };
-    }
-
-    // --- 6. Execute the actual LinkedIn API logic ---
     try {
-      const access_token = linkedin_token.access_token;
-      const restClientLinkedin = new RestliClient();
-
-      // 6.1 Get Author URN
-      webconsole.info(
-        "LINKEDIN POST NODE | Getting connected user information"
-      );
-      const meResponse = await restClientLinkedin.get({
-        resourcePath: "/userinfo",
-        accessToken: access_token,
-      });
-      const author = `urn:li:person:${meResponse.data.sub}`;
-
-      let postContent = {};
-
-      // 6.2 Handle Media Upload (Image has priority over Video)
-      if (ImageLink) {
-        const imageUrn = await this.uploadImage(
-          restClientLinkedin,
-          access_token,
-          author,
-          ImageLink,
-          webconsole
-        );
-        if (!imageUrn) {
-          return { "Post Link": null, Tool: linkedInPostTool };
-        }
-        postContent = {
-          content: {
-            media: {
-              id: imageUrn,
-            },
-          },
-        };
-      } else if (VideoLink) {
-        const videoUrn = await this.uploadVideo(
-          restClientLinkedin,
-          access_token,
-          author,
-          VideoLink,
-          webconsole
-        );
-        if (!videoUrn) {
-          return { "Post Link": null, Tool: linkedInPostTool };
-        }
-        postContent = {
-          content: {
-            media: {
-              title: Content.substring(0, 100) || "Uploaded Video", // Use part of the content as title
-              id: videoUrn,
-            },
-          },
-        };
-      }
-
-      // 6.3 Create Post Entity
-      const postEntity = {
-        author: author,
-        lifecycleState: "PUBLISHED",
-        visibility: Visibility,
-        commentary: Content,
-        distribution: {
-          feedDistribution: "MAIN_FEED",
-          targetEntities: [],
-          thirdPartyDistributionChannels: [],
-        },
-        ...postContent,
-      };
-
-      // 6.4 Send Post Request
-      const postsCreateResponse = await restClientLinkedin.create({
-        resourcePath: "/posts",
-        entity: postEntity,
-        accessToken: access_token,
-        versionString: "202504",
-      });
-
-      const postId = postsCreateResponse.createdEntityId;
-      const postLink = `https://www.linkedin.com/feed/update/${postId}/`;
-      webconsole.success(
-        `LINKEDIN POST NODE | Post created successfully: ${postLink}`
+      // Execute the post creation directly
+      const result = await this.executePost(
+        Content,
+        ImageLink,
+        VideoLink,
+        Visibility,
+        linkedin_token,
+        webconsole
       );
 
+      // Successfully posted, return results
       return {
-        "Post Link": postLink,
+        ...result,
         Credits: this.getCredit(),
         Tool: linkedInPostTool,
       };
     } catch (error) {
-      // Log full error for debugging
-      const errorMessage = error.response
-        ? JSON.stringify(error.response.data, null, 2)
-        : error.message;
-      webconsole.error("LINKEDIN POST NODE | API Error: ", errorMessage);
+      // Failure during direct execution
+      this.setCredit(0);
+      webconsole.error(
+        "LINKEDIN POST NODE | Error during direct execution: " + error.message
+      );
 
       return {
         "Post Link": null,

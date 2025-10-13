@@ -189,6 +189,7 @@ class mongodb_check_collection_node extends BaseNode {
         sampleDocument: sampleDocument,
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(`MongoDB Check Collection Error: ${error.message}`);
       throw error;
     } finally {
@@ -222,6 +223,7 @@ class mongodb_check_collection_node extends BaseNode {
       const connectionString = serverData.envList?.MONGODB_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "MongoDB Check Collection Node | Environment variable MONGODB_CONNECTION_STRING is not set."
         );
@@ -333,6 +335,7 @@ class mongodb_check_collection_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(
         "MongoDB Check Collection Node | Error: " + error.message
       );

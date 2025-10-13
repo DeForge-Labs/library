@@ -179,6 +179,7 @@ class postgres_insert_node extends BaseNode {
       const connectionString = serverData.envList?.PG_CONNECTION_STRING;
 
       if (!connectionString) {
+        this.setCredit(0);
         webconsole.error(
           "Postgres Insert Node | Environment variable PG_CONNECTION_STRING is not set."
         );
@@ -286,6 +287,7 @@ class postgres_insert_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error("Postgres Insert Node | Error: " + error.message);
       return {
         rows: null,

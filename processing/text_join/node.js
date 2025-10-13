@@ -61,9 +61,10 @@ class text_join extends BaseNode {
    */
   getValue(inputs, contents, name, defaultValue = null) {
     const input = inputs.find((i) => i.name === name);
-    if (input?.value !== undefined) return input.value;
+    if (input?.value !== undefined && input?.value !== null) return input.value;
     const content = contents.find((c) => c.name === name);
-    if (content?.value !== undefined) return content.value;
+    if (content?.value !== undefined && content?.value !== null)
+      return content.value;
     return defaultValue;
   }
 
@@ -102,7 +103,7 @@ class text_join extends BaseNode {
     webconsole.info("TEXT JOIN NODE | Executing logic");
 
     let inputTexts = this.getValue(inputs, contents, "Text", null);
-    const separator = this.getValue(inputs, contents, "Separator", ",");
+    const separator = this.getValue(inputs, contents, "Separator", "");
 
     // Ensure inputTexts is an array if present, as the node expects Text[]
     if (inputTexts && !Array.isArray(inputTexts)) {

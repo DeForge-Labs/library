@@ -258,6 +258,7 @@ class hubspot_search_companies_node extends BaseNode {
       const tokens = serverData.socialList;
 
       if (!tokens || !Object.keys(tokens).includes("hubspot")) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Search Companies Node | Please connect your HubSpot account"
         );
@@ -272,6 +273,7 @@ class hubspot_search_companies_node extends BaseNode {
       const hubspotTokens = tokens["hubspot"];
 
       if (!hubspotTokens || !hubspotTokens.access_token) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Search Companies Node | Invalid HubSpot tokens, please reconnect your account"
         );
@@ -286,6 +288,7 @@ class hubspot_search_companies_node extends BaseNode {
       const refreshTokenHandler = serverData.refreshUtil;
 
       if (!refreshTokenHandler) {
+        this.setCredit(0);
         webconsole.error(
           "HubSpot Search Companies Node | Refresh token handler not available"
         );
@@ -388,6 +391,7 @@ class hubspot_search_companies_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
+      this.setCredit(0);
       webconsole.error(
         "HubSpot Search Companies Node | Error: " + error.message
       );
