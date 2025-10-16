@@ -559,7 +559,7 @@ class claude_chat_node extends BaseNode {
             for (const fileLink of files) {
                 fileCount += 1;
                 if (fileCount > 5) {
-                    webconsole.warn("OPENAI NODE | Maximum of 5 files are allowed, skipping remaining files");
+                    webconsole.warn("LAUDENODE | Maximum of 5 files are allowed, skipping remaining files");
                     break;
                 }
                 try {
@@ -583,14 +583,14 @@ class claude_chat_node extends BaseNode {
             
                         // If file size is larger than 25 MB, return false
                         if (contentLength && parseInt(contentLength) > 25 * 1024 * 1024) {
-                            webconsole.error(`OPENAI NODE | File at ${fileLink} exceeds the 25 MB size limit. Skipping this file.`);
+                            webconsole.error(`LAUDENODE | File at ${fileLink} exceeds the 25 MB size limit. Skipping this file.`);
                             skipFile = true;
                             return false;
                         }
             
                         // If file type is not image, return false
                         if (contentType && !contentType.startsWith('image/') && !contentType.startsWith('application/pdf')) {
-                            webconsole.error(`OPENAI NODE | File at ${fileLink} is not an image or PDF (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
+                            webconsole.error(`LAUDENODE | File at ${fileLink} is not an image or PDF (content-type: ${contentType}). Skipping this file. If you believe this is an error, please upload the file to some other service`);
                             skipFile = true;
                             return false;
                         }
@@ -632,13 +632,13 @@ class claude_chat_node extends BaseNode {
                 }
             
                 } catch (error) {
-                    webconsole.error("OPENAI NODE | Some problem occured parsing file, skipping: ", error);                    
+                    webconsole.error("LAUDENODE | Some problem occured parsing file, skipping: ", error);                    
                 }
             }
             
             const inputMessages = [];
             if (fileObjs.length > 0) {
-                webconsole.info(`OPENAI NODE | Attaching ${fileObjs.length} files to the prompt`);
+                webconsole.info(`LAUDENODE | Attaching ${fileObjs.length} files to the prompt`);
                 inputMessages.push(new HumanMessage({
                     content: [
                         {

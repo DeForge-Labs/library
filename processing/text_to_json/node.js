@@ -1,5 +1,5 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import { repairJson } from "@toolsycc/json-repair";
+import { jsonrepair } from "jsonrepair";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -74,7 +74,7 @@ class text_to_json extends BaseNode {
       throw new Error("Input data is not a string.");
     }
 
-    const data = repairJson(Textdata);
+    const data = jsonrepair(Textdata);
 
     // Use a regex to extract content that looks like a JSON object, ignoring surrounding text/newlines.
     // The original regex is good: /^\s*({.*})/ms
@@ -96,13 +96,11 @@ class text_to_json extends BaseNode {
 
     // Fallback: If no match, try repairing the whole string, as some LLMs output only the JSON.
     try {
-      const data = repairJson(Textdata, {
-        returnObject: true,
-      });
+      const data = jsonrepair(Textdata);
       webconsole.success(
         "TEXT TO JSON NODE | Successfully repaired whole input string to JSON"
       );
-      return data;
+      return JSON.parse(data);
     } catch (e) {
       throw new Error(
         "Could not find or parse valid JSON within the input text."
