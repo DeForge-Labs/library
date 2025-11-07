@@ -236,14 +236,20 @@ class dub_media extends BaseNode {
                     
                     fs.renameSync(`./runtime_files/${fileName}`, newFilePath);
                     const dubFileStream = fs.createReadStream(newFilePath)
-                    
-                    const dubLink = await serverData.s3Util.addFile(
+
+                    const { success, fileURL: dubLink, message } = await serverData.s3Util.addFile(
                         newFileName,
                         dubFileStream,
                         dubFileType.mime,
                     );
 
-                    webconsole.success("DUB MEDIA NODE | Succefully uploaded to 0x0: ", dubLink);
+                    if (!success) {
+                        webconsole.error("DUB MEDIA NODE | Failed to upload dubbed media: ", message);
+                        fs.unlinkSync(newFilePath);
+                        throw new Error("Failed to upload dubbed media");
+                    }
+
+                    webconsole.success("DUB MEDIA NODE | Succefully uploaded: ", dubLink);
                     fs.unlinkSync(newFilePath);
 
                     return {

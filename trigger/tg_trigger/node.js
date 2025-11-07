@@ -166,12 +166,19 @@ class tg_trigger extends BaseNode {
 
                     // Get a readable stream of the downloaded voice file
                     const readVoiceFile = fs.createReadStream(filePath);
-                    voiceFileURL = await serverData.s3Util.addFile(
+                    const { success, fileURL, message } = await serverData.s3Util.addFile(
                         `${uuidv4()}.${fileType.ext}`,
                         readVoiceFile,
                         fileType.mime,
                     );
                     fs.unlinkSync(filePath);
+
+                    if (!success) {
+                        webconsole.error("TG NODE | Upload to S3 failed: ", message);
+                        throw new Error("Upload to S3 failed");
+                    }
+
+                    voiceFileURL = fileURL;
                 }
             }
 

@@ -241,15 +241,18 @@ class lyria_node extends BaseNode {
         await fs.open(audioFilePath, "r")
       ).createReadStream();
 
-      // Assuming s3Util.addFile exists and returns the permanent URL
-      const uploadedUrl = await serverData.s3Util.addFile(
+      const { success, fileURL, message } = await serverData.s3Util.addFile(
         path.basename(audioFilePath),
         audioFileStream,
         audioFileMime.mime
       );
+
+      if (!success) {
+        throw new Error(`Failed to upload audio file to S3: ${message}`);
+      }
       await fs.unlink(audioFilePath);
 
-      return { "Audio Link": uploadedUrl };
+      return { "Audio Link": fileURL };
     } catch (error) {
       // Clean up temporary file on error
       if (audioFilePath) {
