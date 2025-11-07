@@ -108,41 +108,114 @@ export interface IRefreshUtil {
 };
 
 /**
+ * Response structure for S3 file upload operations
+ */
+export interface S3UploadResponse {
+    success: boolean;
+    fileURL?: string;
+    message?: string;
+}
+
+/**
+ * Response structure for S3 file URL retrieval operations
+ */
+export interface S3FileURLResponse {
+    success: boolean;
+    fileURL: string | null;
+    message: string;
+}
+
+/**
+ * Response structure for S3 file list operations
+ */
+export interface S3FileListResponse {
+    success: boolean;
+    files: Array<{
+        fileName: string;
+        fileKey: string;
+        bucket: string;
+    }>;
+    message: string;
+}
+
+/**
+ * Response structure for S3 file operations (delete, rename)
+ */
+export interface S3OperationResponse {
+    success: boolean;
+    message: string;
+}
+
+/**
  * Defines the structure of the s3Util in serverData
  */
 export interface IS3Util {
-
     /**
      * Method to upload a file to S3
-     * @param key The key under which to store the file
-     * @param body The file content
+     * @param fileName The name of the file
+     * @param body The file content (Buffer or ReadableStream)
      * @param contentType The MIME type of the file
-     * @param doExpire Whether the file should expire
-     * @param bucket The name of the S3 bucket
+     * @param doExpire Whether the file entry should have an expiration date (defaults to true, expires in 7 days)
+     * @param bucket The name of the S3 bucket (defaults to "public_main")
+     * @param userId Optional user ID to associate the file with a specific user
+     * @returns Promise with upload result including success status, file URL, and message
      */
-    addFile(key: string, body: ReadableStream, contentType: string, doExpire: boolean, bucket: string): Promise<{success: boolean, fileURL?: string, message?: string}>;
+    addFile(
+        fileName: string,
+        body: ReadableStream,
+        contentType: string,
+        doExpire?: boolean,
+        bucket?: string,
+        userId?: string | null
+    ): Promise<S3UploadResponse>;
 
     /**
      * Method to retrieve a file from S3
      * @param key The key of the file to retrieve
-     * @param bucket The name of the S3 bucket
+     * @param bucket The name of the S3 bucket (defaults to "public_main")
      * @returns The file content as a ReadableStream, or undefined if the file does not exist
      */
-    getFile(key: string, bucket: string) : Promise<ReadableStream | undefined>;
+    getFile(key: string, bucket?: string): Promise<ReadableStream | undefined>;
 
     /**
      * Method to retrieve the URL of a file from S3
      * @param key The key of the file to retrieve
-     * @param bucket The name of the S3 bucket
+     * @param bucket The name of the S3 bucket (defaults to "public_main")
+     * @param userId Optional user ID for private bucket access validation
+     * @returns Promise with file URL response including success status, URL, and message
      */
-    getFileURL(key: string, bucket: string) : Promise<string | null>;
+    getFileURL(key: string, bucket?: string, userId?: string | null): Promise<S3FileURLResponse>;
 
     /**
-     * Method to delete a file from S3
+     * Method to delete a file from S3 and its record from the database
      * @param key The key of the file to delete
-     * @param bucket The name of the S3 bucket
+     * @param bucket The name of the S3 bucket (defaults to "public_main")
+     * @param userId Optional user ID for ownership validation
+     * @returns Promise with operation result including success status and message
      */
-    deleteFile(key: string, bucket: string) : void;
+    deleteFile(key: string, bucket?: string, userId?: string | null): Promise<S3OperationResponse>;
+
+    /**
+     * Method to retrieve a list of files uploaded by a specific user
+     * @param userId The ID of the user
+     * @returns Promise with list of files including fileName, fileKey, and bucket
+     */
+    getFileListByUser(userId: string): Promise<S3FileListResponse>;
+
+    /**
+     * Method to rename a file in S3 (updates the database record, not the S3 key)
+     * @param oldKey The current key of the file
+     * @param newFileName The new file name
+     * @param bucket The name of the S3 bucket (defaults to "public_main")
+     * @param userId Optional user ID for ownership validation
+     * @returns Promise with operation result including success status and message
+     */
+    renameFile(
+        oldKey: string,
+        newFileName: string,
+        bucket?: string,
+        userId?: string | null
+    ): Promise<S3OperationResponse>;
 }
 
 /**
