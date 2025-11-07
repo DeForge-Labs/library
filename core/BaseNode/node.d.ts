@@ -74,11 +74,7 @@ export interface IS3Util {
      * @param doExpire Whether the file should expire
      * @param bucket The name of the S3 bucket
      */
-    addFile(key: string, body: ReadableStream, contentType: string, doExpire: boolean, bucket: string): Promise<{
-        success: boolean;
-        fileURL?: string;
-        message?: string;
-    }>;
+    addFile(key: string, body: ReadableStream, contentType: string, doExpire: boolean, bucket: string): Promise<string | undefined>;
     /**
      * Method to retrieve a file from S3
      * @param key The key of the file to retrieve
