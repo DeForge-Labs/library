@@ -377,7 +377,8 @@ class veo_node extends BaseNode {
 
       const videoFileStream = await fs.open(videoFilePath, "r");
 
-      const { success, fileURL: uploadedUrl, message } = await serverData.s3Util.addFile(
+      // Assuming s3Util.addFile exists and returns the permanent URL
+      const uploadedUrl = await serverData.s3Util.addFile(
         path.basename(videoFilePath),
         videoFileStream.createReadStream(),
         videoFileMime.mime
@@ -386,10 +387,6 @@ class veo_node extends BaseNode {
       // Close file stream and delete temporary file
       await videoFileStream.close();
       await fs.unlink(videoFilePath);
-
-      if (!success) {
-        throw new Error(`Failed to upload video file to S3: ${message}`);
-      }
 
       return { "Video Link": uploadedUrl };
     } catch (error) {

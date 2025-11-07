@@ -224,17 +224,12 @@ class text_to_speech extends BaseNode {
 
             const audioFileStream = fs.createReadStream(`./runtime_files/${fileName}`);
 
-            const { success, fileURL: audioLink, message } = await serverData.s3Util.addFile(
+            const audioLink = await serverData.s3Util.addFile(
                 fileName,
                 audioFileStream,
                 fileMimeType.mime,
             );
             fs.unlinkSync(`./runtime_files/${fileName}`);
-
-            if (!success) {
-                webconsole.error("TEXT TO SPEECH NODE | Failed to upload audio: ", message);
-                throw new Error("Failed to upload audio");
-            }
 
 
             webconsole.success("TEXT TO SPEECH NODE | Successfully uploaded audio");
