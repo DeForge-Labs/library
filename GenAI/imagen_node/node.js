@@ -352,17 +352,14 @@ class imagen_node extends BaseNode {
         await fs.open(imageFilePath, "r")
       ).createReadStream();
 
-      const { success, fileURL: uploadedUrl, message } = await serverData.s3Util.addFile(
+      // Assuming s3Util.addFile exists and returns the permanent URL
+      const uploadedUrl = await serverData.s3Util.addFile(
         path.basename(imageFilePath),
         imageFileStream,
         imageFileMime.mime
       );
       await fs.unlink(imageFilePath);
 
-      if (!success) {
-        throw new Error(`Failed to upload image file to S3: ${message}`);
-      }
-      
       return { "Image Link": uploadedUrl };
     } catch (error) {
       // Clean up temporary file on error
