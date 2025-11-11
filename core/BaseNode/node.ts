@@ -219,6 +219,42 @@ export interface IS3Util {
 }
 
 /**
+ * Defines the structure of the API metadata
+ */
+export interface IAPIMetadata {
+    ip: string;
+    method: string;
+    url: string;
+    protocol: string;
+    originalUrl: string;
+    baseUrl: string;
+    timestamp: number;
+}
+
+/**
+ * Defines the structure of the API payload
+ */
+export interface IAPI {
+
+    /**
+     * Body of the API request
+     */
+    body: Record<string, any>;
+    /**
+     * Headers of the API request
+     */
+    headers: Record<string, any>;
+    /**
+     * Query parameters of the API request
+     */
+    query: Record<string, any>;
+    /**
+     * Metadata of the API request
+     */
+    metadata: IAPIMetadata;
+}
+
+/**
  * Defines the structure of the widget payload
  */
 export interface IWidget {
@@ -313,6 +349,13 @@ export interface IServerData {
      * This object will only be include if the workflow includes a Chat Bot Trigger
      */
     chatbotPayload?: IChatbot;
+    /**
+     * The API payload received from an API Trigger
+     * 
+     * @remarks
+     * This object will only be included if the workflow includes an API Trigger
+     */
+    apiPayload?: IAPI;
     /**
      * The emailID of the user who received an email
      * 
