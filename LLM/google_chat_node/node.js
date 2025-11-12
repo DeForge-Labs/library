@@ -132,8 +132,8 @@ const config = {
             type: "Slider",
             value: 0.5,
             min: 0,
-            max: 1,
-            step: 0.01,
+            max: 2,
+            step: 0.1,
         },
         {
             desc: "Save chat as context for LLM",

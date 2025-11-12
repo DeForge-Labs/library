@@ -93,9 +93,10 @@ const config = {
             desc: "The LLM model",
             name: "Model",
             type: "select",
-            value: "claude-3-7-sonnet-latest",
+            value: "claude-sonnet-4-0",
             options: [
                 "claude-sonnet-4-5",
+                "claude-haiku-4-5",
                 "claude-opus-4-1",
                 "claude-opus-4-0",
                 "claude-sonnet-4-0",
@@ -133,8 +134,8 @@ const config = {
             type: "Slider",
             value: 0.5,
             min: 0,
-            max: 1,
-            step: 0.01,
+            max: 2,
+            step: 0.1,
         },
         {
             desc: "Save chat as context for LLM",
@@ -371,6 +372,7 @@ class claude_chat_node extends BaseNode {
 
             const modelPricingInput = {
                 "claude-sonnet-4-5": 2000,
+                "claude-haiku-4-5": 667,
                 "claude-opus-4-1": 10000,
                 "claude-opus-4-0": 10000,
                 "claude-sonnet-4-0": 2000,
@@ -406,6 +408,7 @@ class claude_chat_node extends BaseNode {
             // Input pricing per million tokens in deforge credits
             const modelPricingInput = {
                 "claude-sonnet-4-5": 2000,
+                "claude-haiku-4-5": 667,
                 "claude-opus-4-1": 10000,
                 "claude-opus-4-0": 10000,
                 "claude-sonnet-4-0": 2000,
@@ -416,6 +419,7 @@ class claude_chat_node extends BaseNode {
             // Output pricing per million tokens in deforge credits
             const modelPricingOutput = {
                 "claude-sonnet-4-5": 10000,
+                "claude-haiku-4-5": 3333,
                 "claude-opus-4-1": 50000,
                 "claude-opus-4-0": 50000,
                 "claude-sonnet-4-0": 10000,
@@ -461,6 +465,7 @@ class claude_chat_node extends BaseNode {
             const model = contents.filter((e) => e.name === "Model")[0].value || "claude-3-7-sonnet-latest";
             const modelMap = {
                 "claude-sonnet-4-5": "anthropic/claude-sonnet-4.5",
+                "claude-haiku-4-5": "anthropic/claude-haiku-4.5",
                 "claude-opus-4-1": "anthropic/claude-opus-4.1",
                 "claude-opus-4-0": "anthropic/claude-opus-4",
                 "claude-sonnet-4-0": "anthropic/claude-sonnet-4",
