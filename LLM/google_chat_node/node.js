@@ -95,6 +95,7 @@ const config = {
             type: "select",
             value: "gemini-2.0-flash",
             options: [
+                "gemini-3-pro-preview",
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
                 "gemini-2.5-flash-lite",
@@ -368,6 +369,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing per million tokens in deforge credits less than 200K tokens
             const modelPricingInputUnder200 = {
+                "gemini-3-pro-preview": 1334,
                 "gemini-2.5-pro": 834,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -377,6 +379,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing per million tokens in deforge credits more than 200K tokens
             const modelPricingInputOver200 = {
+                "gemini-3-pro-preview": 2667,
                 "gemini-2.5-pro": 1667,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -408,18 +411,10 @@ class google_chat_node extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("GOOGLE NODE | Starting LangGraph-based chat node");
-            
-            // Model tokens per minute limits (RPM * avg tokens per request, very approximate)
-            const modelTokensPerMinute = {
-                "gemini-2.5-pro": 2000000,
-                "gemini-2.5-flash": 1000000,
-                "gemini-2.5-flash-lite-preview-06-17": 4000000,
-                "gemini-2.0-flash": 4000000,
-                "gemini-2.0-flash-lite": 4000000,
-            };
 
             // Model pricing per million tokens in deforge credits less than 200K tokens
             const modelPricingInputUnder200 = {
+                "gemini-3-pro-preview": 1334,
                 "gemini-2.5-pro": 834,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -429,6 +424,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing per million tokens in deforge credits more than 200K tokens
             const modelPricingInputOver200 = {
+                "gemini-3-pro-preview": 2667,
                 "gemini-2.5-pro": 1667,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -438,6 +434,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing output per million tokens in deforge credits less than 200K tokens
             const modelPricingOutputUnder200 = {
+                "gemini-3-pro-preview": 8000,
                 "gemini-2.5-pro": 6667,
                 "gemini-2.5-flash": 1667,
                 "gemini-2.5-flash-lite-preview-06-17": 267,
@@ -447,6 +444,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing output per million tokens in deforge credits more than 200K tokens
             const modelPricingOutputOver200 = {
+                "gemini-3-pro-preview": 12000,
                 "gemini-2.5-pro": 10000,
                 "gemini-2.5-flash": 1667,
                 "gemini-2.5-flash-lite-preview-06-17": 267,
@@ -491,25 +489,12 @@ class google_chat_node extends BaseNode {
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "gemini-2.0-flash";
             const modelMap = {
+                "gemini-3-pro-preview": "google/gemini-3-pro-preview",
                 "gemini-2.5-pro": "google/gemini-2.5-pro",
                 "gemini-2.5-flash": "google/gemini-2.5-flash",
                 "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
                 "gemini-2.0-flash": "google/gemini-2.0-flash-001",
                 "gemini-2.0-flash-lite": "google/gemini-2.0-flash-lite-001",
-            }
-
-            
-            function estimateTokens(text) {
-                return Math.ceil(text.length / 4);
-            }
-
-            // Trim query if needed to fit within tokens per minute limit
-            const maxTokensPerMinute = modelTokensPerMinute[model] || 32000;
-            const queryTokens = estimateTokens(query);
-            if (queryTokens > maxTokensPerMinute) {
-                const maxChars = maxTokensPerMinute * 4;
-                query = query.slice(-maxChars);
-                webconsole.warn(`GOOGLE NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
             }
             
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
