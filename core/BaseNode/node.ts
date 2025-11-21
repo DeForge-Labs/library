@@ -574,4 +574,12 @@ export default abstract class BaseNode {
     estimateUsage(inputs: Inputs[], contents: Contents[], serverData: IServerData): number {
         return this.credit;
     }
+
+    /**
+     * Destroy method to be implemented to end db connections
+     * @returns
+     */
+    destroy(): Promise<void> | void {
+        return;
+    }
 }

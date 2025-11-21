@@ -130,4 +130,11 @@ export default class BaseNode {
     estimateUsage(inputs, contents, serverData) {
         return this.credit;
     }
+    /**
+     * Destroy method to be implemented to end db connections
+     * @returns
+     */
+    destroy() {
+        return;
+    }
 }

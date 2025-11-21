@@ -437,5 +437,10 @@ export default abstract class BaseNode {
      * @returns The estimated credit usage
      */
     estimateUsage(inputs: Inputs[], contents: Contents[], serverData: IServerData): number;
+    /**
+     * Destroy method to be implemented to end db connections
+     * @returns
+     */
+    destroy(): Promise<void> | void;
 }
 export {};
