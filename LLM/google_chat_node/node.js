@@ -251,19 +251,8 @@ class google_chat_node extends BaseNode {
             const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
             const messages = await chatHistory.getMessages();
             
-            const langChainMessages = messages.map(msg => {
-                if (msg.getType() === 'human') {
-                    return new HumanMessage(msg.content);
-                } else if (msg.getType() === 'ai') {
-                    return new AIMessage(msg.content);
-                } else if (msg.getType() === 'system') {
-                    return new SystemMessage(msg.content);
-                }
-                return msg;
-            });
-            
-            webconsole.info(`GOOGLE NODE | Loaded ${langChainMessages.length} messages from chat history`);
-            return langChainMessages;
+            webconsole.info(`GOOGLE NODE | Loaded ${messages.length} messages from chat history`);
+            return messages;
         } catch (error) {
             webconsole.error(`GOOGLE NODE | Error loading chat history: ${error.message}`);
             return [];
@@ -714,11 +703,21 @@ class google_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+            const finalState = await app.getState(config);
+            const thisTurnMessages = finalState.values.messages.slice(pastMessages.length);
 
             const resJSON = response.toJSON();
 
-            const inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
-            const outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+            let inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
+            let outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+
+            thisTurnMessages.forEach((msg) => {
+                if (msg.type === "ai") {
+                    const msgJSON = msg.toJSON();
+                    inputTokenUsage += msgJSON.kwargs.usage_metadata?.input_tokens || 0;
+                    outputTokenUsage += msgJSON.kwargs.usage_metadata?.output_tokens || 0;
+                }
+            });
 
             const inputCreditRate = inputTokenUsage > 200000 ? modelPricingInputOver200[model] : modelPricingInputUnder200[model];
             const outputCreditRate = outputTokenUsage > 200000 ? modelPricingOutputOver200[model] : modelPricingOutputUnder200[model];
@@ -731,10 +730,9 @@ class google_chat_node extends BaseNode {
 
             if (saveMemory) {
                 try {
-                    const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
-                    
-                    await chatHistory.addUserMessage(query);
-                    await chatHistory.addAIMessage(response.content);
+                    const chatHistory = await this.initializeChatHistory(sessionId, webconsole);                    
+                    const finalMessages = [...inputMessages, ...thisTurnMessages];
+                    await chatHistory.addMessages(finalMessages);
                     
                     webconsole.success("GOOGLE NODE | Chat history saved to PostgreSQL");
                 } catch (error) {

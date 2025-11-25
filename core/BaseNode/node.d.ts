@@ -63,6 +63,24 @@ export interface IRefreshUtil {
     handleTwitterToken(token: any): void;
 }
 /**
+ * Response structure for model pricing information
+ */
+export interface modelPricingResponse {
+    message: string;
+    inputTokenCostPerToken: number;
+    outputTokenCostPerToken: number;
+}
+/**
+ * Defines the structure of the openrouterUtil in serverData
+ */
+export interface IOpenrouterUtil {
+    /**
+     * Method to get pricing information for a specific model
+     * @param model model name in openrouter family/slug format
+     */
+    getModelPricing(model: string): Promise<modelPricingResponse>;
+}
+/**
  * Response structure for S3 file upload operations
  */
 export interface S3UploadResponse {
@@ -239,6 +257,10 @@ export interface IServerData {
      * It is to be used to update tokens after refreshing them
      */
     refreshUtil: IRefreshUtil;
+    /**
+     * An utility object that allows you to get pricing information for models from OpenRouter
+     */
+    openrouterUtil: IOpenrouterUtil;
     /**
      * An utility object that allows you to perform operations on the server's S3 instance allowing you to store and manipulate files
      */
@@ -436,7 +458,7 @@ export default abstract class BaseNode {
      *
      * @returns The estimated credit usage
      */
-    estimateUsage(inputs: Inputs[], contents: Contents[], serverData: IServerData): number;
+    estimateUsage(inputs: Inputs[], contents: Contents[], serverData: IServerData): Promise<number> | number;
     /**
      * Destroy method to be implemented to end db connections
      * @returns

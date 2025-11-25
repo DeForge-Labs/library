@@ -95,6 +95,7 @@ const config = {
             type: "select",
             value: "claude-sonnet-4-0",
             options: [
+                "claude-opus-4-5",
                 "claude-sonnet-4-5",
                 "claude-haiku-4-5",
                 "claude-opus-4-1",
@@ -252,19 +253,8 @@ class claude_chat_node extends BaseNode {
             const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
             const messages = await chatHistory.getMessages();
             
-            const langChainMessages = messages.map(msg => {
-                if (msg.getType() === 'human') {
-                    return new HumanMessage(msg.content);
-                } else if (msg.getType() === 'ai') {
-                    return new AIMessage(msg.content);
-                } else if (msg.getType() === 'system') {
-                    return new SystemMessage(msg.content);
-                }
-                return msg;
-            });
-            
-            webconsole.info(`CLAUDE NODE | Loaded ${langChainMessages.length} messages from chat history`);
-            return langChainMessages;
+            webconsole.info(`CLAUDE NODE | Loaded ${messages.length} messages from chat history`);
+            return messages;
         } catch (error) {
             webconsole.error(`CLAUDE NODE | Error loading chat history: ${error.message}`);
             return [];
@@ -354,7 +344,7 @@ class claude_chat_node extends BaseNode {
      * @param {import("../../core/BaseNode/node.js").Contents[]} contents
      * @param {import("../../core/BaseNode/node.js").IServerData} serverData
      */
-    estimateUsage(inputs, contents, serverData) {
+    async estimateUsage(inputs, contents, serverData) {
         try {
             // estimate credit usage based on the size of the query and the model chosen and its pricing
             const queryFilter = inputs.filter((e) => e.name === "Query");
@@ -362,30 +352,30 @@ class claude_chat_node extends BaseNode {
 
             const model = contents.find((e) => e.name === "Model")?.value || "claude-3-7-sonnet-latest";
 
-            
-
             // --- Tokenizer logic (simple, for English text) ---
             function estimateTokens(text) {
                 // Approximate: 1 token ≈ 4 characters
                 return Math.ceil(text.length / 4);
             }
 
-            const modelPricingInput = {
-                "claude-sonnet-4-5": 2000,
-                "claude-haiku-4-5": 667,
-                "claude-opus-4-1": 10000,
-                "claude-opus-4-0": 10000,
-                "claude-sonnet-4-0": 2000,
-                "claude-3-7-sonnet-latest": 2000,
-                "claude-3-5-haiku-latest": 534,
+            const modelMap = {
+                "claude-opus-4-5": "anthropic/claude-opus-4.5",
+                "claude-sonnet-4-5": "anthropic/claude-sonnet-4.5",
+                "claude-haiku-4-5": "anthropic/claude-haiku-4.5",
+                "claude-opus-4-1": "anthropic/claude-opus-4.1",
+                "claude-opus-4-0": "anthropic/claude-opus-4",
+                "claude-sonnet-4-0": "anthropic/claude-sonnet-4",
+                "claude-3-7-sonnet-latest": "anthropic/claude-3.7-sonnet",
+                "claude-3-5-haiku-latest": "anthropic/claude-3.5-haiku",
             }
-            
+
+            const { message, inputTokenCostPerToken, outputTokenCostPerToken } = await serverData.openrouterUtil.getModelPricing(modelMap[model]);            
 
             // Estimate credit usage based on query length and model pricing
             const queryTokens = estimateTokens(query);
-            const inputPrice = modelPricingInput[model] || 10000;
+            const inputPrice = inputTokenCostPerToken || 10000;
 
-            return Math.ceil(queryTokens * (inputPrice / 1e6));
+            return Math.ceil(queryTokens * inputPrice);
         } catch (error) {
             console.error(`CLAUDE NODE | Falling back to default value | Error estimating usage: ${error.message}`);
             return this.getCredit();
@@ -404,28 +394,6 @@ class claude_chat_node extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("CLAUDE NODE | Starting LangGraph-based chat node");
-
-            // Input pricing per million tokens in deforge credits
-            const modelPricingInput = {
-                "claude-sonnet-4-5": 2000,
-                "claude-haiku-4-5": 667,
-                "claude-opus-4-1": 10000,
-                "claude-opus-4-0": 10000,
-                "claude-sonnet-4-0": 2000,
-                "claude-3-7-sonnet-latest": 2000,
-                "claude-3-5-haiku-latest": 534,
-            }
-
-            // Output pricing per million tokens in deforge credits
-            const modelPricingOutput = {
-                "claude-sonnet-4-5": 10000,
-                "claude-haiku-4-5": 3333,
-                "claude-opus-4-1": 50000,
-                "claude-opus-4-0": 50000,
-                "claude-sonnet-4-0": 10000,
-                "claude-3-7-sonnet-latest": 10000,
-                "claude-3-5-haiku-latest": 2667,
-            }
             
             const queryFilter = inputs.filter((e) => e.name === "Query");
             let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
@@ -464,6 +432,7 @@ class claude_chat_node extends BaseNode {
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "claude-3-7-sonnet-latest";
             const modelMap = {
+                "claude-opus-4-5": "anthropic/claude-opus-4.5",
                 "claude-sonnet-4-5": "anthropic/claude-sonnet-4.5",
                 "claude-haiku-4-5": "anthropic/claude-haiku-4.5",
                 "claude-opus-4-1": "anthropic/claude-opus-4.1",
@@ -666,14 +635,26 @@ class claude_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+            const finalState = await app.getState(config);
+            const thisTurnMessages = finalState.values.messages.slice(pastMessages.length);
 
             const resJSON = response.toJSON();
 
-            const inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
-            const outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+            let inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
+            let outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
 
-            const totalInputCost = Math.ceil(inputTokenUsage * (modelPricingInput[model] / 1e6));
-            const totalOutputCost = Math.ceil(outputTokenUsage * (modelPricingOutput[model] / 1e6));
+            thisTurnMessages.forEach((msg) => {
+                if (msg.type === "ai") {
+                    const msgJSON = msg.toJSON();
+                    inputTokenUsage += msgJSON.kwargs.usage_metadata?.input_tokens || 0;
+                    outputTokenUsage += msgJSON.kwargs.usage_metadata?.output_tokens || 0;
+                }
+            });
+
+            const { message, inputTokenCostPerToken, outputTokenCostPerToken } = await serverData.openrouterUtil.getModelPricing(modelMap[model]);
+
+            const totalInputCost = Math.ceil(inputTokenUsage * inputTokenCostPerToken);
+            const totalOutputCost = Math.ceil(outputTokenUsage * outputTokenCostPerToken);
             const totalCost = totalInputCost + totalOutputCost;
 
             this.setCredit(this.getCredit() + totalCost);
@@ -681,9 +662,8 @@ class claude_chat_node extends BaseNode {
             if (saveMemory) {
                 try {
                     const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
-                    
-                    await chatHistory.addUserMessage(query);
-                    await chatHistory.addAIMessage(response.content);
+                    const finalMessages = [...inputMessages, ...thisTurnMessages];
+                    await chatHistory.addMessages(finalMessages);
                     
                     webconsole.success("CLAUDE NODE | Chat history saved to PostgreSQL");
                 } catch (error) {
