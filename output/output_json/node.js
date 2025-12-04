@@ -37,6 +37,14 @@ class output_json extends BaseNode {
         super(config);
     }
 
+    getValue(inputs, contents, name, defaultValue = null) {
+        const input = inputs.find((i) => i.name === name);
+        if (input?.value !== undefined) return input.value;
+        const content = contents.find((c) => c.name === name);
+        if (content?.value !== undefined) return content.value;
+        return defaultValue;
+    }
+
     /**
      * @override
      * @inheritdoc
@@ -49,11 +57,14 @@ class output_json extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
 
         try {
-            const JSONOutput = Object.keys(inputs).length > 0 ? inputs[0].value : {};
+            const JSONOutput = this.getValue(inputs, contents, "JSON", {});
 
             webconsole.info("JSON OUTPUT | Emmitting JSON output");
 
-            return JSONOutput;
+            return {
+                "JSON": JSONOutput,
+                "Credits": this.getCredit(),
+            };
         } catch (error) {
             webconsole.error("JSON OUTPUT | Some error occured: ", error);
             return null;
