@@ -58,7 +58,7 @@ class output_number extends BaseNode {
         try {
             const NumberOutput = this.getValue(inputs, contents, "Number", 0);
 
-            webconsole.info("NUMBER OUTPUT | Emmitting number output");
+            webconsole.info("NUMBER OUTPUT | Emmitting number output: ", NumberOutput);
 
             return {
                 "Number": NumberOutput,

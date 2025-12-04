@@ -58,7 +58,7 @@ class output_text extends BaseNode {
         try {
             const StringOutput = this.getValue(inputs, contents, "Text", "");
 
-            webconsole.info("TEXT OUTPUT | Emmitting Text output");
+            webconsole.info("TEXT OUTPUT | Emmitting Text output: ", StringOutput);
 
             return {
                 "Text": StringOutput,

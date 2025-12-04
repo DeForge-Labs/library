@@ -59,7 +59,7 @@ class output_json extends BaseNode {
         try {
             const JSONOutput = this.getValue(inputs, contents, "JSON", {});
 
-            webconsole.info("JSON OUTPUT | Emmitting JSON output");
+            webconsole.info("JSON OUTPUT | Emmitting JSON output: ", JSONOutput);
 
             return {
                 "JSON": JSONOutput,
