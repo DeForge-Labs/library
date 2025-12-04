@@ -23,6 +23,11 @@ const config = {
   ],
   outputs: [
     {
+      desc: "Flow output to continue the workflow",
+      name: "Flow",
+      type: "Flow",
+    },
+    {
       desc: "The number in text format",
       name: "Text",
       type: "Text",
@@ -147,6 +152,7 @@ class num_to_text extends BaseNode {
         "NUMBER TO TEXT NODE | Some error occured: " + error.message
       );
       return {
+        Flow: true,
         Text: null,
         Credits: this.getCredit(),
         Tool: numToTextTool,
