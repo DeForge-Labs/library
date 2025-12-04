@@ -50,9 +50,12 @@ class output_number extends BaseNode {
         try {
             const NumberOutput = Object.keys(inputs).length > 0 ? inputs[0].value : null;
 
-            webconsole.info("NUMBER OUTPUT | Emmitting JSON output");
+            webconsole.info("NUMBER OUTPUT | Emmitting number output");
 
-            return NumberOutput;
+            return {
+                "Number": NumberOutput !== null ? NumberOutput : contents["Number"],
+                "Credits": this.getCredit(),
+            };
         } catch (error) {
             webconsole.error("NUMBER OUTPUT | Some error occured: ", error);
             return null;
