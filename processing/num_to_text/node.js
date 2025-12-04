@@ -143,6 +143,7 @@ class num_to_text extends BaseNode {
       const text = this.executeNumToText(NumData, webconsole);
 
       return {
+        Flow: true,
         Text: text,
         Credits: this.getCredit(),
         Tool: numToTextTool,
@@ -152,7 +153,7 @@ class num_to_text extends BaseNode {
         "NUMBER TO TEXT NODE | Some error occured: " + error.message
       );
       return {
-        Flow: true,
+        Flow: false,
         Text: null,
         Credits: this.getCredit(),
         Tool: numToTextTool,
