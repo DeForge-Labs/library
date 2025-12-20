@@ -36,7 +36,7 @@ const config = {
         {
             desc: "The file to use as knowledge base",
             name: "File",
-            type: "File",
+            type: "KnowledgeBase",
             value: "file",
         },
     ],
