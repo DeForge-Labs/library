@@ -37,6 +37,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The link of the newly created post",
       name: "Post Link",
       type: "Text",

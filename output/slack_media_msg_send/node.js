@@ -31,7 +31,13 @@ const config = {
             type: "Text"
         }
     ],
-    outputs: [],
+    outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+    ],
     fields: [
         {
             desc: "Direct link to the Media file you want to send",

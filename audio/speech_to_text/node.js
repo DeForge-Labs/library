@@ -29,6 +29,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Transcribed text",
             name: "Transcription",
             type: "Text",

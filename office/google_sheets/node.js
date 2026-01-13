@@ -39,6 +39,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The URL of the newly created Google Sheet",
       name: "Sheet URL",
       type: "Text",

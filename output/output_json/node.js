@@ -19,7 +19,13 @@ const config = {
             type: "JSON",
         },
     ],
-    outputs: [],
+    outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+    ],
     fields: [
         {
             desc: "JSON to output",

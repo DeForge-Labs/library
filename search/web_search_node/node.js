@@ -27,6 +27,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The content of all the search results in markdown",
             name: "output",
             type: "Text",

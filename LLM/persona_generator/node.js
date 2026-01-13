@@ -22,6 +22,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The persona details of the user",
             name: "Persona",
             type: "Text",

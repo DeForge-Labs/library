@@ -21,6 +21,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The final output object of chat bot",
             name: "Result",
             type: "JSON"

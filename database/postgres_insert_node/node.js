@@ -34,6 +34,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       name: "rows",
       type: "JSON",
       desc: "The data from the inserted rows, if 'Returning' is used",

@@ -24,6 +24,11 @@ const config = {
   ],
   outputs: [
     {
+      desc: "The Flow to trigger",
+      name: "Flow",
+      type: "Flow",
+    },
+    {
       name: "exists",
       type: "Boolean",
       desc: "Whether the collection exists",

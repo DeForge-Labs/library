@@ -19,7 +19,13 @@ const config = {
             type: "Number",
         },
     ],
-    outputs: [],
+    outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+    ],
     fields: [
         {
             desc: "Number to output",

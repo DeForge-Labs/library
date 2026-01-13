@@ -34,6 +34,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       name: "insertedIds",
       type: "JSON",
       desc: "The IDs of the inserted documents",

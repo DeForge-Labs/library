@@ -27,6 +27,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "RAG Database",
             name: "Rag Database",
             type: "Rag",

@@ -21,6 +21,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The map of the objects",
       name: "map",
       type: "JSON",

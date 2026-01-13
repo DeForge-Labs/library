@@ -41,6 +41,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "Temporary link to the audio",
       name: "Audio Link",
       type: "Text",
