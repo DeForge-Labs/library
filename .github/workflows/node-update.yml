@@ -157,21 +157,3 @@ jobs:
                         console.error('Error calling server update script:', error.message);
                         core.setFailed('Failed to update plugins on server');
                     }
-
-            - name: Setup SSH key
-              run: |
-                mkdir -p ~/.ssh
-                echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-                chmod 600 ~/.ssh/id_rsa
-                ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-            - name: Restart server
-              run: |
-                ssh -p ${{ secrets.VPS_PORT }} -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" bash -c "'
-                    set -eo pipefail
-
-                    if [ \"${{ github.ref_name }}\" = \"main\" ]; then
-                        pm2 restart 21
-                    elif [ \"${{ github.ref_name }}\" = \"dev\" ]; then
-                        pm2 restart 34
-                    fi
-                '"
