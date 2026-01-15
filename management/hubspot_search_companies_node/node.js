@@ -34,6 +34,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       name: "success",
       type: "Boolean",
       desc: "Whether the search was successful",

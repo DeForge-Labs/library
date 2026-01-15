@@ -29,6 +29,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "Slots of the meeting",
       name: "Slots",
       type: "JSON",

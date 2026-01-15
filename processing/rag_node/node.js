@@ -24,13 +24,13 @@ const config = {
     desc: "Process your Knowledge Base to use it in LLMs",
     credit: 15,
     inputs: [
-        {
-            desc: "The knowledge base link",
-            name: "Link",
-            type: "Text",
-        },
     ],
     outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
         {
             desc: "RAG Database",
             name: "Rag Database",
@@ -39,26 +39,10 @@ const config = {
     ],
     fields: [
         {
-            desc: "The type of data you are providing",
-            name: "Data Type",
-            type: "select",
-            value: "Link to a file",
-            options: [
-                "Link to a file",
-                "Link to a webpage",
-            ],
-        },
-        {
-            desc: "The knowledge base link",
-            name: "Link",
-            type: "Text",
-            value: "https://yourlink.com/",
-        },
-        {
-            desc: "Go deeper into the given link to gain further information (only available for webpage type RAG)",
-            name: "Deep Search",
-            type: "CheckBox",
-            value: false,
+            desc: "The file to use as knowledge base",
+            name: "File",
+            type: "KnowledgeBase",
+            value: null,
         },
     ],
     difficulty: "easy",

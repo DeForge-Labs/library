@@ -51,6 +51,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The flow of the workflow if booking is successful",
       name: "Success",
       type: "Flow",

@@ -46,6 +46,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "Temporary link to the video",
       name: "Video Link",
       type: "Text",

@@ -29,6 +29,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       name: "rows",
       type: "JSON",
       desc: "The array of rows returned by the query (if any)",

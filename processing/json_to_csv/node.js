@@ -24,6 +24,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The CSV text parsed from JSON",
       name: "Text",
       type: "Text",

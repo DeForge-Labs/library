@@ -23,6 +23,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The number of milliseconds since the Unix epoch (timestamp)",
       name: "Number",
       type: "Number",

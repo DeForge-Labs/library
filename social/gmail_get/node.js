@@ -32,6 +32,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "All email data (JSON array of {subject, body})",
       name: "All Email",
       type: "JSON",

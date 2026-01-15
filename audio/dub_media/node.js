@@ -32,6 +32,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "Link to the dubbed media file",
             name: "Dubbed Link",
             type: "Text",

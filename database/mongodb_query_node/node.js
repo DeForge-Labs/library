@@ -49,6 +49,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       name: "documents",
       type: "JSON",
       desc: "The array of documents returned by the query",

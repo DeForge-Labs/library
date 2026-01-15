@@ -27,6 +27,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The link of the posted tweet",
       name: "Tweet Link",
       type: "Text",

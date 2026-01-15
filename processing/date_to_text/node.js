@@ -28,6 +28,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The text representation of the date",
       name: "Text",
       type: "Text",

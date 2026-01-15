@@ -34,6 +34,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The response of the API",
       name: "output",
       type: "JSON",

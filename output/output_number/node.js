@@ -19,7 +19,13 @@ const config = {
             type: "Number",
         },
     ],
-    outputs: [],
+    outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+    ],
     fields: [
         {
             desc: "Number to output",
@@ -37,6 +43,14 @@ class output_number extends BaseNode {
         super(config);
     }
 
+    getValue(inputs, contents, name, defaultValue = null) {
+        const input = inputs.find((i) => i.name === name);
+        if (input?.value !== undefined) return input.value;
+        const content = contents.find((c) => c.name === name);
+        if (content?.value !== undefined) return content.value;
+        return defaultValue;
+    }
+
     /**
      * @override
      * @inheritdoc
@@ -48,11 +62,14 @@ class output_number extends BaseNode {
      */
     async run(inputs, contents, webconsole, serverData) {
         try {
-            const NumberOutput = Object.keys(inputs).length > 0 ? inputs[0].value : null;
+            const NumberOutput = this.getValue(inputs, contents, "Number", 0);
 
-            webconsole.info("NUMBER OUTPUT | Emmitting JSON output");
+            webconsole.info("NUMBER OUTPUT | Emmitting number output: ", NumberOutput);
 
-            return NumberOutput;
+            return {
+                "Number": NumberOutput,
+                "Credits": this.getCredit(),
+            };
         } catch (error) {
             webconsole.error("NUMBER OUTPUT | Some error occured: ", error);
             return null;

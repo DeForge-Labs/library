@@ -83,6 +83,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The response of the LLM",
             name: "output",
             type: "Text",
@@ -95,6 +100,7 @@ const config = {
             type: "select",
             value: "gemini-2.0-flash",
             options: [
+                "gemini-3-pro-preview",
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
                 "gemini-2.5-flash-lite",
@@ -132,8 +138,8 @@ const config = {
             type: "Slider",
             value: 0.5,
             min: 0,
-            max: 1,
-            step: 0.01,
+            max: 2,
+            step: 0.1,
         },
         {
             desc: "Save chat as context for LLM",
@@ -250,19 +256,8 @@ class google_chat_node extends BaseNode {
             const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
             const messages = await chatHistory.getMessages();
             
-            const langChainMessages = messages.map(msg => {
-                if (msg.getType() === 'human') {
-                    return new HumanMessage(msg.content);
-                } else if (msg.getType() === 'ai') {
-                    return new AIMessage(msg.content);
-                } else if (msg.getType() === 'system') {
-                    return new SystemMessage(msg.content);
-                }
-                return msg;
-            });
-            
-            webconsole.info(`GOOGLE NODE | Loaded ${langChainMessages.length} messages from chat history`);
-            return langChainMessages;
+            webconsole.info(`GOOGLE NODE | Loaded ${messages.length} messages from chat history`);
+            return messages;
         } catch (error) {
             webconsole.error(`GOOGLE NODE | Error loading chat history: ${error.message}`);
             return [];
@@ -368,6 +363,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing per million tokens in deforge credits less than 200K tokens
             const modelPricingInputUnder200 = {
+                "gemini-3-pro-preview": 1334,
                 "gemini-2.5-pro": 834,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -377,6 +373,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing per million tokens in deforge credits more than 200K tokens
             const modelPricingInputOver200 = {
+                "gemini-3-pro-preview": 2667,
                 "gemini-2.5-pro": 1667,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -408,18 +405,10 @@ class google_chat_node extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("GOOGLE NODE | Starting LangGraph-based chat node");
-            
-            // Model tokens per minute limits (RPM * avg tokens per request, very approximate)
-            const modelTokensPerMinute = {
-                "gemini-2.5-pro": 2000000,
-                "gemini-2.5-flash": 1000000,
-                "gemini-2.5-flash-lite-preview-06-17": 4000000,
-                "gemini-2.0-flash": 4000000,
-                "gemini-2.0-flash-lite": 4000000,
-            };
 
             // Model pricing per million tokens in deforge credits less than 200K tokens
             const modelPricingInputUnder200 = {
+                "gemini-3-pro-preview": 1334,
                 "gemini-2.5-pro": 834,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -429,6 +418,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing per million tokens in deforge credits more than 200K tokens
             const modelPricingInputOver200 = {
+                "gemini-3-pro-preview": 2667,
                 "gemini-2.5-pro": 1667,
                 "gemini-2.5-flash": 200,
                 "gemini-2.5-flash-lite-preview-06-17": 67,
@@ -438,6 +428,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing output per million tokens in deforge credits less than 200K tokens
             const modelPricingOutputUnder200 = {
+                "gemini-3-pro-preview": 8000,
                 "gemini-2.5-pro": 6667,
                 "gemini-2.5-flash": 1667,
                 "gemini-2.5-flash-lite-preview-06-17": 267,
@@ -447,6 +438,7 @@ class google_chat_node extends BaseNode {
 
             // Model pricing output per million tokens in deforge credits more than 200K tokens
             const modelPricingOutputOver200 = {
+                "gemini-3-pro-preview": 12000,
                 "gemini-2.5-pro": 10000,
                 "gemini-2.5-flash": 1667,
                 "gemini-2.5-flash-lite-preview-06-17": 267,
@@ -491,25 +483,12 @@ class google_chat_node extends BaseNode {
 
             const model = contents.filter((e) => e.name === "Model")[0].value || "gemini-2.0-flash";
             const modelMap = {
+                "gemini-3-pro-preview": "google/gemini-3-pro-preview",
                 "gemini-2.5-pro": "google/gemini-2.5-pro",
                 "gemini-2.5-flash": "google/gemini-2.5-flash",
                 "gemini-2.5-flash-lite": "google/gemini-2.5-flash-lite",
                 "gemini-2.0-flash": "google/gemini-2.0-flash-001",
                 "gemini-2.0-flash-lite": "google/gemini-2.0-flash-lite-001",
-            }
-
-            
-            function estimateTokens(text) {
-                return Math.ceil(text.length / 4);
-            }
-
-            // Trim query if needed to fit within tokens per minute limit
-            const maxTokensPerMinute = modelTokensPerMinute[model] || 32000;
-            const queryTokens = estimateTokens(query);
-            if (queryTokens > maxTokensPerMinute) {
-                const maxChars = maxTokensPerMinute * 4;
-                query = query.slice(-maxChars);
-                webconsole.warn(`GOOGLE NODE | Query trimmed to fit model tokens per minute limit (${maxTokensPerMinute} tokens, ~${maxChars} chars)`);
             }
             
             const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
@@ -729,11 +708,21 @@ class google_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+            const finalState = await app.getState(config);
+            const thisTurnMessages = finalState.values.messages.slice(pastMessages.length);
 
             const resJSON = response.toJSON();
 
-            const inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
-            const outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+            let inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
+            let outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+
+            thisTurnMessages.forEach((msg) => {
+                if (msg.type === "ai") {
+                    const msgJSON = msg.toJSON();
+                    inputTokenUsage += msgJSON.kwargs.usage_metadata?.input_tokens || 0;
+                    outputTokenUsage += msgJSON.kwargs.usage_metadata?.output_tokens || 0;
+                }
+            });
 
             const inputCreditRate = inputTokenUsage > 200000 ? modelPricingInputOver200[model] : modelPricingInputUnder200[model];
             const outputCreditRate = outputTokenUsage > 200000 ? modelPricingOutputOver200[model] : modelPricingOutputUnder200[model];
@@ -746,10 +735,9 @@ class google_chat_node extends BaseNode {
 
             if (saveMemory) {
                 try {
-                    const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
-                    
-                    await chatHistory.addUserMessage(query);
-                    await chatHistory.addAIMessage(response.content);
+                    const chatHistory = await this.initializeChatHistory(sessionId, webconsole);                    
+                    const finalMessages = [...inputMessages, ...thisTurnMessages];
+                    await chatHistory.addMessages(finalMessages);
                     
                     webconsole.success("GOOGLE NODE | Chat history saved to PostgreSQL");
                 } catch (error) {

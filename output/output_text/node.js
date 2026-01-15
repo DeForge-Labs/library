@@ -19,7 +19,13 @@ const config = {
             type: "Text",
         },
     ],
-    outputs: [],
+    outputs: [
+        {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+    ],
     fields: [
         {
             desc: "Text to output",
@@ -37,6 +43,14 @@ class output_text extends BaseNode {
         super(config);
     }
 
+    getValue(inputs, contents, name, defaultValue = null) {
+        const input = inputs.find((i) => i.name === name);
+        if (input?.value !== undefined) return input.value;
+        const content = contents.find((c) => c.name === name);
+        if (content?.value !== undefined) return content.value;
+        return defaultValue;
+    }
+
     /** 
      * @override
      * @inheritdoc
@@ -48,9 +62,9 @@ class output_text extends BaseNode {
      */
     async run(inputs, contents, webconsole, serverData) {
         try {
-            const StringOutput = inputs.find((e) => e.name === "Text")?.value || "";
+            const StringOutput = this.getValue(inputs, contents, "Text", "");
 
-            webconsole.info("TEXT OUTPUT | Emmitting Text output");
+            webconsole.info("TEXT OUTPUT | Emmitting Text output: ", StringOutput);
 
             return {
                 "Text": StringOutput,

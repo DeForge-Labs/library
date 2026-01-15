@@ -27,6 +27,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The result of the operation",
       name: "Result",
       type: "Number",

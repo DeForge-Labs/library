@@ -82,6 +82,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The response of the LLM",
             name: "output",
             type: "Text",
@@ -136,8 +141,8 @@ const config = {
             type: "Slider",
             value: 0.5,
             min: 0,
-            max: 1,
-            step: 0.01,
+            max: 2,
+            step: 0.1,
         },
         {
             desc: "Save chat as context for LLM",
@@ -254,19 +259,8 @@ class openai_chat_node extends BaseNode {
             const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
             const messages = await chatHistory.getMessages();
             
-            const langChainMessages = messages.map(msg => {
-                if (msg.getType() === 'human') {
-                    return new HumanMessage(msg.content);
-                } else if (msg.getType() === 'ai') {
-                    return new AIMessage(msg.content);
-                } else if (msg.getType() === 'system') {
-                    return new SystemMessage(msg.content);
-                }
-                return msg;
-            });
-            
-            webconsole.info(`OPENAI NODE | Loaded ${langChainMessages.length} messages from chat history`);
-            return langChainMessages;
+            webconsole.info(`OPENAI NODE | Loaded ${messages.length} messages from chat history`);
+            return messages;
         } catch (error) {
             webconsole.error(`OPENAI NODE | Error loading chat history: ${error.message}`);
             return [];
@@ -359,7 +353,7 @@ class openai_chat_node extends BaseNode {
      * @param {import("../../core/BaseNode/node.js").Contents[]} contents
      * @param {import("../../core/BaseNode/node.js").IServerData} serverData
      */
-    estimateUsage(inputs, content, serverData) {
+    async estimateUsage(inputs, content, serverData) {
         try {
             const queryFilter = inputs.filter((e) => e.name === "Query");
             const query = queryFilter.length > 0 ? queryFilter[0].value : content.find((e) => e.name === "Query")?.value || "";
@@ -370,25 +364,26 @@ class openai_chat_node extends BaseNode {
                 return Math.ceil(text.length / 4);
             }
 
-            // Input pricing per million tokens in deforge credits
-            const modelPricingInput = {
-                "gpt-5": 834,
-                "gpt-5-mini": 167,
-                "gpt-5-nano": 34,
-                "gpt-4o": 1667,
-                "gpt-4o-mini": 100,
-                "gpt-4.1": 1334,
-                "gpt-4.1-mini": 267,
-                "gpt-4.1-nano": 67,
-                "o3-mini": 734,
-                "o4-mini": 734,
-            };
+            const modelMap = {
+                "gpt-5": "openai/gpt-5",
+                "gpt-5-mini": "openai/gpt-5-mini",
+                "gpt-5-nano": "openai/gpt-5-nano",
+                "gpt-4o": "openai/gpt-4o",
+                "gpt-4o-mini": "openai/gpt-4o-mini",
+                "gpt-4.1": "openai/gpt-4.1",
+                "gpt-4.1-mini": "openai/gpt-4.1-mini",
+                "gpt-4.1-nano": "openai/gpt-4.1-nano",
+                "o3-mini": "openai/o3-mini",
+                "o4-mini": "openai/o4-mini",
+            }
+
+            const { message, inputTokenCostPerToken, outputTokenCostPerToken } = await serverData.openrouterUtil.getModelPricing(modelMap[model]);
 
             const inputTokens = estimateTokens(query);
 
-            const inputPrice = modelPricingInput[model] || 1667;
+            const inputPrice = inputTokenCostPerToken || 1667;
 
-            return Math.ceil(inputTokens * (inputPrice / 1e6))
+            return Math.ceil(inputTokens * inputPrice)
         } catch (error) {
             webconsole.error("OPENAI NODE | Falling back to min required credits | Error estimating usage: ", error);
             return this.getCredit();
@@ -407,34 +402,6 @@ class openai_chat_node extends BaseNode {
     async run(inputs, contents, webconsole, serverData) {
         try {
             webconsole.info("OPENAI NODE | Starting LangGraph-based chat node");
-
-            // Input pricing per million tokens in deforge credits
-            const modelPricingInput = {
-                "gpt-5": 834,
-                "gpt-5-mini": 167,
-                "gpt-5-nano": 34,
-                "gpt-4o": 1667,
-                "gpt-4o-mini": 100,
-                "gpt-4.1": 1334,
-                "gpt-4.1-mini": 267,
-                "gpt-4.1-nano": 67,
-                "o3-mini": 734,
-                "o4-mini": 734,
-            };
-
-            // Output pricing per million tokens in deforge credits
-            const modelPricingOutput = {
-                "gpt-5": 6667,
-                "gpt-5-mini": 1334,
-                "gpt-5-nano": 267,
-                "gpt-4o": 6667,
-                "gpt-4o-mini": 400,
-                "gpt-4.1": 5334,
-                "gpt-4.1-mini": 1067,
-                "gpt-4.1-nano": 267,
-                "o3-mini": 2934,
-                "o4-mini": 2934,
-            };
 
             const queryFilter = inputs.filter((e) => e.name === "Query");
             let query = queryFilter.length > 0 ? queryFilter[0].value : contents.filter((e) => e.name === "Query")[0].value || "";
@@ -683,14 +650,26 @@ class openai_chat_node extends BaseNode {
             
             const output = await app.invoke({ messages: inputMessages }, config);
             const response = output.messages[output.messages.length - 1];
+            const finalState = await app.getState(config);
+            const thisTurnMessages = finalState.values.messages.slice(pastMessages.length);
 
             const resJSON = response.toJSON();
 
-            const inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
-            const outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
+            let inputTokenUsage = resJSON.kwargs.usage_metadata.input_tokens;
+            let outputTokenUsage = resJSON.kwargs.usage_metadata.output_tokens;
 
-            const totalInputCost = Math.ceil(inputTokenUsage * (modelPricingInput[model] / 1e6));
-            const totalOutputCost = Math.ceil(outputTokenUsage * (modelPricingOutput[model] / 1e6));
+            thisTurnMessages.forEach((msg) => {
+                if (msg.type === "ai") {
+                    const msgJSON = msg.toJSON();
+                    inputTokenUsage += msgJSON.kwargs.usage_metadata?.input_tokens || 0;
+                    outputTokenUsage += msgJSON.kwargs.usage_metadata?.output_tokens || 0;
+                }
+            });
+
+            const { message, inputTokenCostPerToken, outputTokenCostPerToken } = await serverData.openrouterUtil.getModelPricing(modelMap[model]);
+
+            const totalInputCost = Math.ceil(inputTokenUsage * inputTokenCostPerToken);
+            const totalOutputCost = Math.ceil(outputTokenUsage * outputTokenCostPerToken);
             const totalCost = totalInputCost + totalOutputCost;
 
             this.setCredit(this.getCredit() + totalCost);
@@ -698,9 +677,8 @@ class openai_chat_node extends BaseNode {
             if (saveMemory) {
                 try {
                     const chatHistory = await this.initializeChatHistory(sessionId, webconsole);
-                    
-                    await chatHistory.addUserMessage(query);
-                    await chatHistory.addAIMessage(response.content);
+                    const finalMessages = [...inputMessages, ...thisTurnMessages];
+                    await chatHistory.addMessages(finalMessages);
                     
                     webconsole.success("OPENAI NODE | Chat history saved to PostgreSQL");
                 } catch (error) {

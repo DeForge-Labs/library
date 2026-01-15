@@ -28,6 +28,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       desc: "The value of the key, converted to Text (JSON strings if nested object)",
       name: "Value",
       type: "Text",

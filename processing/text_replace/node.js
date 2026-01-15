@@ -33,6 +33,11 @@ const config = {
   ],
   outputs: [
     {
+        desc: "The Flow to trigger",
+        name: "Flow",
+        type: "Flow",
+    },
+    {
       name: "Text",
       type: "Text",
       desc: "The result text after replacement.",

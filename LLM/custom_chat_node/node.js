@@ -82,6 +82,11 @@ const config = {
     ],
     outputs: [
         {
+            desc: "The Flow to trigger",
+            name: "Flow",
+            type: "Flow",
+        },
+        {
             desc: "The response of the LLM",
             name: "output",
             type: "Text",
@@ -124,8 +129,8 @@ const config = {
             type: "Slider",
             value: 0.5,
             min: 0,
-            max: 1,
-            step: 0.01,
+            max: 2,
+            step: 0.1,
         },
         {
             desc: "Save chat as context for LLM",
