@@ -4,11 +4,11 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 const config = {
-  title: "Notion: List Databases",
+  title: "Notion: List Pages",
   category: "management",
-  type: "notion_list_database_node",
+  type: "notion_list_page_node",
   icon: {},
-  desc: "Fetches a list of all Notion databases shared with this integration.",
+  desc: "Search for specific pages in your Notion workspace to get their IDs.",
   credit: 5,
   inputs: [
     {
@@ -17,7 +17,7 @@ const config = {
       type: "Flow",
     },
     {
-      desc: "Optional query to filter databases by name",
+      desc: "Optional query to filter pages by title",
       name: "Query",
       type: "Text",
     },
@@ -29,8 +29,8 @@ const config = {
       type: "Flow",
     },
     {
-      desc: "The list of databases found (JSON)",
-      name: "Databases",
+      desc: "The list of pages found (JSON)",
+      name: "Pages",
       type: "JSON",
     },
     {
@@ -48,24 +48,28 @@ const config = {
     },
   ],
   difficulty: "easy",
-  tags: ["notion", "productivity", "search", "database"],
+  tags: ["notion", "productivity", "search", "docs"],
 };
 
-class notion_list_databases extends BaseNode {
+class notion_list_pages extends BaseNode {
   constructor() {
     super(config);
   }
 
-  async listDatabases(apiKey, query, webconsole) {
+  async listPages(apiKey, query, webconsole) {
     const notion = new Client({ auth: apiKey });
 
     try {
-      webconsole.info("NOTION NODE | Searching for databases...");
+      webconsole.info("NOTION NODE | Searching for pages...");
 
       const searchParams = {
         filter: {
-          value: "data_source",
+          value: "page",
           property: "object",
+        },
+        sort: {
+          direction: "descending",
+          timestamp: "last_edited_time",
         },
         page_size: 100,
       };
@@ -76,15 +80,28 @@ class notion_list_databases extends BaseNode {
 
       const response = await notion.search(searchParams);
 
-      const databases = response.results.map((db) => ({
-        id: db.id,
-        title: db.title[0]?.plain_text || "Untitled Database",
-        url: db.url,
-        last_edited: db.last_edited_time,
-      }));
+      const pages = response.results.map((page) => {
+        let title = "Untitled Page";
+        if (page.properties) {
+          const titleProp = Object.values(page.properties).find(
+            (prop) => prop.id === "title" || prop.type === "title",
+          );
+          if (titleProp && titleProp.title && titleProp.title.length > 0) {
+            title = titleProp.title[0].plain_text;
+          }
+        }
 
-      webconsole.success(`NOTION NODE | Found ${databases.length} databases.`);
-      return databases;
+        return {
+          id: page.id,
+          title: title,
+          url: page.url,
+          last_edited: page.last_edited_time,
+          parent_type: page.parent.type,
+        };
+      });
+
+      webconsole.success(`NOTION NODE | Found ${pages.length} pages.`);
+      return pages;
     } catch (error) {
       webconsole.error(`NOTION ERROR | ${error.message}`);
       throw error;
@@ -107,55 +124,53 @@ class notion_list_databases extends BaseNode {
       webconsole.error(
         "NOTION NODE | API Key missing. Please set NOTION_API_KEY.",
       );
-      return { Databases: [], Tool: null, Credits: 0 };
+      return { Pages: [], Tool: null, Credits: 0 };
     }
 
-    const listDbTool = tool(
+    const listPagesTool = tool(
       async ({ query: tQuery }) => {
         try {
-          const dbs = await this.listDatabases(
-            apiKey,
-            tQuery || "",
-            webconsole,
-          );
+          const pages = await this.listPages(apiKey, tQuery || "", webconsole);
           this.setCredit(this.getCredit() + 5);
-          return [JSON.stringify(dbs, null, 2), this.getCredit()];
+          return [JSON.stringify(pages, null, 2), this.getCredit()];
         } catch (err) {
-          return [`Error listing databases: ${err.message}`, this.getCredit()];
+          return [`Error listing pages: ${err.message}`, this.getCredit()];
         }
       },
       {
-        name: "notion_list_databases",
+        name: "notion_list_pages",
         description:
-          "Get a list of all Notion databases I have access to. Use this to find the ID of a database by its name.",
+          "Search for Notion pages by title to get their IDs. Useful when you need to read or update a specific document.",
         schema: z.object({
           query: z
             .string()
             .optional()
-            .describe("Optional name to filter the list"),
+            .describe(
+              "The title (or part of the title) of the page you are looking for",
+            ),
         }),
         responseFormat: "content_and_artifact",
       },
     );
 
     try {
-      const dbs = await this.listDatabases(apiKey, query, webconsole);
+      const pages = await this.listPages(apiKey, query, webconsole);
       this.setCredit(5);
 
       return {
-        Databases: dbs,
-        Tool: listDbTool,
+        Pages: pages,
+        Tool: listPagesTool,
         Credits: this.getCredit(),
       };
     } catch (error) {
       this.setCredit(0);
       return {
-        Databases: [],
-        Tool: listDbTool,
+        Pages: [],
+        Tool: listPagesTool,
         Credits: 0,
       };
     }
   }
 }
 
-export default notion_list_databases;
+export default notion_list_pages;
