@@ -41,6 +41,12 @@ const config = {
   ],
   fields: [
     {
+      name: "Query",
+      type: "Text",
+      value: "",
+      desc: "Optional query to filter databases by name",
+    },
+    {
       name: "NOTION_API_KEY",
       type: "env",
       desc: "Your Notion Integration Token",

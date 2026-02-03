@@ -62,6 +62,18 @@ const config = {
       defaultValue: "NOTION_API_KEY",
     },
     {
+      name: "Title",
+      type: "Text",
+      value: "",
+      desc: "Title of the new page",
+    },
+    {
+      name: "Content",
+      type: "TextArea",
+      value: "",
+      desc: "Body content (Markdown supported)",
+    },
+    {
       name: "Parent Type",
       type: "select",
       value: "database_id",
