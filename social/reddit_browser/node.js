@@ -6,7 +6,7 @@ import { z } from "zod";
 const config = {
   title: "Reddit Browser",
   category: "social",
-  type: "reddit_node",
+  type: "reddit_browser",
   icon: {},
   desc: "Search subreddits, fetch trending posts, or get latest discussions from Reddit.",
   credit: 15,
