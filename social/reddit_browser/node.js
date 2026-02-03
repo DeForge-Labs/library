@@ -8,81 +8,42 @@ const config = {
   category: "social",
   type: "reddit_browser",
   icon: {},
-  desc: "Search subreddits, fetch trending posts, or get latest discussions from Reddit.",
+  desc: "Search subreddits or fetch top discussions from Reddit.",
   credit: 15,
   inputs: [
-    {
-      desc: "The flow of the workflow",
-      name: "Flow",
-      type: "Flow",
-    },
-    {
-      desc: "Subreddit to browse (e.g., 'startups', 'technology')",
-      name: "Subreddit",
-      type: "Text",
-    },
-    {
-      desc: "Search query to filter posts",
-      name: "Search Query",
-      type: "Text",
-    },
+    { desc: "The flow of the workflow", name: "Flow", type: "Flow" },
+    { desc: "Search query", name: "Search Query", type: "Text" },
   ],
   outputs: [
-    {
-      desc: "The Flow to trigger",
-      name: "Flow",
-      type: "Flow",
-    },
-    {
-      desc: "The list of posts found",
-      name: "Posts",
-      type: "JSON",
-    },
-    {
-      desc: "The tool version of this node, to be used by LLMs",
-      name: "Tool",
-      type: "Tool",
-    },
+    { desc: "The Flow to trigger", name: "Flow", type: "Flow" },
+    { desc: "List of posts found", name: "Posts", type: "JSON" },
+    { desc: "The tool version for LLMs", name: "Tool", type: "Tool" },
   ],
   fields: [
     {
-      desc: "Subreddit to browse",
+      desc: "Specific subreddit (optional, leave blank for all of Reddit)",
       name: "Subreddit",
       type: "Text",
-      value: "all",
+      value: "",
     },
     {
-      desc: "Search query (leave empty for frontpage of subreddit)",
+      desc: "Search query (e.g., 'best budget cameras')",
       name: "Search Query",
       type: "Text",
       value: "",
     },
     {
-      desc: "Sort order",
-      name: "Sort",
-      type: "select",
-      value: "relevance",
-      options: ["relevance", "hot", "top", "new", "comments"],
-    },
-    {
-      desc: "Time filter (for top/relevance)",
-      name: "Time",
-      type: "select",
-      value: "week",
-      options: ["all", "year", "month", "week", "day", "hour"],
-    },
-    {
-      desc: "Number of posts to fetch",
+      desc: "Number of results to fetch (Max 5)",
       name: "Limit",
       type: "Slider",
       value: 5,
       min: 1,
-      max: 25,
+      max: 5,
       step: 1,
     },
   ],
   difficulty: "medium",
-  tags: ["reddit", "social", "research", "scraping"],
+  tags: ["reddit", "social", "research", "jina"],
 };
 
 class reddit_node extends BaseNode {
@@ -90,49 +51,36 @@ class reddit_node extends BaseNode {
     super(config);
   }
 
-  async fetchReddit(subreddit, query, sort, time, limit, webconsole) {
+  async fetchReddit(subreddit, query, limit, webconsole) {
     try {
-      const sub = subreddit?.replace(/r\//, "") || "all";
-      let url = "";
+      const subPart = subreddit
+        ? `reddit.com/r/${subreddit.replace(/r\//, "")}`
+        : "reddit.com";
+      const fullQuery = `${query} site:${subPart}`;
 
-      if (query && query.trim() !== "") {
-        url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&sort=${sort}&t=${time}&limit=${limit}&restrict_sr=1`;
-      } else {
-        const listingType = sort === "relevance" ? "hot" : sort;
-        url = `https://www.reddit.com/r/${sub}/${listingType}.json?limit=${limit}&t=${time}`;
-      }
+      const url = `https://s.jina.ai/?q=${encodeURIComponent(fullQuery)}`;
 
-      webconsole.info(`REDDIT NODE | Requesting: ${url}`);
+      webconsole.info(`JINA-REDDIT | Searching: ${fullQuery}`);
 
       const response = await axios.get(url, {
         headers: {
-          "User-Agent":
-            "DeforgeAI/1.0.0 (Workflows and Agents; +https://deforge.io)",
+          Accept: "application/json",
+          Authorization: `Bearer ${process.env.JINA_API_KEY}`,
+          "X-Engine": "direct",
         },
+        timeout: 30000,
       });
 
-      if (
-        !response.data ||
-        !response.data.data ||
-        !response.data.data.children
-      ) {
-        return [];
-      }
+      if (!response.data || !response.data.data) return [];
 
-      return response.data.data.children.map((child) => {
-        const p = child.data;
-        return {
-          title: p.title,
-          author: p.author,
-          score: p.score,
-          num_comments: p.num_comments,
-          subreddit: p.subreddit,
-          url: `https://www.reddit.com${p.permalink}`,
-          text: p.selftext ? p.selftext.slice(0, 2000) : "[Link/Image Post]",
-        };
-      });
+      return response.data.data.slice(0, limit).map((item) => ({
+        title: item.title,
+        url: item.url,
+        content: item.content.slice(0, 3000),
+        source: "Reddit (via Jina AI)",
+      }));
     } catch (error) {
-      webconsole.error(`REDDIT NODE | API Error: ${error.message}`);
+      webconsole.error(`JINA-REDDIT ERROR | ${error.message}`);
       throw error;
     }
   }
@@ -146,87 +94,49 @@ class reddit_node extends BaseNode {
       return defaultValue;
     };
 
-    const subreddit = getValue("Subreddit", "all");
+    const subreddit = getValue("Subreddit", "");
     const query = getValue("Search Query", "");
-    const sort = getValue("Sort", "relevance");
-    const time = getValue("Time", "week");
     const limit = Number(getValue("Limit", 5));
 
     const redditTool = tool(
-      async ({
-        subreddit: tSub,
-        query: tQuery,
-        sort: tSort,
-        limit: tLimit,
-      }) => {
-        webconsole.info("REDDIT TOOL | Invoked by LLM");
+      async ({ subreddit: tSub, query: tQuery, limit: tLimit }) => {
         try {
           const data = await this.fetchReddit(
             tSub || subreddit,
             tQuery || query,
-            tSort || sort,
-            time,
             tLimit || limit,
             webconsole,
           );
-
           this.setCredit(this.getCredit() + 15);
-
-          if (data.length === 0)
-            return "No Reddit posts found for that criteria.";
-
           return [JSON.stringify(data, null, 2), this.getCredit()];
         } catch (err) {
-          return [
-            `Error fetching Reddit data: ${err.message}`,
-            this.getCredit(),
-          ];
+          return [`Error: ${err.message}`, this.getCredit()];
         }
       },
       {
         name: "reddit_search",
         description:
-          "Search Reddit for posts, discussions, or user opinions. Useful for market research, finding trends, or checking community sentiment.",
+          "Searches Reddit for community discussions and opinions on a specific topic.",
         schema: z.object({
           subreddit: z
             .string()
-            .describe("The subreddit to search in (e.g., 'startups')"),
-          query: z.string().describe("The search keywords"),
-          sort: z
-            .enum(["relevance", "hot", "top", "new"])
             .optional()
-            .describe("How to sort results"),
-          limit: z.number().optional().describe("Number of results (max 10)"),
+            .describe("Subreddit to search in (e.g. 'startups')"),
+          query: z.string().describe("Search keywords"),
+          limit: z.number().optional().describe("Number of posts (1-5)"),
         }),
         responseFormat: "content_and_artifact",
       },
     );
 
     try {
-      webconsole.info("REDDIT NODE | Running direct fetch");
-      const posts = await this.fetchReddit(
-        subreddit,
-        query,
-        sort,
-        time,
-        limit,
-        webconsole,
-      );
-
+      if (!query) throw new Error("Search query is required.");
+      const posts = await this.fetchReddit(subreddit, query, limit, webconsole);
       this.setCredit(15);
-
-      return {
-        Posts: posts,
-        Tool: redditTool,
-        Credits: this.getCredit(),
-      };
+      return { Posts: posts, Tool: redditTool, Credits: this.getCredit() };
     } catch (error) {
       this.setCredit(0);
-      return {
-        Posts: "[]",
-        Tool: redditTool,
-        Credits: 0,
-      };
+      return { Posts: [], Tool: redditTool, Credits: 0 };
     }
   }
 }
