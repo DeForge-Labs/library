@@ -41,7 +41,7 @@ const config = {
   ],
   fields: [
     {
-      name: "Notion API Key",
+      name: "NOTION_API_KEY",
       type: "env",
       desc: "Your Notion Integration Token",
       defaultValue: "NOTION_API_KEY",
