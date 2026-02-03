@@ -1,0 +1,26 @@
+{
+  "name": "reddit-browser",
+  "version": "0.0.1",
+  "description": "Get posts from Reddit",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "@langchain/core": "^0.3.78",
+    "axios": "^1.13.4",
+    "dotenv": "^17.2.1",
+    "zod": "^3.25.76"
+  }
+}
