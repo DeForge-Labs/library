@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const config = {
   title: "X (Twitter) Browser",
-  category: "Social",
+  category: "social",
   type: "twitter_node",
   icon: {},
   desc: "Search tweets, track keywords, or browse user profiles",
