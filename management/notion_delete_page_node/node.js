@@ -66,7 +66,7 @@ class notion_delete_page extends BaseNode {
     const notion = new Client({ auth: apiKey });
 
     try {
-      webconsole.warn(`NOTION NODE | Archiving (Deleting) page: ${pageId}`);
+      webconsole.info(`NOTION NODE | Archiving (Deleting) page: ${pageId}`);
 
       const response = await notion.pages.update({
         page_id: pageId,
