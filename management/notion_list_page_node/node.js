@@ -47,10 +47,10 @@ const config = {
       desc: "Optional query to filter pages by title",
     },
     {
-      name: "NOTION_API_KEY",
-      type: "env",
-      desc: "Your Notion Integration Token",
-      defaultValue: "NOTION_API_KEY",
+      desc: "Connect your Notion Workspace",
+      name: "Notion",
+      type: "social",
+      defaultValue: "",
     },
   ],
   difficulty: "easy",
@@ -62,8 +62,12 @@ class notion_list_pages extends BaseNode {
     super(config);
   }
 
-  async listPages(apiKey, query, webconsole) {
-    const notion = new Client({ auth: apiKey });
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
+  async listPages(accessToken, query, webconsole) {
+    const notion = new Client({ auth: accessToken });
 
     try {
       webconsole.info("NOTION NODE | Searching for pages...");
@@ -123,23 +127,36 @@ class notion_list_pages extends BaseNode {
       return defaultValue;
     };
 
-    const apiKey = serverData.envList?.NOTION_API_KEY;
     const query = getValue("Query", "");
 
-    if (!apiKey) {
-      webconsole.error(
-        "NOTION NODE | API Key missing. Please set NOTION_API_KEY.",
-      );
+    const tokens = serverData.socialList;
+    if (!tokens || !Object.keys(tokens).includes("notion")) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Notion account not connected.");
+      return { Pages: [], Tool: null, Credits: 0 };
+    }
+
+    const notionData = tokens["notion"];
+    const accessToken = notionData.access_token;
+
+    if (!accessToken) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Access token missing.");
       return { Pages: [], Tool: null, Credits: 0 };
     }
 
     const listPagesTool = tool(
       async ({ query: tQuery }) => {
         try {
-          const pages = await this.listPages(apiKey, tQuery || "", webconsole);
+          const pages = await this.listPages(
+            accessToken,
+            tQuery || "",
+            webconsole,
+          );
           this.setCredit(this.getCredit() + 5);
           return [JSON.stringify(pages, null, 2), this.getCredit()];
         } catch (err) {
+          this.setCredit(0);
           return [`Error listing pages: ${err.message}`, this.getCredit()];
         }
       },
@@ -160,7 +177,7 @@ class notion_list_pages extends BaseNode {
     );
 
     try {
-      const pages = await this.listPages(apiKey, query, webconsole);
+      const pages = await this.listPages(accessToken, query, webconsole);
       this.setCredit(5);
 
       return {

@@ -56,10 +56,10 @@ const config = {
   ],
   fields: [
     {
-      name: "NOTION_API_KEY",
-      type: "env",
-      desc: "Your Notion Integration Token",
-      defaultValue: "NOTION_API_KEY",
+      desc: "Connect your Notion Workspace",
+      name: "Notion",
+      type: "social",
+      defaultValue: "",
     },
     {
       name: "Title",
@@ -102,8 +102,12 @@ class notion_create_page extends BaseNode {
     super(config);
   }
 
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
   async createPage(
-    apiKey,
+    accessToken,
     title,
     content,
     parentId,
@@ -111,7 +115,7 @@ class notion_create_page extends BaseNode {
     titlePropName,
     webconsole,
   ) {
-    const notion = new Client({ auth: apiKey });
+    const notion = new Client({ auth: accessToken });
 
     try {
       webconsole.info(
@@ -171,7 +175,6 @@ class notion_create_page extends BaseNode {
       return defaultValue;
     };
 
-    const apiKey = serverData.envList?.NOTION_API_KEY;
     const title = getValue("Title", "Untitled");
     const content = getValue("Content", "");
     const parentId = getValue("Parent ID");
@@ -181,9 +184,30 @@ class notion_create_page extends BaseNode {
     const titlePropName =
       contents.find((c) => c.name === "Title Property Name")?.value || "Name";
 
-    if (!apiKey) {
-      webconsole.error("NOTION NODE | API Key missing.");
-      return { "Page ID": null, "Page URL": null, Tool: null, Credits: 0 };
+    const tokens = serverData.socialList;
+    if (!tokens || !Object.keys(tokens).includes("notion")) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Notion account not connected.");
+      return {
+        "Page ID": null,
+        "Page URL": null,
+        Tool: null,
+        Credits: 0,
+      };
+    }
+
+    const notionData = tokens["notion"];
+    const accessToken = notionData.access_token;
+
+    if (!accessToken) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Access token missing.");
+      return {
+        "Page ID": null,
+        "Page URL": null,
+        Tool: null,
+        Credits: 0,
+      };
     }
 
     const createPageTool = tool(
@@ -197,7 +221,7 @@ class notion_create_page extends BaseNode {
           const pType = tType || "database_id";
 
           const res = await this.createPage(
-            apiKey,
+            accessToken,
             tTitle,
             tContent,
             tParentId || parentId,
@@ -208,6 +232,7 @@ class notion_create_page extends BaseNode {
           this.setCredit(this.getCredit() + 10);
           return [`Page created. URL: ${res.url}`, this.getCredit()];
         } catch (err) {
+          this.setCredit(0);
           return [`Error creating page: ${err.message}`, this.getCredit()];
         }
       },
@@ -241,7 +266,7 @@ class notion_create_page extends BaseNode {
 
     try {
       const result = await this.createPage(
-        apiKey,
+        accessToken,
         title,
         content,
         parentId,

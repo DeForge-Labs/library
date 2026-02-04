@@ -46,10 +46,10 @@ const config = {
   ],
   fields: [
     {
-      name: "NOTION_API_KEY",
-      type: "env",
-      desc: "Your Notion Integration Token",
-      defaultValue: "NOTION_API_KEY",
+      desc: "Connect your Notion Workspace",
+      name: "Notion",
+      type: "social",
+      defaultValue: "",
     },
     {
       name: "Page ID",
@@ -65,6 +65,10 @@ const config = {
 class notion_read_page extends BaseNode {
   constructor() {
     super(config);
+  }
+
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
   }
 
   blockToMarkdown(block) {
@@ -97,8 +101,8 @@ class notion_read_page extends BaseNode {
     }
   }
 
-  async getPageContent(apiKey, pageId, webconsole) {
-    const notion = new Client({ auth: apiKey });
+  async getPageContent(accessToken, pageId, webconsole) {
+    const notion = new Client({ auth: accessToken });
 
     try {
       webconsole.info(`NOTION NODE | Reading page: ${pageId}`);
@@ -146,11 +150,21 @@ class notion_read_page extends BaseNode {
       return defaultValue;
     };
 
-    const apiKey = serverData.envList?.NOTION_API_KEY;
     const pageId = getValue("Page ID");
 
-    if (!apiKey) {
-      webconsole.error("NOTION NODE | API Key missing.");
+    const tokens = serverData.socialList;
+    if (!tokens || !Object.keys(tokens).includes("notion")) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Notion account not connected.");
+      return { Content: "", Title: "", Tool: null, Credits: 0 };
+    }
+
+    const notionData = tokens["notion"];
+    const accessToken = notionData.access_token;
+
+    if (!accessToken) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Access token missing.");
       return { Content: "", Title: "", Tool: null, Credits: 0 };
     }
 
@@ -158,7 +172,7 @@ class notion_read_page extends BaseNode {
       async ({ pageId: tPageId }) => {
         try {
           const res = await this.getPageContent(
-            apiKey,
+            accessToken,
             tPageId || pageId,
             webconsole,
           );
@@ -168,6 +182,7 @@ class notion_read_page extends BaseNode {
             this.getCredit(),
           ];
         } catch (err) {
+          this.setCredit(0);
           return [`Error reading page: ${err.message}`, this.getCredit()];
         }
       },
@@ -188,7 +203,7 @@ class notion_read_page extends BaseNode {
     }
 
     try {
-      const result = await this.getPageContent(apiKey, pageId, webconsole);
+      const result = await this.getPageContent(accessToken, pageId, webconsole);
       this.setCredit(5);
       return {
         Content: result.content,

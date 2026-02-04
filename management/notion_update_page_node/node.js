@@ -46,10 +46,10 @@ const config = {
   ],
   fields: [
     {
-      name: "NOTION_API_KEY",
-      type: "env",
-      desc: "Your Notion Integration Token",
-      defaultValue: "NOTION_API_KEY",
+      desc: "Connect your Notion Workspace",
+      name: "Notion",
+      type: "social",
+      defaultValue: "",
     },
     {
       name: "Page ID",
@@ -99,8 +99,8 @@ class notion_update_page extends BaseNode {
     return formatted;
   }
 
-  async updatePage(apiKey, pageId, properties, archive, webconsole) {
-    const notion = new Client({ auth: apiKey });
+  async updatePage(accessToken, pageId, properties, archive, webconsole) {
+    const notion = new Client({ auth: accessToken });
 
     try {
       webconsole.info(`NOTION NODE | Updating page: ${pageId}`);
@@ -135,7 +135,6 @@ class notion_update_page extends BaseNode {
       return defaultValue;
     };
 
-    const apiKey = serverData.envList?.NOTION_API_KEY;
     const pageId = getValue("Page ID");
 
     const archiveField = contents.find((c) => c.name === "Archive Page");
@@ -155,8 +154,19 @@ class notion_update_page extends BaseNode {
       }
     }
 
-    if (!apiKey) {
-      webconsole.error("NOTION NODE | API Key missing.");
+    const tokens = serverData.socialList;
+    if (!tokens || !Object.keys(tokens).includes("notion")) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Notion account not connected.");
+      return { "Page URL": null, Tool: null, Credits: 0 };
+    }
+
+    const notionData = tokens["notion"];
+    const accessToken = notionData.access_token;
+
+    if (!accessToken) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Access token missing.");
       return { "Page URL": null, Tool: null, Credits: 0 };
     }
 
@@ -167,7 +177,7 @@ class notion_update_page extends BaseNode {
             typeof tProps === "string" ? JSON.parse(tProps) : tProps;
 
           const url = await this.updatePage(
-            apiKey,
+            accessToken,
             tPageId || pageId,
             parsedProps,
             tArchive,
@@ -176,6 +186,7 @@ class notion_update_page extends BaseNode {
           this.setCredit(this.getCredit() + 10);
           return [`Successfully updated page. URL: ${url}`, this.getCredit()];
         } catch (err) {
+          this.setCredit(0);
           return [`Error updating page: ${err.message}`, this.getCredit()];
         }
       },
@@ -208,7 +219,7 @@ class notion_update_page extends BaseNode {
 
     try {
       const url = await this.updatePage(
-        apiKey,
+        accessToken,
         pageId,
         properties,
         shouldArchive,

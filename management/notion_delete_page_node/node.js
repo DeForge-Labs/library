@@ -41,10 +41,10 @@ const config = {
   ],
   fields: [
     {
-      name: "NOTION_API_KEY",
-      type: "env",
-      desc: "Your Notion Integration Token",
-      defaultValue: "NOTION_API_KEY",
+      desc: "Connect your Notion Workspace",
+      name: "Notion",
+      type: "social",
+      defaultValue: "",
     },
     {
       name: "Page ID",
@@ -62,13 +62,17 @@ class notion_delete_page extends BaseNode {
     super(config);
   }
 
-  async deletePage(apiKey, pageId, webconsole) {
-    const notion = new Client({ auth: apiKey });
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
+  async deletePage(accessToken, pageId, webconsole) {
+    const notion = new Client({ auth: accessToken });
 
     try {
       webconsole.info(`NOTION NODE | Archiving (Deleting) page: ${pageId}`);
 
-      const response = await notion.pages.update({
+      await notion.pages.update({
         page_id: pageId,
         archived: true,
       });
@@ -90,21 +94,32 @@ class notion_delete_page extends BaseNode {
       return defaultValue;
     };
 
-    const apiKey = serverData.envList?.NOTION_API_KEY;
     const pageId = getValue("Page ID");
 
-    if (!apiKey) {
-      webconsole.error("NOTION NODE | API Key missing.");
+    const tokens = serverData.socialList;
+    if (!tokens || !Object.keys(tokens).includes("notion")) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Notion account not connected.");
+      return { Success: false, Tool: null, Credits: 0 };
+    }
+
+    const notionData = tokens["notion"];
+    const accessToken = notionData.access_token;
+
+    if (!accessToken) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Access token missing.");
       return { Success: false, Tool: null, Credits: 0 };
     }
 
     const deletePageTool = tool(
       async ({ pageId: tPageId }) => {
         try {
-          await this.deletePage(apiKey, tPageId || pageId, webconsole);
+          await this.deletePage(accessToken, tPageId || pageId, webconsole);
           this.setCredit(this.getCredit() + 5);
           return ["Successfully moved page to trash.", this.getCredit()];
         } catch (err) {
+          this.setCredit(0);
           return [`Error deleting page: ${err.message}`, this.getCredit()];
         }
       },
@@ -126,7 +141,7 @@ class notion_delete_page extends BaseNode {
     }
 
     try {
-      await this.deletePage(apiKey, pageId, webconsole);
+      await this.deletePage(accessToken, pageId, webconsole);
       this.setCredit(5);
       return {
         Success: true,
