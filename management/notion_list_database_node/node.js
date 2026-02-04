@@ -35,10 +35,10 @@ const config = {
       desc: "Optional query to filter databases by name",
     },
     {
-      name: "NOTION_API_KEY",
-      type: "env",
-      desc: "Your Notion Integration Token",
-      defaultValue: "NOTION_API_KEY",
+      desc: "Connect your Notion Workspace",
+      name: "Notion",
+      type: "social",
+      defaultValue: "",
     },
   ],
   difficulty: "easy",
@@ -50,6 +50,10 @@ class notion_list_databases extends BaseNode {
     super(config);
   }
 
+  estimateUsage(inputs, contents, serverData) {
+    return this.getCredit();
+  }
+
   extractIdFromUrl(url) {
     const match = url.match(/([a-f0-9]{32})(?=\?|$|#)/);
     if (match && match[0]) {
@@ -59,8 +63,8 @@ class notion_list_databases extends BaseNode {
     return null;
   }
 
-  async listDatabases(apiKey, query, webconsole) {
-    const notion = new Client({ auth: apiKey });
+  async listDatabases(accessToken, query, webconsole) {
+    const notion = new Client({ auth: accessToken });
 
     try {
       webconsole.info("NOTION NODE | Searching for databases...");
@@ -108,33 +112,55 @@ class notion_list_databases extends BaseNode {
       return defaultValue;
     };
 
-    const apiKey = serverData.envList?.NOTION_API_KEY;
     const query = getValue("Query", "");
 
-    if (!apiKey) {
+    const tokens = serverData.socialList;
+    if (!tokens || !Object.keys(tokens).includes("notion")) {
+      this.setCredit(0);
+      webconsole.error("NOTION NODE | Notion account not connected.");
+      return {
+        success: false,
+        message: "Notion account not connected",
+        Databases: [],
+        Tool: null,
+      };
+    }
+
+    const notionData = tokens["notion"];
+    const accessToken = notionData.access_token;
+
+    if (!accessToken) {
+      this.setCredit(0);
       webconsole.error(
-        "NOTION NODE | API Key missing. Please set NOTION_API_KEY.",
+        "NOTION NODE | Access token missing from connection data.",
       );
-      return { Databases: [], Tool: null, Credits: 0 };
+      return {
+        success: false,
+        message: "Invalid Notion connection",
+        Databases: [],
+        Tool: null,
+      };
     }
 
     const listDbTool = tool(
       async ({ query: tQuery }) => {
         try {
           const dbs = await this.listDatabases(
-            apiKey,
+            accessToken,
             tQuery || "",
             webconsole,
           );
           this.setCredit(this.getCredit() + 5);
           return [JSON.stringify(dbs, null, 2), this.getCredit()];
         } catch (err) {
+          this.setCredit(0);
           return [`Error listing databases: ${err.message}`, this.getCredit()];
         }
       },
       {
         name: "notion_list_databases",
-        description: "Get a list of all Notion databases I have access to.",
+        description:
+          "Get a list of all Notion databases the user has shared with the integration.",
         schema: z.object({
           query: z
             .string()
@@ -146,7 +172,7 @@ class notion_list_databases extends BaseNode {
     );
 
     try {
-      const dbs = await this.listDatabases(apiKey, query, webconsole);
+      const dbs = await this.listDatabases(accessToken, query, webconsole);
       this.setCredit(5);
 
       return {
