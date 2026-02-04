@@ -11,11 +11,7 @@ const config = {
   desc: "Fetches a list of all Notion databases shared with this integration.",
   credit: 5,
   inputs: [
-    {
-      desc: "The flow of the workflow",
-      name: "Flow",
-      type: "Flow",
-    },
+    { desc: "The flow of the workflow", name: "Flow", type: "Flow" },
     {
       desc: "Optional query to filter databases by name",
       name: "Query",
@@ -23,21 +19,13 @@ const config = {
     },
   ],
   outputs: [
-    {
-      desc: "The Flow to trigger",
-      name: "Flow",
-      type: "Flow",
-    },
+    { desc: "The Flow to trigger", name: "Flow", type: "Flow" },
     {
       desc: "The list of databases found (JSON)",
       name: "Databases",
       type: "JSON",
     },
-    {
-      desc: "The tool version of this node",
-      name: "Tool",
-      type: "Tool",
-    },
+    { desc: "The tool version of this node", name: "Tool", type: "Tool" },
   ],
   fields: [
     {
@@ -62,6 +50,15 @@ class notion_list_databases extends BaseNode {
     super(config);
   }
 
+  extractIdFromUrl(url) {
+    const match = url.match(/([a-f0-9]{32})(?=\?|$|#)/);
+    if (match && match[0]) {
+      const raw = match[0];
+      return `${raw.substr(0, 8)}-${raw.substr(8, 4)}-${raw.substr(12, 4)}-${raw.substr(16, 4)}-${raw.substr(20)}`;
+    }
+    return null;
+  }
+
   async listDatabases(apiKey, query, webconsole) {
     const notion = new Client({ auth: apiKey });
 
@@ -82,12 +79,17 @@ class notion_list_databases extends BaseNode {
 
       const response = await notion.search(searchParams);
 
-      const databases = response.results.map((db) => ({
-        id: db.id,
-        title: db.title[0]?.plain_text || "Untitled Database",
-        url: db.url,
-        last_edited: db.last_edited_time,
-      }));
+      const databases = response.results.map((db) => {
+        const urlId = this.extractIdFromUrl(db.url);
+
+        return {
+          id: urlId || db.id,
+          api_id: db.id,
+          title: db.title?.[0]?.plain_text || "Untitled Database",
+          url: db.url,
+          last_edited: db.last_edited_time,
+        };
+      });
 
       webconsole.success(`NOTION NODE | Found ${databases.length} databases.`);
       return databases;
@@ -132,8 +134,7 @@ class notion_list_databases extends BaseNode {
       },
       {
         name: "notion_list_databases",
-        description:
-          "Get a list of all Notion databases I have access to. Use this to find the ID of a database by its name.",
+        description: "Get a list of all Notion databases I have access to.",
         schema: z.object({
           query: z
             .string()
