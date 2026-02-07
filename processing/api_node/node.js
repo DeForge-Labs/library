@@ -1,7 +1,6 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import axios from "axios";
-import { tool } from "@langchain/core/tools"; // 1. Import tool
-import { z } from "zod"; // 2. Import zod
+import { tool } from "@langchain/core/tools"; 
+import { z } from "zod"; 
 
 const config = {
   title: "API Call",
@@ -85,34 +84,50 @@ class api_node extends BaseNode {
     super(config);
   }
 
-  /**
-   * Helper function to perform the actual API call
-   */
   async executeApiCall(method, endpoint, body, headers, webconsole) {
     if (!endpoint || !endpoint.trim()) {
       throw new Error("No endpoint found");
     }
 
-    // Ensure body and headers are objects if they are null/undefined
     const actualBody = body ?? {};
     const actualHeaders = headers ?? {};
 
-    const requestConfig = {
+    const options = {
       method: method,
-      maxBodyLength: Infinity,
-      url: endpoint,
-      ...(Object.keys(actualHeaders).length > 0 && { headers: actualHeaders }),
-      data: JSON.stringify(actualBody),
+      headers: {
+        "Content-Type": "application/json",
+        ...actualHeaders,
+      },
     };
+
+    if (method !== "GET" && method !== "HEAD") {
+      options.body = JSON.stringify(actualBody);
+    }
 
     webconsole.info(`API NODE | Sending ${method} request to ${endpoint}`);
     try {
-      const response = await axios.request(requestConfig);
+      const response = await fetch(endpoint, options);
+      
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data === "object"
+            ? JSON.stringify(data)
+            : data || response.statusText
+        );
+      }
+
       webconsole.success("API NODE | Response received");
-      return response.data;
+      return data;
     } catch (error) {
-      const errorMsg =
-        error.response?.data?.message || error.message || String(error);
+      const errorMsg = error.message || String(error);
       webconsole.error(`API NODE | Error: ${errorMsg}`);
       throw new Error(`API call failed: ${errorMsg}`);
     }
@@ -142,7 +157,6 @@ class api_node extends BaseNode {
     const body = getValue("body", {});
     const headers = getValue("headers", {});
 
-    // 4. Create the Tool
     const apiCallTool = tool(
       async (
         {
@@ -207,7 +221,6 @@ class api_node extends BaseNode {
       };
     }
 
-    // 5. Execute the API call with node inputs/fields
     try {
       const apiResponse = await this.executeApiCall(
         method,
@@ -223,7 +236,6 @@ class api_node extends BaseNode {
         Credits: this.getCredit(),
       };
     } catch (error) {
-      // executeApiCall throws an Error with a descriptive message
       return {
         output: { error: error.message },
         Tool: apiCallTool,
