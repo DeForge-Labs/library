@@ -6,6 +6,50 @@ import { z } from "zod";
 
 dotenv.config();
 
+ const countryDict = {
+      "Great Britain": "gb",
+      "United States": "us",
+      Austria: "at",
+      Australia: "au",
+      Belgium: "be",
+      Brazil: "br",
+      Canada: "ca",
+      Switzerland: "ch",
+      Germany: "de",
+      Spain: "es",
+      France: "fr",
+      India: "in",
+      Italy: "it",
+      Mexico: "mx",
+      Netherlands: "nl",
+      "New Zealand": "nz",
+      Poland: "pl",
+      Singapore: "sg",
+      "South Africa": "za",
+    };
+
+    const currencyCodeDict = {
+      "Great Britain": "GBP",
+      "United States": "USD",
+      Austria: "EUR",
+      Australia: "AUD",
+      Belgium: "EUR",
+      Brazil: "BRL",
+      Canada: "CAD",
+      Switzerland: "CHF",
+      Germany: "EUR",
+      Spain: "EUR",
+      France: "EUR",
+      India: "INR",
+      Italy: "EUR",
+      Mexico: "MXN",
+      Netherlands: "EUR",
+      "New Zealand": "NZD",
+      Poland: "PLN",
+      Singapore: "SGD",
+      "South Africa": "ZAR",
+    };
+
 const config = {
   title: "Jobs Search",
   category: "search",
@@ -158,50 +202,6 @@ class jobs_search_node extends BaseNode {
 
   // --- API Execution Helper ---
   async executeJobSearch(query, minSalary, country, webconsole) {
-    const countryDict = {
-      "Great Britain": "gb",
-      "United States": "us",
-      Austria: "at",
-      Australia: "au",
-      Belgium: "be",
-      Brazil: "br",
-      Canada: "ca",
-      Switzerland: "ch",
-      Germany: "de",
-      Spain: "es",
-      France: "fr",
-      India: "in",
-      Italy: "it",
-      Mexico: "mx",
-      Netherlands: "nl",
-      "New Zealand": "nz",
-      Poland: "pl",
-      Singapore: "sg",
-      "South Africa": "za",
-    };
-
-    const currencyCodeDict = {
-      "Great Britain": "GBP",
-      "United States": "USD",
-      Austria: "EUR",
-      Australia: "AUD",
-      Belgium: "EUR",
-      Brazil: "BRL",
-      Canada: "CAD",
-      Switzerland: "CHF",
-      Germany: "EUR",
-      Spain: "EUR",
-      France: "EUR",
-      India: "INR",
-      Italy: "EUR",
-      Mexico: "MXN",
-      Netherlands: "EUR",
-      "New Zealand": "NZD",
-      Poland: "PLN",
-      Singapore: "SGD",
-      "South Africa": "ZAR",
-    };
-
     if (!query) {
       throw new Error("Search query (Terms) is required.");
     }

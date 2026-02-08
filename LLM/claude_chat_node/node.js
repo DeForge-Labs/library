@@ -435,7 +435,7 @@ class claude_chat_node extends BaseNode {
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
 
-            const model = contents.filter((e) => e.name === "Model")[0].value || "claude-3-7-sonnet-latest";
+            const model = contents.find((e) => e.name === "Model")?.value || "claude-3-7-sonnet-latest";
             const modelMap = {
                 "claude-opus-4-5": "anthropic/claude-opus-4.5",
                 "claude-sonnet-4-5": "anthropic/claude-sonnet-4.5",
@@ -447,7 +447,7 @@ class claude_chat_node extends BaseNode {
                 "claude-3-5-haiku-latest": "anthropic/claude-3.5-haiku",
             }
 
-            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
+            const saveMemory = contents.find((e) => e.name === "Save Context")?.value || false;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
             const ragTableName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";

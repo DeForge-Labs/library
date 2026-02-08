@@ -481,7 +481,7 @@ class google_chat_node extends BaseNode {
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
 
-            const model = contents.filter((e) => e.name === "Model")[0].value || "gemini-2.0-flash";
+            const model = contents.find((e) => e.name === "Model")?.value || "gemini-2.0-flash";
             const modelMap = {
                 "gemini-3-pro-preview": "google/gemini-3-pro-preview",
                 "gemini-2.5-pro": "google/gemini-2.5-pro",
@@ -491,7 +491,7 @@ class google_chat_node extends BaseNode {
                 "gemini-2.0-flash-lite": "google/gemini-2.0-flash-lite-001",
             }
             
-            const saveMemory = contents.filter((e) => e.name === "Save Context")[0].value || false;
+            const saveMemory = contents.find((e) => e.name === "Save Context")?.value || false;
 
             const ragStoreFilter = inputs.filter((e) => e.name === "RAG");
             const ragTableName = ragStoreFilter.length > 0 ? ragStoreFilter[0].value : "";
