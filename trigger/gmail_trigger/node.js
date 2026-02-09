@@ -115,7 +115,7 @@ class gmail_trigger extends BaseNode {
             webconsole.info("GMAIL TRIGGER NODE | Started execution");
 
             const tokens = serverData.socialList;
-            if (!Object.keys(tokens).includes("gmail_trigger")) {
+            if (!tokens || !Object.keys(tokens).includes("gmail_trigger")) {
                 webconsole.error("GMAIL TRIGGER NODE | Please connect your gmail account");
                 return null;
             }
@@ -136,29 +136,40 @@ class gmail_trigger extends BaseNode {
 
             const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
             const oldHistory = serverData.oldHistoryId;
-            const newHistory = serverData.newHistoryId;
 
             const historyResponse = await gmail.users.history.list({
                 userId: 'me',
                 startHistoryId: oldHistory,
             });
 
-            if (!historyResponse.data.history) {
-                webconsole.error("GMAIL TRIGGER NODE | No new emails found");
+            if (!historyResponse.data.history || historyResponse.data.history.length === 0) {
+                webconsole.info("GMAIL TRIGGER NODE | No new emails found (History empty)");
                 return null;
             }
 
             webconsole.info("GMAIL TRIGGER NODE | New emails found, processing...");
-            let allEmailData = {emails: []};
+            
+            let allEmailData = { emails: [] };
+
             for (const historyItem of historyResponse.data.history) {
-                for (const messageItem of historyItem.messagesAdded) {
-                    const messageId = messageItem.message.id;
+                if (historyItem.messagesAdded) {
+                    for (const messageItem of historyItem.messagesAdded) {
+                        const messageId = messageItem.message.id;
 
-                    const emailData = await this.processEmail(gmail, messageId);
-                    webconsole.info(`GMAIL TRIGGER NODE | Processed email: ${emailData.subject}`);
-
-                    allEmailData.emails.push(emailData);
+                        try {
+                            const emailData = await this.processEmail(gmail, messageId);
+                            webconsole.info(`GMAIL TRIGGER NODE | Processed email: ${emailData.subject}`);
+                            allEmailData.emails.push(emailData);
+                        } catch (innerError) {
+                            webconsole.error(`GMAIL TRIGGER NODE | Failed to fetch specific email ${messageId}: ${innerError.message}`);
+                        }
+                    }
                 }
+            }
+
+            if (allEmailData.emails.length === 0) {
+                 webconsole.info("GMAIL TRIGGER NODE | History processed, but no new message content found (likely just label changes).");
+                 return null;
             }
 
             webconsole.success("GMAIL TRIGGER NODE | All emails processed successfully");
@@ -166,8 +177,8 @@ class gmail_trigger extends BaseNode {
             return {
                 "Flow": true,
                 "All Email": allEmailData,
-                "Subject": allEmailData.emails.length === 1 ? allEmailData.emails[0].subject : "Multiple or no emails found",
-                "Body": allEmailData.emails.length === 1 ? allEmailData.emails[0].body : "Multiple or no emails found",
+                "Subject": allEmailData.emails.length === 1 ? allEmailData.emails[0].subject : "Multiple emails found",
+                "Body": allEmailData.emails.length === 1 ? allEmailData.emails[0].body : "Multiple emails found",
                 "Credits": this.getCredit(),
             };
 
