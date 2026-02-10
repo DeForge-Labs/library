@@ -57,6 +57,12 @@ const config = {
             type: "Text",
             value: "123456",
         },
+        {
+            desc: "Connect to your Slack account",
+            name: "Slack",
+            type: "social",
+            defaultValue: "",
+        },
     ],
     difficulty: "easy",
     tags: ["output", "media", "slack", "bot"],
@@ -83,7 +89,7 @@ class slack_media_msg_send extends BaseNode {
         let Caption = CaptionFilter.length > 0 ? CaptionFilter[0].value : contents.filter((e) => e.name === "Caption")[0].value || "";
         Caption = Caption.length > 39990 ? Caption.slice(0, -3) + "..." : Caption;
 
-        const ChannelFilter = inputs.filter((e) => e.name === "ChatID");
+        const ChannelFilter = inputs.filter((e) => e.name === "ChannelID");
         const ChannelID = ChannelFilter.length > 0 ? ChannelFilter[0].value : contents.filter((e) => e.name === "ChannelID")[0].value || "";
         
         if (!ChannelID) {

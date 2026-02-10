@@ -1,11 +1,11 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-  title: "Map Input",
+  title: "JSON Input",
   category: "input",
   type: "map_var",
   icon: {},
-  desc: "Map variable",
+  desc: "JSON variable",
   credit: 0,
   inputs: [
     {

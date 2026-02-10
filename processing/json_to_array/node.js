@@ -1,11 +1,11 @@
 import BaseNode from "../../core/BaseNode/node.js";
 
 const config = {
-  title: "Objects To JSON",
+  title: "JSON To Array",
   category: "processing",
-  type: "obj_to_map",
+  type: "json_to_array",
   icon: {},
-  desc: "Convert object to JSON",
+  desc: "Aggregates multiple JSON objects into a single JSON Array.",
   credit: 0,
   inputs: [
     {
@@ -14,8 +14,8 @@ const config = {
       type: "Flow",
     },
     {
-      desc: "Objects to convert",
-      name: "objects",
+      desc: "Multiple JSON objects to aggregate",
+      name: "jsons",
       type: "JSON[]",
     },
   ],
@@ -26,24 +26,24 @@ const config = {
         type: "Flow",
     },
     {
-      desc: "The map of the objects",
-      name: "map",
+      desc: "The resulting array of JSON objects",
+      name: "array",
       type: "JSON",
     },
   ],
   fields: [
     {
-      desc: "Objects to convert",
-      name: "objects",
+      desc: "JSON objects",
+      name: "jsons",
       type: "JSON[]",
       value: "[]",
     },
   ],
-  difficulty: "medium",
-  tags: ["object", "map"],
+  difficulty: "easy",
+  tags: ["json", "array", "aggregator"],
 };
 
-class obj_to_map extends BaseNode {
+class json_to_json_array extends BaseNode {
   constructor() {
     super(config);
   }
@@ -59,34 +59,32 @@ class obj_to_map extends BaseNode {
    */
   async run(inputs, contents, webconsole, serverData) {
     try {
-      webconsole.info("OBJECT TO MAP NODE | Gathering objects");
-      let pairMap = {};
-
-      const inputObjsFilter = inputs.find((e) => e.name === "objects");
+      webconsole.info("JSON TO ARRAY NODE | Gathering inputs");
+      
+      const inputObjsFilter = inputs.find((e) => e.name === "jsons");
       let inputObjs = inputObjsFilter?.value || [];
 
-      if (typeof inputObjs === "object") {
-        inputObjs = [inputObjs];
+      // Ensure we are working with an array
+      if (!Array.isArray(inputObjs)) {
+          // If the system passed a single object instead of an array, wrap it
+          if (inputObjs && typeof inputObjs === 'object') {
+              inputObjs = [inputObjs];
+          } else {
+              inputObjs = [];
+          }
       }
 
-      for (const obj of inputObjs) {
-        const key = Object.keys(obj)[0];
-        const value = Object.values(obj)[0];
-
-        pairMap[key] = value;
-      }
-
-      webconsole.success(`OBJECT TO MAP NODE | Successfully converted  data`);
+      webconsole.success(`JSON TO ARRAY NODE | Aggregated ${inputObjs.length} items`);
 
       return {
-        map: pairMap,
+        array: inputObjs,
         Credits: this.getCredit(),
       };
     } catch (error) {
-      webconsole.error("OBJECT TO MAP NODE | Some error occured: ", error);
+      webconsole.error("JSON TO ARRAY NODE | Some error occured: ", error);
       return null;
     }
   }
 }
 
-export default obj_to_map;
+export default json_to_json_array;

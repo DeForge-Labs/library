@@ -209,7 +209,8 @@ class cal_book extends BaseNode {
       const eventIdPayload = await axios.get(meetingLink);
       // This is highly fragile, assuming the Cal.com page structure.
       // In a real application, you'd use a stable API.
-      const eventIDMatch = eventIdPayload.data.match(/eventData.*?id":(\d+)/);
+
+      const eventIDMatch = eventIdPayload.data.match(/eventData.+?id\\?":(\d+)/);
       if (!eventIDMatch || eventIDMatch.length < 2) {
         throw new Error("Could not parse event ID from meeting link page.");
       }

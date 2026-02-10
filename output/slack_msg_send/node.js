@@ -45,6 +45,12 @@ const config = {
             type: "Text",
             value: "123456",
         },
+        {
+            desc: "Connect to your Slack account",
+            name: "Slack",
+            type: "social",
+            defaultValue: "",
+        },
     ],
     difficulty: "easy",
     tags: ["output", "slack", "bot"],

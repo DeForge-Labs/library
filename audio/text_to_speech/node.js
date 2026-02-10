@@ -239,7 +239,7 @@ class text_to_speech extends BaseNode {
 
             webconsole.success("TEXT TO SPEECH NODE | Successfully uploaded audio");
             return {
-                "Audio Link": audioLink,
+                "Audio Link": audioLink?.fileURL,
                 "Credits": this.getCredit(),
             };
             

@@ -1,7 +1,7 @@
 {
-  "name": "dub-media",
+  "name": "csv-to-json",
   "version": "0.0.1",
-  "description": "Dub audio or video to another language using ElevenLabs",
+  "description": "CSV to JSON",
   "main": "node.js",
   "type": "module",
   "scripts": {
@@ -18,12 +18,8 @@
   },
   "homepage": "https://github.com/DeForge-Labs/library#readme",
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "^2.7.0",
-    "axios": "^1.11.0",
-    "dotenv": "^17.2.0",
-    "file-type": "^21.0.0",
-    "form-data": "^4.0.4",
-    "nodejs-file-downloader": "^4.13.0",
-    "uuid": "^11.1.0"
+    "papaparse": "^5.5.3",
+    "@langchain/core": "^0.3.78",
+    "zod": "^3.25.76"
   }
 }
