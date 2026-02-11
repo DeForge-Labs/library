@@ -7,17 +7,19 @@ import dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
 import nodemailer from "nodemailer";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_AUTH_URL,
+});
 
 const prisma = new PrismaClient({ adapter });
 
 async function sendDeforgeEmail(to, subject, htmlBody) {
   const smtpConfig = {
-    host: process.env.DEFORGE_SMTP_HOST,
-    port: process.env.DEFORGE_SMTP_PORT,
-    user: process.env.DEFORGE_SMTP_USER,
-    pass: process.env.DEFORGE_SMTP_PASSWORD,
-    secure: process.env.DEFORGE_SMTP_SECURE === "true",
+    host: process.env.AUTH_SMTP_HOST,
+    port: process.env.AUTH_SMTP_PORT,
+    user: process.env.AUTH_SMTP_USER,
+    pass: process.env.AUTH_SMTP_PASSWORD,
+    secure: process.env.AUTH_SMTP_SECURE === "true",
   };
 
   if (!smtpConfig.host || !smtpConfig.user || !smtpConfig.pass) {

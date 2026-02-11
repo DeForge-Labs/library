@@ -9,7 +9,7 @@ const config = {
   type: "passwordless_otp_generate",
   icon: {},
   desc: "Initiates passwordless sign-in by sending an OTP to the provided email.",
-  credit: 0,
+  credit: 5,
   inputs: [
     { name: "Flow", type: "Flow", desc: "The flow of the workflow" },
     { name: "Email", type: "Text", desc: "User's email address" },
