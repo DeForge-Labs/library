@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const config = {
   title: "Flux Image Gen",
-  category: "GenAI", 
+  category: "GenAI",
   type: "flux_image_gen",
   icon: {},
   desc: "Generate images using Flux AI.",
@@ -55,7 +55,7 @@ const config = {
       name: "Resolution",
       type: "select",
       value: "1024x768",
-      options: ["1024x768", "1600x800", "1920x1080"],
+      options: ["1024x768", "1024x1024", "1440x1440"],
     },
     {
       desc: "Random seed (optional)",
@@ -89,7 +89,7 @@ class flux_image_gen extends BaseNode {
    */
   parseResolution(resolutionStr) {
     if (!resolutionStr || typeof resolutionStr !== "string") {
-      return { width: 1024, height: 768 }; 
+      return { width: 1024, height: 768 };
     }
     const parts = resolutionStr.split("x");
     if (parts.length === 2) {
@@ -114,7 +114,7 @@ class flux_image_gen extends BaseNode {
     if (!prompt) throw new Error("Prompt is required.");
 
     const { width, height } = this.parseResolution(resolution);
-    
+
     const body = {
       prompt: prompt,
       width: width,
@@ -147,39 +147,38 @@ class flux_image_gen extends BaseNode {
 
       const data = await response.json();
       pollingUrl = data.polling_url;
-      
+
       webconsole.info(`FLUX GEN | Task initiated. Polling URL received.`);
     } catch (error) {
       throw new Error(`Failed to initiate Flux generation: ${error.message}`);
     }
 
     let tries = 0;
-    const maxTries = 20; 
-    
+    const maxTries = 20;
+
     while (tries < maxTries) {
       try {
         const pollResponse = await fetch(pollingUrl, {
-            method: "GET",
-            headers: {
-                "x-key": apiKey
-            }
+          method: "GET",
+          headers: {
+            "x-key": apiKey,
+          },
         });
-        
+
         if (!pollResponse.ok) {
-           console.warn("Polling request failed, retrying...");
+          console.warn("Polling request failed, retrying...");
         } else {
-            const pollData = await pollResponse.json();
+          const pollData = await pollResponse.json();
 
-            if (pollData.status === "Ready") {
-                webconsole.success("FLUX GEN | Image ready.");
-                return pollData.result.sample; 
-            } else if (pollData.status === "Failed") {
-                throw new Error("Flux generation status returned Failed.");
-            }
+          if (pollData.status === "Ready") {
+            webconsole.success("FLUX GEN | Image ready.");
+            return pollData.result.sample;
+          } else if (pollData.status === "Failed") {
+            throw new Error("Flux generation status returned Failed.");
+          }
         }
-
       } catch (e) {
-         webconsole.error(`FLUX GEN | Polling error: ${e.message}`);
+        webconsole.error(`FLUX GEN | Polling error: ${e.message}`);
       }
 
       tries++;
@@ -193,7 +192,12 @@ class flux_image_gen extends BaseNode {
     webconsole.info("FLUX GEN | Begin execution");
 
     const prompt = this.getValue(inputs, contents, "Prompt", "");
-    const resolution = this.getValue(inputs, contents, "Resolution", "1280x720");
+    const resolution = this.getValue(
+      inputs,
+      contents,
+      "Resolution",
+      "1280x720",
+    );
     const seed = this.getValue(inputs, contents, "Seed", 42);
 
     const fluxTool = tool(
@@ -204,7 +208,7 @@ class flux_image_gen extends BaseNode {
             prompt,
             resolution,
             seed,
-            webconsole
+            webconsole,
           );
           return [JSON.stringify({ imageUrl: resultUrl }), this.getCredit()];
         } catch (error) {
@@ -214,16 +218,25 @@ class flux_image_gen extends BaseNode {
       },
       {
         name: "fluxImageGenerator",
-        description: "Generates an image using Flux AI based on a text prompt. Returns a URL to the generated image.",
+        description:
+          "Generates an image using Flux AI based on a text prompt. Returns a URL to the generated image.",
         schema: z.object({
-          prompt: z.string().describe("The detailed text description of the image to generate."),
-          resolution: z.enum(["1280x720", "1600x800", "1920x1080"])
-            .default("1280x720")
+          prompt: z
+            .string()
+            .describe(
+              "The detailed text description of the image to generate.",
+            ),
+          resolution: z
+            .enum(["1024x768", "1024x1024", "1440x1440"])
+            .default("1024x768")
             .describe("The resolution of the output image."),
-          seed: z.number().default(42).describe("The random seed for generation."),
+          seed: z
+            .number()
+            .default(42)
+            .describe("The random seed for generation."),
         }),
         responseFormat: "content_and_artifact",
-      }
+      },
     );
 
     if (!prompt) {
@@ -240,7 +253,7 @@ class flux_image_gen extends BaseNode {
         prompt,
         resolution,
         seed,
-        webconsole
+        webconsole,
       );
 
       return {
