@@ -1,0 +1,32 @@
+{
+  "name": "verify_session",
+  "version": "0.0.1",
+  "description": "Verify session for authentication",
+  "main": "node.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeForge-Labs/library.git"
+  },
+  "author": "DeForge Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeForge-Labs/library/issues"
+  },
+  "homepage": "https://github.com/DeForge-Labs/library#readme",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "better-auth": "^1.4.18",
+    "dotenv": "^17.2.4",
+    "nodemailer": "^8.0.1",
+    "@langchain/core": "^0.3.78",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "prisma": "^7.3.0"
+  }
+}

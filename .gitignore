@@ -141,3 +141,5 @@ test.sh
 .DS_Store
 
 package-lock.json
+
+generated/
