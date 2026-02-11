@@ -75,29 +75,32 @@ function getOtpTemplate(otp, companyName) {
   `;
 }
 
-export const auth = betterAuth({
-  baseURL: "https://deforge.io",
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
-  emailVerification: {
-    enabled: true,
-  },
-  plugins: [
-    bearer({}),
-    emailOTP({
-      overrideDefaultEmailVerification: true,
-      async sendVerificationOTP({ email, otp, type, request }) {
-        if (type === "sign-in") {
-          const companyName =
-            request?.headers?.get("x-company-name") || "Acme Inc";
-
-          const subject = `${companyName}: Sign In Code`;
-          const html = getOtpTemplate(otp, companyName);
-
-          await sendDeforgeEmail(email, subject, html);
-        }
-      },
+export const sendMail = async (email, companyName) => {
+  const auth = betterAuth({
+    baseURL: "https://deforge.io",
+    database: prismaAdapter(prisma, {
+      provider: "postgresql",
     }),
-  ],
-});
+    emailVerification: {
+      enabled: true,
+    },
+    plugins: [
+      bearer({}),
+      emailOTP({
+        overrideDefaultEmailVerification: true,
+        async sendVerificationOTP({ email, otp, type }) {
+          if (type === "sign-in") {
+            const subject = `${companyName}: Sign In Code`;
+            const html = getOtpTemplate(otp, companyName);
+
+            await sendDeforgeEmail(email, subject, html);
+          }
+        },
+      }),
+    ],
+  });
+
+  await auth.api.sendVerificationOTP({
+    body: { email, type: "sign-in" },
+  });
+};

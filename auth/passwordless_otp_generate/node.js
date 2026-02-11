@@ -1,5 +1,5 @@
 import BaseNode from "../../core/BaseNode/node.js";
-import { auth } from "./auth.js";
+import { sendMail } from "./auth.js";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -56,10 +56,8 @@ class passwordless_otp_generate extends BaseNode {
     const generateOtpTool = tool(
       async ({ email, companyName }) => {
         try {
-          await auth.api.sendVerificationOTP({
-            body: { email, type: "sign-in" },
-            headers: { "x-company-name": companyName || "Acme Inc" },
-          });
+          await sendMail(email, companyName || "Acme Inc");
+
           return [
             JSON.stringify({ success: true, message: "OTP Sent" }),
             this.getCredit(),
@@ -82,6 +80,7 @@ class passwordless_otp_generate extends BaseNode {
     );
 
     if (!email) {
+      webconsole.warning("OTP NODE | No email provided");
       return { Success: false, Tool: generateOtpTool };
     }
 
@@ -90,10 +89,7 @@ class passwordless_otp_generate extends BaseNode {
         `GENERATING OTP | For: ${email} | Company: ${companyName}`,
       );
 
-      await auth.api.sendVerificationOTP({
-        body: { email, type: "sign-in" },
-        headers: { "x-company-name": companyName },
-      });
+      await sendMail(email, companyName);
 
       webconsole.success("OTP Sent Successfully");
       return {
