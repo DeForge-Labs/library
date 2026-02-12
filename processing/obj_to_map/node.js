@@ -21,9 +21,9 @@ const config = {
   ],
   outputs: [
     {
-        desc: "The Flow to trigger",
-        name: "Flow",
-        type: "Flow",
+      desc: "The Flow to trigger",
+      name: "Flow",
+      type: "Flow",
     },
     {
       desc: "The map of the objects",
@@ -65,7 +65,11 @@ class obj_to_map extends BaseNode {
       const inputObjsFilter = inputs.find((e) => e.name === "objects");
       let inputObjs = inputObjsFilter?.value || [];
 
-      if (typeof inputObjs === "object") {
+      if (
+        !Array.isArray(inputObjs) &&
+        typeof inputObjs === "object" &&
+        inputObjs !== null
+      ) {
         inputObjs = [inputObjs];
       }
 
