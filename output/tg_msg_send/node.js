@@ -36,6 +36,11 @@ const config = {
       name: "Flow",
       type: "Flow",
     },
+    {
+      desc: "The response from Telegram containing message_id and chat details",
+      name: "Response",
+      type: "JSON",
+    },
   ],
   fields: [
     {
@@ -215,7 +220,10 @@ class tg_msg_send extends BaseNode {
         webconsole.success(
           "TG MSG NODE | Sent message with MarkdownV2 and Buttons",
         );
-        return markdownResponse.data;
+        return {
+          Response: markdownResponse.data.result,
+          Credits: this.getCredit(),
+        };
       }
     } catch (error) {
       webconsole.info(
@@ -240,7 +248,11 @@ class tg_msg_send extends BaseNode {
         webconsole.success(
           "TG MSG NODE | Sent message as plain text with Buttons",
         );
-        return plainResponse.data;
+
+        return {
+          Response: plainResponse.data.result,
+          Credits: this.getCredit(),
+        };
       }
       return null;
     } catch (error) {
