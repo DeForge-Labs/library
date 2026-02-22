@@ -5,7 +5,7 @@ const config = {
   category: "trigger",
   type: "discord_trigger",
   icon: {},
-  desc: "Triggers the flow when a user uses a slash command or clicks a button on your Discord bot",
+  desc: "Triggers the flow when a user uses a slash command, clicks a button, or sends a text message on your Discord bot",
   credit: 0,
   inputs: [],
   outputs: [
@@ -15,13 +15,18 @@ const config = {
       type: "Flow",
     },
     {
-      desc: "Type of interaction (COMMAND or BUTTON)",
+      desc: "Type of interaction (COMMAND, BUTTON, or MESSAGE)",
       name: "Interaction Type",
       type: "Text",
     },
     {
       desc: "The name of the slash command, or the custom ID of the button clicked",
       name: "Action Value",
+      type: "Text",
+    },
+    {
+      desc: "Message received by the bot",
+      name: "Message",
       type: "Text",
     },
     {
@@ -54,7 +59,7 @@ const config = {
     },
   ],
   difficulty: "easy",
-  tags: ["trigger", "discord", "bot", "command", "button"],
+  tags: ["trigger", "discord", "bot", "command", "button", "message"],
 };
 
 class discord_trigger extends BaseNode {
@@ -88,6 +93,7 @@ class discord_trigger extends BaseNode {
 
       let interactionType = "UNKNOWN";
       let actionValue = "";
+      let msg = "";
 
       if (payload.type === 2) {
         interactionType = "COMMAND";
@@ -95,6 +101,9 @@ class discord_trigger extends BaseNode {
       } else if (payload.type === 3) {
         interactionType = "BUTTON";
         actionValue = payload.data?.custom_id || "";
+      } else if (payload.type === "MESSAGE") {
+        interactionType = "MESSAGE";
+        msg = payload.data?.content || "";
       }
 
       webconsole.success(
@@ -105,6 +114,7 @@ class discord_trigger extends BaseNode {
         Flow: true,
         "Interaction Type": interactionType,
         "Action Value": actionValue,
+        Message: msg,
         "Channel ID": channelID,
         "User ID": userID,
         "Server ID": serverID,
