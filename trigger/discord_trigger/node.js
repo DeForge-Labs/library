@@ -25,7 +25,7 @@ const config = {
       type: "Text",
     },
     {
-      desc: "Message received by the bot",
+      desc: "Message received by the bot (or the query from a slash command)",
       name: "Message",
       type: "Text",
     },
@@ -98,6 +98,7 @@ class discord_trigger extends BaseNode {
       if (payload.type === 2) {
         interactionType = "COMMAND";
         actionValue = payload.data?.name || "";
+        msg = payload.deforge_query || "";
       } else if (payload.type === 3) {
         interactionType = "BUTTON";
         actionValue = payload.data?.custom_id || "";
