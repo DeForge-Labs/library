@@ -6,8 +6,8 @@ const config = {
   category: "output",
   type: "discord_msg_send",
   icon: {},
-  desc: "Send a text or media message via your Discord bot",
-  credit: 0,
+  desc: "Send a text, media message, or interactive components via your Discord bot",
+  credit: 5,
   inputs: [
     {
       desc: "The flow of the workflow",
@@ -28,6 +28,11 @@ const config = {
       desc: "(Optional) Direct link to an image/media file you want to embed",
       name: "Media Link",
       type: "Text",
+    },
+    {
+      desc: "(Optional) Array of JSON objects representing Discord Components (Action Rows)",
+      name: "Components",
+      type: "JSON[]",
     },
   ],
   outputs: [
@@ -62,6 +67,12 @@ const config = {
       value: "",
     },
     {
+      desc: "(Optional) Array of Discord Components",
+      name: "Components",
+      type: "JSON[]",
+      value: "[]",
+    },
+    {
       desc: "Connect to your Discord account",
       name: "Discord",
       type: "social",
@@ -69,7 +80,7 @@ const config = {
     },
   ],
   difficulty: "easy",
-  tags: ["output", "discord", "bot", "message", "media"],
+  tags: ["output", "discord", "bot", "message", "media", "components"],
 };
 
 class discord_msg_send extends BaseNode {
@@ -121,6 +132,20 @@ class discord_msg_send extends BaseNode {
       contents.find((e) => e.name === "Media Link")?.value ||
       "";
 
+    const ComponentsFilter = inputs.find((e) => e.name === "Components");
+    let ComponentsArray =
+      ComponentsFilter?.value ||
+      contents.find((e) => e.name === "Components")?.value ||
+      [];
+
+    if (
+      ComponentsArray &&
+      !Array.isArray(ComponentsArray) &&
+      typeof ComponentsArray === "object"
+    ) {
+      ComponentsArray = [ComponentsArray];
+    }
+
     const tokens = serverData.socialList;
     if (!tokens || !Object.keys(tokens).includes("discord")) {
       webconsole.error(
@@ -156,6 +181,20 @@ class discord_msg_send extends BaseNode {
           },
         ];
       }
+
+      // --- DEFORGE: ATTACH COMPONENTS TO PAYLOAD ---
+      if (ComponentsArray && ComponentsArray.length > 0) {
+        // Discord only allows a maximum of 5 Action Rows per message
+        if (ComponentsArray.length > 5) {
+          webconsole.info(
+            "DISCORD MSG NODE | Truncating components array to maximum allowed 5 Action Rows",
+          );
+          payload.components = ComponentsArray.slice(0, 5);
+        } else {
+          payload.components = ComponentsArray;
+        }
+      }
+      // ---------------------------------------------
 
       const response = await axios.post(
         `https://discord.com/api/v10/channels/${ChannelID}/messages`,
