@@ -133,11 +133,11 @@ class send_deforge_email_node extends BaseNode {
   async executeSendEmail(to, subject, body, cc, bcc, isHTML, webconsole) {
     // 1. Load System Credentials from process.env
     const smtpConfig = {
-      host: process.env.DEFORGE_SMTP_HOST,
-      port: process.env.DEFORGE_SMTP_PORT,
-      user: process.env.DEFORGE_SMTP_USER,
-      pass: process.env.DEFORGE_SMTP_PASSWORD,
-      secure: process.env.DEFORGE_SMTP_SECURE === "true",
+      host: process.env.AGENT_SMTP_HOST,
+      port: process.env.AGENT_SMTP_PORT,
+      user: process.env.AGENT_SMTP_USER,
+      pass: process.env.AGENT_SMTP_PASSWORD,
+      secure: process.env.AGENT_SMTP_SECURE === "true",
     };
 
     if (!smtpConfig.host || !smtpConfig.user || !smtpConfig.pass) {
