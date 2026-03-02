@@ -84,7 +84,7 @@ const config = {
     },
     {
       name: "IfNotExists",
-      type: "Boolean",
+      type: "CheckBox",
       value: true,
       desc: "Add IF NOT EXISTS clause to prevent errors if table exists",
     },

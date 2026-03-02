@@ -78,19 +78,19 @@ const config = {
     },
     {
       name: "Filter",
-      type: "JSON",
+      type: "Map",
       value: "{}",
       desc: "MongoDB filter query object (e.g., {status: 'active'})",
     },
     {
       name: "Projection",
-      type: "JSON",
+      type: "Map",
       value: "{}",
       desc: "Fields to include/exclude (e.g., {name: 1, email: 1, _id: 0})",
     },
     {
       name: "Sort",
-      type: "JSON",
+      type: "Map",
       value: "{}",
       desc: "Sort order (e.g., {createdAt: -1})",
     },
