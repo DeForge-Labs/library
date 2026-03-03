@@ -516,7 +516,7 @@ class custom_chat_node extends BaseNode {
                                     
                         // If file size is larger than 25 MB, return false
                         if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
-                            webconsole.error(`CUSTOM NODE | File at ${fileLink} exceeds the 25 MB size limit. Skipping this file.`);
+                            webconsole.error(`CUSTOM NODE | File at ${fileLink} exceeds the 50 MB size limit. Skipping this file.`);
                             skipFile = true;
                             return false;
                         }
