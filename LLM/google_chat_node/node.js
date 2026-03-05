@@ -97,8 +97,9 @@ const config = {
       type: "select",
       value: "gemini-2.5-flash",
       options: [
-        "gemini-3-pro-preview",
-        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-pro",
+        "gemini-3-flash",
         "gemini-2.5-pro",
         "gemini-2.5-flash",
       ],
@@ -386,16 +387,18 @@ class google_chat_node extends BaseNode {
 
       // Model pricing per million tokens in deforge credits less than 200K tokens
       const modelPricingInputUnder200 = {
-        "gemini-3-pro-preview": 1334,
-        "gemini-3-flash-preview": 350,
+        "gemini-3.1-flash-lite": 100,
+        "gemini-3.1-pro": 1334,
+        "gemini-3-flash": 350,
         "gemini-2.5-pro": 834,
         "gemini-2.5-flash": 200,
       };
 
       // Model pricing per million tokens in deforge credits more than 200K tokens
       const modelPricingInputOver200 = {
-        "gemini-3-pro-preview": 2667,
-        "gemini-3-flash-preview": 350,
+        "gemini-3.1-flash-lite": 100,
+        "gemini-3.1-pro": 2667,
+        "gemini-3-flash": 350,
         "gemini-2.5-pro": 1667,
         "gemini-2.5-flash": 200,
       };
@@ -431,32 +434,36 @@ class google_chat_node extends BaseNode {
 
       // Model pricing per million tokens in deforge credits less than 200K tokens
       const modelPricingInputUnder200 = {
-        "gemini-3-pro-preview": 1334,
-        "gemini-3-flash-preview": 350,
+        "gemini-3.1-flash-lite": 100,
+        "gemini-3.1-pro": 1334,
+        "gemini-3-flash": 350,
         "gemini-2.5-pro": 834,
         "gemini-2.5-flash": 200,
       };
 
       // Model pricing per million tokens in deforge credits more than 200K tokens
       const modelPricingInputOver200 = {
-        "gemini-3-pro-preview": 2667,
-        "gemini-3-flash-preview": 350,
+        "gemini-3.1-flash-lite": 100,
+        "gemini-3.1-pro": 2667,
+        "gemini-3-flash": 350,
         "gemini-2.5-pro": 1667,
         "gemini-2.5-flash": 200,
       };
 
       // Model pricing output per million tokens in deforge credits less than 200K tokens
       const modelPricingOutputUnder200 = {
-        "gemini-3-pro-preview": 8000,
-        "gemini-3-flash-preview": 2000,
+        "gemini-3.1-flash-lite": 700,
+        "gemini-3.1-pro": 8000,
+        "gemini-3-flash": 2000,
         "gemini-2.5-pro": 6667,
         "gemini-2.5-flash": 1667,
       };
 
       // Model pricing output per million tokens in deforge credits more than 200K tokens
       const modelPricingOutputOver200 = {
-        "gemini-3-pro-preview": 12000,
-        "gemini-3-flash-preview": 2000,
+        "gemini-3.1-flash-lite": 1000,
+        "gemini-3.1-pro": 12000,
+        "gemini-3-flash": 2000,
         "gemini-2.5-pro": 10000,
         "gemini-2.5-flash": 1667,
       };
@@ -515,8 +522,9 @@ class google_chat_node extends BaseNode {
       const model =
         contents.find((e) => e.name === "Model")?.value || "gemini-2.5-flash";
       const modelMap = {
-        "gemini-3-pro-preview": "google/gemini-3-pro-preview",
-        "gemini-3-flash-preview": "google/gemini-3-flash-preview",
+        "gemini-3.1-flash-lite": "google/gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro": "google/gemini-3.1-pro-preview",
+        "gemini-3-flash": "google/gemini-3-flash-preview",
         "gemini-2.5-pro": "google/gemini-2.5-pro",
         "gemini-2.5-flash": "google/gemini-2.5-flash",
       };
