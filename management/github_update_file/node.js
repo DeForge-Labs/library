@@ -77,6 +77,12 @@ const config = {
       value: "README.md",
     },
     {
+      desc: "The new text/code content of the file",
+      name: "New Content",
+      type: "TextArea",
+      value: "",
+    },
+    {
       desc: "Commit Message",
       name: "Commit Message",
       type: "Text",

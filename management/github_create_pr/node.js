@@ -77,6 +77,12 @@ const config = {
       value: "Automated PR from Deforge Agent",
     },
     {
+      desc: "Description/Body of the PR (Markdown supported)",
+      name: "Body",
+      type: "TextArea",
+      value: "",
+    },
+    {
       desc: "Source branch with changes",
       name: "Head Branch",
       type: "Text",
