@@ -96,7 +96,7 @@ class github_trigger extends BaseNode {
         contents.find((c) => c.name === "Event Type")?.value || "*";
 
       if (selectedEventType !== "*" && eventType !== selectedEventType) {
-        webconsole.warn(
+        webconsole.info(
           `GITHUB TRIGGER | Ignored event: ${eventType}. Listening for: ${selectedEventType}`,
         );
         return null;
