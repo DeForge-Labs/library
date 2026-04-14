@@ -6,49 +6,49 @@ import { z } from "zod";
 
 dotenv.config();
 
- const countryDict = {
-      "Great Britain": "gb",
-      "United States": "us",
-      Austria: "at",
-      Australia: "au",
-      Belgium: "be",
-      Brazil: "br",
-      Canada: "ca",
-      Switzerland: "ch",
-      Germany: "de",
-      Spain: "es",
-      France: "fr",
-      India: "in",
-      Italy: "it",
-      Mexico: "mx",
-      Netherlands: "nl",
-      "New Zealand": "nz",
-      Poland: "pl",
-      Singapore: "sg",
-      "South Africa": "za",
-    };
+const countryDict = {
+  "Great Britain": "gb",
+  "United States": "us",
+  Austria: "at",
+  Australia: "au",
+  Belgium: "be",
+  Brazil: "br",
+  Canada: "ca",
+  Switzerland: "ch",
+  Germany: "de",
+  Spain: "es",
+  France: "fr",
+  India: "in",
+  Italy: "it",
+  Mexico: "mx",
+  Netherlands: "nl",
+  "New Zealand": "nz",
+  Poland: "pl",
+  Singapore: "sg",
+  "South Africa": "za",
+};
 
-    const currencyCodeDict = {
-      "Great Britain": "GBP",
-      "United States": "USD",
-      Austria: "EUR",
-      Australia: "AUD",
-      Belgium: "EUR",
-      Brazil: "BRL",
-      Canada: "CAD",
-      Switzerland: "CHF",
-      Germany: "EUR",
-      Spain: "EUR",
-      France: "EUR",
-      India: "INR",
-      Italy: "EUR",
-      Mexico: "MXN",
-      Netherlands: "EUR",
-      "New Zealand": "NZD",
-      Poland: "PLN",
-      Singapore: "SGD",
-      "South Africa": "ZAR",
-    };
+const currencyCodeDict = {
+  "Great Britain": "GBP",
+  "United States": "USD",
+  Austria: "EUR",
+  Australia: "AUD",
+  Belgium: "EUR",
+  Brazil: "BRL",
+  Canada: "CAD",
+  Switzerland: "CHF",
+  Germany: "EUR",
+  Spain: "EUR",
+  France: "EUR",
+  India: "INR",
+  Italy: "EUR",
+  Mexico: "MXN",
+  Netherlands: "EUR",
+  "New Zealand": "NZD",
+  Poland: "PLN",
+  Singapore: "SGD",
+  "South Africa": "ZAR",
+};
 
 const config = {
   title: "Jobs Search",
@@ -76,9 +76,9 @@ const config = {
   ],
   outputs: [
     {
-        desc: "The Flow to trigger",
-        name: "Flow",
-        type: "Flow",
+      desc: "The Flow to trigger",
+      name: "Flow",
+      type: "Flow",
     },
     {
       desc: "The list of retrieved jobs (JSON array)",
@@ -170,7 +170,7 @@ class jobs_search_node extends BaseNode {
             }
             return value;
           })
-          .join(",")
+          .join(","),
       );
     }
     return rows.join("\n");
@@ -187,7 +187,7 @@ class jobs_search_node extends BaseNode {
     if (min && max) {
       return `${min.toLocaleString(locale, options)} - ${max.toLocaleString(
         locale,
-        options
+        options,
       )} per year`;
     }
     if (min) {
@@ -211,7 +211,7 @@ class jobs_search_node extends BaseNode {
 
     if (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_APP_KEY) {
       throw new Error(
-        "Adzuna API credentials not provided in environment variables."
+        "Adzuna API credentials not provided in environment variables.",
       );
     }
 
@@ -242,7 +242,7 @@ class jobs_search_node extends BaseNode {
     const results = data.results || [];
 
     webconsole.success(
-      `JOBS SEARCH NODE | Successfully retrieved ${results.length} jobs for query: ${query}.`
+      `JOBS SEARCH NODE | Successfully retrieved ${results.length} jobs for query: ${query}.`,
     );
 
     const jobList = results.map((job) => ({
@@ -285,7 +285,7 @@ class jobs_search_node extends BaseNode {
     if (!process.env.ADZUNA_APP_ID || !process.env.ADZUNA_APP_KEY) {
       this.setCredit(0);
       webconsole.error(
-        "JOBS SEARCH NODE | Adzuna API credentials not provided in environment variables."
+        "JOBS SEARCH NODE | Adzuna API credentials not provided in environment variables.",
       );
     }
 
@@ -310,7 +310,7 @@ class jobs_search_node extends BaseNode {
             terms,
             minSalary || 0,
             country,
-            webconsole
+            webconsole,
           );
 
           this.setCredit(this.getCredit() + executionCredit);
@@ -347,7 +347,7 @@ class jobs_search_node extends BaseNode {
             .string()
             .min(1)
             .describe(
-              "The main keywords or job title to search for (e.g., 'data scientist', 'remote marketing')."
+              "The main keywords or job title to search for (e.g., 'data scientist', 'remote marketing').",
             ),
           minSalary: z
             .number()
@@ -356,7 +356,7 @@ class jobs_search_node extends BaseNode {
             .default(0)
             .optional()
             .describe(
-              "The minimum annual salary desired for the job listings."
+              "The minimum annual salary desired for the job listings.",
             ),
           country: z
             .enum(Object.keys(countryDict))
@@ -365,7 +365,7 @@ class jobs_search_node extends BaseNode {
             .describe("The country where the job should be located."),
         }),
         responseFormat: "content_and_artifact",
-      }
+      },
     );
 
     // 1. Check for API keys (already set credit to 0 if missing)
@@ -381,8 +381,8 @@ class jobs_search_node extends BaseNode {
     // 2. Check for required input for direct execution
     if (!query) {
       this.setCredit(0);
-      webconsole.warn(
-        "JOBS SEARCH NODE | No search query provided in node inputs. Returning tool only."
+      webconsole.info(
+        "JOBS SEARCH NODE | No search query provided in node inputs. Returning tool only.",
       );
       return {
         "Job List": null,
@@ -398,7 +398,7 @@ class jobs_search_node extends BaseNode {
         query,
         minSalary,
         country,
-        webconsole
+        webconsole,
       );
 
       // Credit is already set to the base value (10) for successful direct execution.
@@ -415,7 +415,7 @@ class jobs_search_node extends BaseNode {
         ? JSON.stringify(error.response.data)
         : error.message;
       webconsole.error(
-        `JOBS SEARCH NODE | Error occurred during direct search: ${errorMessage}`
+        `JOBS SEARCH NODE | Error occurred during direct search: ${errorMessage}`,
       );
       this.setCredit(0);
       return {
