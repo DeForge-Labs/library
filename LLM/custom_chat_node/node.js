@@ -50,6 +50,11 @@ const config = {
             type: "Text",
         },
         {
+            desc: "The LLM model",
+            name: "Model",
+            type: "Text",
+        },
+        {
             desc: "Chat text to send",
             name: "Query",
             type: "Text",
@@ -402,7 +407,8 @@ class custom_chat_node extends BaseNode {
             let temperature = temperatureFilter.length > 0 ? temperatureFilter[0].value : contents.filter((e) => e.name === "Temperature")[0].value || 0.3;
             temperature = Number(temperature);
 
-            const model = contents.filter((e) => e.name === "Model")[0].value || "";
+            const modelFilter = inputs.filter((e) => e.name === "Model");
+            const model = modelFilter.length > 0 ? modelFilter[0].value : contents.filter((e) => e.name === "Model")[0].value || "";
 
             if (!model.trim()) {
                 webconsole.error("CUSTOM NODE | No model provided");
