@@ -277,7 +277,7 @@ class custom_chat_node extends BaseNode {
         }
     }
 
-    createWorkflow(llm, systemPrompt, tools, webconsole) {
+    createWorkflow(llm, systemPrompt, tools, webconsole, saveMemory) {
 
         if (Array.isArray(tools) && tools.length > 0) {
             llm = llm.bindTools(tools);
@@ -351,7 +351,11 @@ class custom_chat_node extends BaseNode {
                 .addEdge("model", END);
         }
 
-        return workflow.compile({ checkpointer: this.memoryStore });
+        if (saveMemory) {
+            return workflow.compile({ checkpointer: this.memoryStore });
+        } else {
+            return workflow.compile();
+        }
     }
 
     /**
@@ -460,7 +464,7 @@ class custom_chat_node extends BaseNode {
 
             toolList = [...toolList, ...tools];
 
-            const app = this.createWorkflow(llm, systemPrompt, toolList, webconsole);
+            const app = this.createWorkflow(llm, systemPrompt, toolList, webconsole, saveMemory);
 
             const config = {
                 configurable: {
